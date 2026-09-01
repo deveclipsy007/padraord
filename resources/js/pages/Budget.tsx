@@ -1,0 +1,58 @@
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { FormEvent, useState } from 'react';
+import { AppLayout } from '../layout';
+import { GlassSurface } from '../components/GlassSurface';
+import { BudgetIntakePanel, IntakeQuote, Preparation } from '../components/BudgetIntakePanel';
+import { CasePageHeader } from '../components/CasePageHeader';
+import { FileText, GitCompareArrows } from 'lucide-react';
+
+type Item = { id: number; category: string; description: string; quantity: string; unit: string; unitCostCents: number; supplier?: string; quoteId?: number; quoteValidUntil?: string; managementBps: number; administrationBps: number; contingencyCents: number; sellTotalCents: number; calculation: Record<string, number> };
+type Props = { selectedQuoteId:number;preparation:Preparation;opportunity: { id: number; title: string; clientName: string }; budget: { id: number | null; version: number; revision: number; status: string; purpose: string; items: Item[]; totalCents: number }; versions: { id: number; version: number; status: string; snapshot?: { totalCents: number } }[]; quotes: IntakeQuote[]; approvalEnabled: boolean };
+const money = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value / 100);
+const reais = (value: number) => (value / 100).toFixed(2).replace('.', ',');
+
+export default function Budget({ opportunity, budget, versions, quotes, approvalEnabled, selectedQuoteId, preparation }: Props) {
+    const [editing, setEditing] = useState<number | null>(null);
+    const [notice, setNotice] = useState('');
+    const base = '/opportunities/' + opportunity.id + '/budget';
+    const form = useForm({ revision: budget.revision, category: 'Produção', description: '', quantity: '1', unit: 'unidade', unit_cost: '', supplier: '', supplier_quote_id: '', quote_valid_until: '', management_percent: '0', administration_percent: '0', contingency: '0' });
+    const locked = budget.status === 'approved';
+    function action(path: string, extra: Record<string, unknown> = {}) {
+        router.post(base + path, { revision: budget.revision, ...extra }, { preserveScroll: true, onError: (errors) => setNotice(Object.values(errors).join(' ')), onSuccess: () => setNotice('') });
+    }
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        form.transform(data => ({ ...data, revision: budget.revision }));
+        const options = { preserveScroll: true, onSuccess: () => { form.reset(); setEditing(null); } };
+        if (editing) form.patch(base + '/items/' + editing, options);
+        else form.post(base + '/items', options);
+    }
+    function edit(item: Item, duplicate = false) {
+        setEditing(duplicate ? null : item.id);
+        form.setData({ revision: budget.revision, category: item.category, description: item.description, quantity: item.quantity, unit: item.unit, unit_cost: reais(item.unitCostCents), supplier: item.supplier || '', supplier_quote_id: item.quoteId ? String(item.quoteId) : '', quote_valid_until: item.quoteValidUntil || '', management_percent: String(item.managementBps / 100), administration_percent: String(item.administrationBps / 100), contingency: reais(item.contingencyCents) });
+    }
+    return <AppLayout><Head title={'Orçamento · ' + opportunity.title} />
+        <CasePageHeader id={opportunity.id} eyebrow="Orçamento de Gestão" title="Custos, alternativas e memória" client={opportunity.clientName} status={`versão ${budget.version} · ${budget.status}`} actions={<div className="topbar-actions">{budget.id && <button className="button button-subtle" onClick={() => action('/versions')}><GitCompareArrows size={15}/> Nova versão</button>}<Link className="button button-subtle" href={`/opportunities/${opportunity.id}/documents`}><FileText size={15}/> Documentos</Link></div>} />
+        <GlassSurface className="budget-ai"><div><strong>Regras comerciais aguardando validação</strong><p>Taxas são cenários de demonstração, não margem de lucro nem preço autorizado. Administração incide sobre custo + Gestão. Não há desconto automático.</p></div><span className="status-pill violet">Demonstração</span></GlassSurface>
+        {notice && <p role="alert" className="form-error">{notice}</p>}
+        <BudgetIntakePanel caseId={opportunity.id} revision={budget.revision} locked={locked} quotes={quotes} selectedQuoteId={selectedQuoteId} preparation={preparation}/>
+        <section className="budget-header"><GlassSurface className="budget-total"><span className="eyebrow">TOTAL DA VERSÃO</span><strong>{money(budget.totalCents)}</strong><small>{locked ? 'Snapshot aprovado · somente leitura' : 'Estimativa preliminar · edição invalida revisão'}</small></GlassSurface><GlassSurface className="budget-ai"><div><strong>Revisão humana</strong><p>A revisão de demonstração permite testar o fluxo, sem aprovar contratação.</p><button className="button button-subtle" disabled={locked || !budget.items.length} onClick={() => action('/approve', { demo: true })}>Revisar demonstração</button><button className="button button-primary" disabled={locked || !approvalEnabled} title={!approvalEnabled ? 'Regras e autoridade comercial não validadas' : 'Aprovar versão'} onClick={() => action('/approve')}>Aprovação real</button></div></GlassSurface></section>
+        <section className="budget-grid"><GlassSurface className="budget-items"><div className="panel-heading"><h2>Itens e memória de cálculo</h2><Link href="/suppliers">Fornecedores e cotações</Link></div>
+            {!budget.items.length && <p className="empty-state">Adicione o primeiro custo. Nenhum orçamento é criado apenas por visitar esta página.</p>}
+            {budget.items.map(item => <article className="budget-row" key={item.id} style={{ display: 'block' }}><strong>{item.description} · {money(item.sellTotalCents)}</strong><p>{item.category} · {item.quantity} {item.unit} · {item.supplier || 'Fornecedor a definir'}</p><p>Custo {money(item.calculation.cost)} + Gestão {money(item.calculation.management)} + Administração {money(item.calculation.administration)} + Contingência {money(item.calculation.contingency)}{item.calculation.legacyMarkup > 0 && ' + acréscimo legado ' + money(item.calculation.legacyMarkup)}</p><small>Cotação: {item.quoteValidUntil || 'validade não informada'}</small><div className="topbar-actions"><button className="button button-subtle" disabled={locked} onClick={() => edit(item)}>Editar</button><button className="button button-subtle" disabled={locked} onClick={() => edit(item, true)}>Duplicar item</button><button className="button button-subtle" disabled={locked} onClick={() => { if (window.confirm('Remover este item do rascunho?')) router.delete(base + '/items/' + item.id, { data: { revision: budget.revision }, preserveScroll: true, onError: errors => setNotice(Object.values(errors).join(' ')) }); }}>Remover</button></div></article>)}
+            <h3>Versões preservadas</h3>{versions.map(version => <p key={version.id}>v{version.version} · {version.status} {version.snapshot && ' · ' + money(version.snapshot.totalCents)}</p>)}
+        </GlassSurface><GlassSurface className="budget-form-card"><h2>{editing ? 'Editar item' : 'Adicionar custo'}</h2><form className="form-grid compact-form" onSubmit={submit}>
+            {Object.entries(form.errors).map(([key, value]) => <p role="alert" className="form-error" key={key}>{value}</p>)}
+            <label>Categoria<input required value={form.data.category} onChange={e => form.setData('category', e.target.value)} /></label>
+            <label>Descrição<input required value={form.data.description} onChange={e => form.setData('description', e.target.value)} /></label>
+            <div className="two-fields"><label>Quantidade<input required type="number" min="0.01" step="0.01" value={form.data.quantity} onChange={e => form.setData('quantity', e.target.value)} /></label><label>Unidade<input required value={form.data.unit} onChange={e => form.setData('unit', e.target.value)} /></label></div>
+            <label>Cotação vinculada<select value={form.data.supplier_quote_id} onChange={e => { const quote = quotes.find(q => String(q.id) === e.target.value); form.setData(data => ({ ...data, supplier_quote_id: e.target.value, unit_cost: quote ? reais(quote.unitCostCents) : data.unit_cost, quote_valid_until: quote?.validUntil || data.quote_valid_until })); }}><option value="">Estimativa manual</option>{quotes.map(quote => <option key={quote.id} value={quote.id}>{quote.label} · {money(quote.unitCostCents)}</option>)}</select></label>
+            <label>Custo unitário (R$)<input required inputMode="decimal" placeholder="1200,00" value={form.data.unit_cost} onChange={e => form.setData('unit_cost', e.target.value)} disabled={!!form.data.supplier_quote_id} /></label>
+            <label>Fornecedor estimado<input value={form.data.supplier} onChange={e => form.setData('supplier', e.target.value)} /></label>
+            <label>Validade da cotação<input type="date" value={form.data.quote_valid_until} onChange={e => form.setData('quote_valid_until', e.target.value)} /></label>
+            <div className="two-fields"><label>Gestão (%) · simulação<input type="number" min="0" max="100" step=".01" value={form.data.management_percent} onChange={e => form.setData('management_percent', e.target.value)} /></label><label>Administração (%)<input type="number" min="0" max="100" step=".01" value={form.data.administration_percent} onChange={e => form.setData('administration_percent', e.target.value)} /></label></div>
+            <label>Contingência (R$)<input inputMode="decimal" value={form.data.contingency} onChange={e => form.setData('contingency', e.target.value)} /></label>
+            <button className="button button-primary" disabled={locked || form.processing}>{form.processing ? 'Salvando…' : editing ? 'Salvar alterações' : 'Adicionar item'}</button>
+            {editing && <button type="button" className="button button-subtle" onClick={() => { setEditing(null); form.reset(); }}>Cancelar edição</button>}
+        </form></GlassSurface></section></AppLayout>;
+}

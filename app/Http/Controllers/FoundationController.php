@@ -1,0 +1,136 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Activity;
+use App\Models\AuditLog;
+use App\Models\Client;
+use App\Models\Contact;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+
+class FoundationController extends Controller
+{
+    private function audit(Request $request, string $action, $subject): void
+    {
+        AuditLog::create(['user_id' => $request->user()->id, 'action' => $action, 'subject_type' => $subject::class, 'subject_id' => $subject->id]);
+    }
+
+    public function clientStore(Request $request)
+    {
+        $client = Client::create($this->clientData($request));
+        $this->audit($request, 'client.created', $client);
+
+        return redirect("/clients/{$client->id}")->with('success', 'Cliente criado.');
+    }
+
+    public function clientUpdate(Request $request, Client $client)
+    {
+        $client->update($this->clientData($request));
+        $this->audit($request, 'client.updated', $client);
+
+        return back()->with('success', 'Cliente atualizado.');
+    }
+
+    private function clientData(Request $request): array
+    {
+        return $request->validate(['name' => 'required|string|max:160', 'industry' => 'nullable|string|max:160', 'notes' => 'nullable|string|max:10000']);
+    }
+
+    public function clientShow(Client $client)
+    {
+        return Inertia::render('ClientProfile', ['client' => $client->load(['contacts', 'opportunities'])]);
+    }
+
+    public function contactStore(Request $request, Client $client)
+    {
+        $contact = $client->contacts()->create($this->contactData($request));
+        $this->audit($request, 'contact.created', $contact);
+
+        return back()->with('success', 'Contato adicionado.');
+    }
+
+    public function contactUpdate(Request $request, Client $client, Contact $contact)
+    {
+        abort_unless($contact->client_id === $client->id, 404);
+        $contact->update($this->contactData($request));
+        $this->audit($request, 'contact.updated', $contact);
+
+        return back()->with('success', 'Contato atualizado.');
+    }
+
+    private function contactData(Request $request): array
+    {
+        return $request->validate(['name' => 'required|string|max:160', 'email' => 'nullable|email|max:160', 'phone' => 'nullable|string|max:60', 'role' => 'nullable|string|max:160']);
+    }
+
+    public function userStore(Request $request)
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $data = $request->validate(['name' => 'required|string|max:160', 'email' => 'required|email|max:160|unique:users,email', 'password' => 'required|string|min:12|max:128', 'role' => ['required', Rule::in(['admin', 'producer'])]]);
+        $user = User::create([...$data, 'is_active' => true, 'can_approve_commercial' => false]);
+        $this->audit($request, 'user.created', $user);
+
+        return back()->with('success', 'Usuário criado. Compartilhe a senha por um canal seguro.');
+    }
+
+    public function userUpdate(Request $request, User $user)
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $data = $request->validate(['name' => 'required|string|max:160', 'email' => ['required', 'email', 'max:160', Rule::unique('users')->ignore($user->id)], 'role' => ['required', Rule::in(['admin', 'producer'])], 'is_active' => 'required|boolean']);
+        if ($user->id === $request->user()->id && (! $data['is_active'] || $data['role'] !== 'admin')) {
+            return back()->withErrors(['is_active' => 'Não é permitido retirar seu próprio acesso administrativo.']);
+        }
+        $user->update($data);
+        $this->audit($request, 'user.updated', $user);
+
+        return back()->with('success', 'Acesso atualizado. Autoridade comercial permanece separada.');
+    }
+
+    public function userPassword(Request $request, User $user)
+    {
+        abort_unless($request->user()->isAdmin(), 403);
+        $data = $request->validate(['password' => 'required|string|min:12|max:128']);
+        $user->update([...$data, 'remember_token' => null]);
+        if (config('session.driver') === 'database') {
+            DB::table('sessions')->where('user_id', $user->id)->delete();
+        }
+        $this->audit($request, 'user.password_reset', $user);
+
+        return back()->with('success', 'Senha redefinida. Compartilhe pelo canal seguro da equipe.');
+    }
+
+    public function activityStore(Request $request)
+    {
+        $activity = Activity::create($this->activityData($request));
+        $this->audit($request, 'activity.created', $activity);
+
+        return back()->with('success', 'Atividade criada.');
+    }
+
+    public function activityUpdate(Request $request, Activity $activity)
+    {
+        $activity->update($this->activityData($request));
+        $this->audit($request, 'activity.updated', $activity);
+
+        return back()->with('success', 'Atividade atualizada.');
+    }
+
+    private function activityData(Request $request): array
+    {
+        $data = $request->validate(['title' => 'required|string|max:160', 'description' => 'nullable|string|max:10000', 'opportunity_id' => 'nullable|exists:opportunities,id', 'user_id' => ['nullable', Rule::exists('users', 'id')->where('is_active', true)], 'type' => ['required', Rule::in(['task', 'meeting', 'follow_up'])], 'priority' => ['required', Rule::in(['low', 'normal', 'high'])], 'status' => ['required', Rule::in(['todo', 'in_progress', 'done', 'cancelled'])], 'due_at' => 'nullable|date']);
+
+        return [...$data, 'completed_at' => $data['status'] === 'done' ? now() : null];
+    }
+
+    public function activityDestroy(Request $request, Activity $activity)
+    {
+        $activity->update(['status' => 'cancelled', 'completed_at' => null]);
+        $this->audit($request, 'activity.cancelled', $activity);
+
+        return back()->with('success', 'Atividade cancelada; histórico preservado.');
+    }
+}

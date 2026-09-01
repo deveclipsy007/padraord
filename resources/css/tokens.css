@@ -1,0 +1,47 @@
+:root {
+    --rd-font-ui: "Manrope Variable", "Avenir Next", -apple-system, BlinkMacSystemFont, sans-serif;
+    --rd-font-display: "Manrope Variable", "Avenir Next", -apple-system, BlinkMacSystemFont, sans-serif;
+    --rd-canvas: #eaf0f7;
+    --rd-canvas-deep: #dfe8f3;
+    --rd-surface: #f9fbff;
+    --rd-surface-glass: rgba(255, 255, 255, .72);
+    --rd-surface-glass-strong: rgba(255, 255, 255, .84);
+    --rd-ink: #17181d;
+    --rd-muted: #687184;
+    --rd-muted-soft: #8e97a8;
+    --rd-line: rgba(70, 86, 110, .11);
+    --rd-line-strong: rgba(58, 72, 94, .18);
+    --rd-violet: #7657f5;
+    --rd-violet-deep: #6547dc;
+    --rd-violet-soft: #e7e1ff;
+    --rd-blue: #6fa7ff;
+    --rd-green: #2b9a70;
+    --rd-amber: #c38425;
+    --rd-red: #c24f5d;
+    --rd-radius-control: 12px;
+    --rd-radius-item: 16px;
+    --rd-radius-card: 22px;
+    --rd-radius-feature: 28px;
+    --rd-shadow-sm: 0 8px 22px rgba(57, 76, 104, .07);
+    --rd-shadow: 0 18px 45px rgba(57, 76, 104, .10);
+    --rd-focus: 0 0 0 4px rgba(118, 87, 245, .18);
+    --rd-space-1: 4px;
+    --rd-space-2: 8px;
+    --rd-space-3: 12px;
+    --rd-space-4: 16px;
+    --rd-space-6: 24px;
+    --rd-space-8: 32px;
+    --rd-space-12: 48px;
+}
+
+html { background: var(--rd-canvas); }
+body { background: var(--rd-canvas); color: var(--rd-ink); font-family: var(--rd-font-ui); font-size: 14px; font-weight: 460; line-height: 1.5; font-variation-settings: "wght" 460; letter-spacing: -.008em; }
+button, input, select, textarea { font: inherit; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--rd-font-display); font-variation-settings: "wght" 650; text-wrap: balance; }
+strong, b { font-variation-settings: "wght" 650; }
+button, a { -webkit-tap-highlight-color: transparent; }
+.sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+
+@supports not (backdrop-filter: blur(1px)) {
+    :root { --rd-surface-glass: #f5f8fc; --rd-surface-glass-strong: #f9fbff; }
+}

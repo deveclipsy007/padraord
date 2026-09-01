@@ -1,0 +1,112 @@
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2, CircleAlert, Clock3, Filter, Plus, Search, Sparkles, X } from 'lucide-react';
+import { FormEvent, useMemo, useState } from 'react';
+import { AppLayout, PrimaryButton } from '../layout';
+import { TodayQueue, type QueueTask } from '../components/TodayQueue';
+import { BentoGrid, BentoItem } from '../components/ui/BentoGrid';
+import { PageHeader } from '../components/ui/PageHeader';
+import { StatusBadge } from '../components/ui/StatusBadge';
+import { Surface } from '../components/ui/Surface';
+import { Opportunity, PipelineColumn } from '../types';
+import contextCore from '../../images/rd/optimized/context-core.webp';
+
+type Props = {
+    todayQueue: QueueTask[];
+    currentUserId: number;
+    todayLabel: string;
+    aiMode: string;
+    opportunities: Opportunity[];
+    columns: PipelineColumn[];
+    metrics: { activeOpportunities: number; pendingBriefings: number; nextActions: number };
+};
+
+const stageColors: Record<string, string> = {
+    lead: 'violet', qualification: 'blue', briefing: 'amber', budget: 'violet', proposal: 'violet',
+    negotiation: 'amber', contract: 'green', pre_production: 'green', production: 'green', post_event: 'gray', closed: 'gray',
+};
+
+function money(cents: number | null) {
+    if (cents === null) return 'Sem valor definido';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(cents / 100);
+}
+
+export default function Dashboard({ opportunities, columns, metrics, todayQueue, currentUserId, todayLabel, aiMode }: Props) {
+    const [showForm, setShowForm] = useState(false);
+    const { data, setData, post, processing, errors, reset } = useForm({ title: '', client_name: '', contact_name: '', contact_email: '' });
+    const grouped = useMemo(() => Object.fromEntries(columns.map((column) => [column.id, opportunities.filter((opportunity) => opportunity.stage === column.id)])), [columns, opportunities]);
+    const demoOpportunityId = opportunities[0]?.id;
+    const pendingDecisions = opportunities.filter((item) => item.briefingStatus !== 'complete').slice(0, 3);
+    const activeStages = columns.filter((column) => column.count > 0).sort((a, b) => b.count - a.count).slice(0, 5);
+    const totalInStages = Math.max(1, activeStages.reduce((sum, column) => sum + column.count, 0));
+
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        post('/opportunities', { onSuccess: () => { reset(); setShowForm(false); } });
+    }
+
+    return (
+        <AppLayout>
+            <Head title="Hoje" />
+            <PageHeader
+                eyebrow={todayLabel}
+                title="Olá, Padrão RD."
+                description="Uma leitura direta do que precisa de atenção agora."
+                secondaryActions={<><button className="command-button" type="button" onClick={() => window.dispatchEvent(new Event('rd:command'))}><Search size={15} /><span>Buscar</span><kbd>⌘ K</kbd></button><button className="icon-button" aria-label="Abrir pipeline completo" onClick={() => router.visit('/pipeline')}><Filter size={17} /></button></>}
+                primaryAction={<PrimaryButton onClick={() => setShowForm(true)}>Nova oportunidade</PrimaryButton>}
+            />
+
+            <BentoGrid className="dashboard-bento" aria-label="Resumo operacional de hoje">
+                <BentoItem colSpan={2} rowSpan={2}>
+                    <Surface tone="elevated" padding="lg" className="operation-hero">
+                        <div className="operation-hero__top"><div><span className="eyebrow">OPERAÇÃO HOJE</span><h2>{todayQueue.length ? `${todayQueue.length} itens pedem ação.` : 'Tudo sob controle.'}</h2><p>Continue pela decisão mais importante sem reconstruir o contexto.</p></div><StatusBadge tone={todayQueue.length ? 'warning' : 'success'}>{todayQueue.length ? 'Atenção necessária' : 'Fluxo em dia'}</StatusBadge></div>
+                        <div className="operation-orbits" aria-label="Indicadores principais">
+                            <Link href="/pipeline"><strong>{metrics.activeOpportunities}</strong><span>oportunidades</span></Link>
+                            <Link href="/briefings"><strong>{metrics.pendingBriefings}</strong><span>briefings</span></Link>
+                            <Link href="/agenda"><strong>{metrics.nextActions}</strong><span>próximas ações</span></Link>
+                        </div>
+                        <button className="button button-primary" type="button" onClick={() => router.visit(todayQueue.length ? '/agenda' : '/pipeline')}>Abrir próxima ação <ArrowRight size={15} /></button>
+                    </Surface>
+                </BentoItem>
+
+                <BentoItem colSpan={2}>
+                    <Surface className="decision-widget">
+                        <div className="bento-heading"><div><span className="eyebrow">DECISÕES</span><h2>Aguardando você</h2></div><Link href="/briefings">Ver fila <ArrowUpRight size={14} /></Link></div>
+                        <div className="decision-list">{pendingDecisions.length ? pendingDecisions.map((item) => <Link key={item.id} href={`/opportunities/${item.id}/briefing`}><span className="decision-list__icon"><CircleAlert size={15} /></span><div><strong>{item.title}</strong><small>Briefing precisa de revisão</small></div><ArrowUpRight size={14} /></Link>) : <div className="bento-empty">Nenhuma decisão pendente agora.</div>}</div>
+                    </Surface>
+                </BentoItem>
+
+                <BentoItem>
+                    <Surface className="stage-widget">
+                        <div className="bento-heading"><div><span className="eyebrow">COMERCIAL</span><h2>Distribuição</h2></div><Link href="/pipeline"><ArrowUpRight size={15} /></Link></div>
+                        <div className="stage-bars">{activeStages.length ? activeStages.map((column) => <div key={column.id}><span><i className={`status-dot ${stageColors[column.id] ?? 'gray'}`} />{column.label}</span><strong>{column.count}</strong><b><i style={{ width: `${Math.max(8, (column.count / totalInStages) * 100)}%` }} /></b></div>) : <p className="bento-empty">Sem oportunidades ativas.</p>}</div>
+                    </Surface>
+                </BentoItem>
+
+                <BentoItem>
+                    <Surface tone="accent" className="ai-bento-card">
+                        <div className="ai-bento-card__copy"><span><Sparkles size={14} /> ASSISTENTE</span><h2>{aiMode === 'manual' ? 'Modo manual' : aiMode === 'demo' ? 'Demonstração' : 'OpenAI ativa'}</h2><p>Contexto preparado para revisão humana.</p><button type="button" onClick={() => router.visit('/settings/ai')}>Ver configuração <ArrowUpRight size={14} /></button></div>
+                        <img src={contextCore} width="152" height="152" alt="Núcleo visual do assistente" />
+                    </Surface>
+                </BentoItem>
+
+                <BentoItem colSpan={2}>
+                    <Surface className="today-bento"><div className="bento-heading"><div><span className="eyebrow">HOJE E AMANHÃ</span><h2>Fila operacional</h2></div><Link href="/agenda">Agenda <ArrowUpRight size={14} /></Link></div><TodayQueue tasks={todayQueue} userId={currentUserId} /></Surface>
+                </BentoItem>
+
+                <BentoItem colSpan={2}>
+                    <Surface className="pipeline-preview"><div className="bento-heading"><div><span className="eyebrow">FLUXO COMERCIAL</span><h2>Pipeline resumido</h2></div><Link href="/pipeline">Kanban completo <ArrowUpRight size={14} /></Link></div><div className="pipeline-mini">{columns.slice(0, 4).map((column) => <div key={column.id}><header><span className={`status-dot ${stageColors[column.id] ?? 'gray'}`} />{column.label}<b>{column.count}</b></header>{(grouped[column.id] ?? []).slice(0, 2).map((opportunity) => <Link key={opportunity.id} href={`/opportunities/${opportunity.id}`}><strong>{opportunity.title}</strong><span>{opportunity.clientName}</span></Link>)}</div>)}</div></Surface>
+                </BentoItem>
+
+                <BentoItem>
+                    <Surface className="continuity-bento"><span className="eyebrow">CONTINUIDADE</span><h2>{opportunities[0]?.title || 'Nenhum caso recente'}</h2><p>{opportunities[0] ? 'Retome de onde a equipe parou.' : 'Crie uma oportunidade para iniciar a jornada.'}</p><Link className="button button-subtle" href={demoOpportunityId ? `/opportunities/${demoOpportunityId}` : '/pipeline'}>{demoOpportunityId ? 'Continuar caso' : 'Abrir comercial'} <ArrowRight size={14} /></Link></Surface>
+                </BentoItem>
+
+                <BentoItem>
+                    <Surface className="activity-bento"><span className="eyebrow">ATIVIDADE RECENTE</span><h2>Histórico operacional</h2><p>Abra o histórico para consultar alterações e decisões registradas.</p><Link className="button button-subtle" href="/history">Ver histórico <ArrowRight size={14} /></Link></Surface>
+                </BentoItem>
+            </BentoGrid>
+
+            {showForm && <div className="modal-backdrop" role="presentation"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><span className="eyebrow">NOVA OPORTUNIDADE</span><h2 id="modal-title">Começar pelo contexto.</h2></div><button className="icon-button" onClick={() => setShowForm(false)} aria-label="Fechar"><X size={17} /></button></div><form onSubmit={submit} className="form-grid"><label>Nome da oportunidade<input value={data.title} onChange={(event) => setData('title', event.target.value)} autoFocus />{errors.title && <small className="field-error">{errors.title}</small>}</label><label>Cliente<input value={data.client_name} onChange={(event) => setData('client_name', event.target.value)} />{errors.client_name && <small className="field-error">{errors.client_name}</small>}</label><label>Contato<input value={data.contact_name} onChange={(event) => setData('contact_name', event.target.value)} /></label><label>E-mail<input type="email" value={data.contact_email} onChange={(event) => setData('contact_email', event.target.value)} /></label><div className="form-actions"><button type="button" className="button button-subtle" onClick={() => setShowForm(false)}>Cancelar</button><button type="submit" className="button button-primary" disabled={processing}><Plus size={16} />{processing ? 'Criando…' : 'Criar oportunidade'}</button></div></form></div></div>}
+        </AppLayout>
+    );
+}
