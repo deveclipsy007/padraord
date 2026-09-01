@@ -14,6 +14,7 @@ use Illuminate\Validation\ValidationException;
 class CaseContextService
 {
     private const BRIEFING = ['objetivo' => 'objective', 'público' => 'audience', 'publico' => 'audience', 'data' => 'event_date', 'local' => 'location', 'investimento' => 'budget', 'orçamento' => 'budget', 'escopo' => 'scope', 'restrições' => 'restrictions', 'restricoes' => 'restrictions', 'referências' => 'references', 'referencias' => 'references'];
+
     private const VIABILITY = ['conceito' => 'concept', 'experiência' => 'experience', 'experiencia' => 'experience', 'premissas técnicas' => 'technical_assumptions', 'premissas tecnicas' => 'technical_assumptions', 'estimativa' => 'estimate_notes', 'fornecedores' => 'supplier_needs', 'cronograma' => 'schedule_notes'];
 
     public function createPreview(Opportunity $case, User $user, array $data): AssistantPreview

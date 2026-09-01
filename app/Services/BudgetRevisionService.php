@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\Ability;
 use App\Models\AuditLog;
 use App\Models\Budget;
 use App\Models\Opportunity;
 use App\Models\SupplierQuote;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 final class BudgetRevisionService
@@ -39,7 +41,7 @@ final class BudgetRevisionService
             if (! $budget || $budget->revision !== $revision || $budget->status === 'approved') {
                 throw ValidationException::withMessages(['revision' => 'Versão inexistente, já aprovada ou alterada. Atualize antes de revisar.']);
             }
-            if ($final && (! $actor->can_approve_commercial || ! config('commercial.rules_approved') || blank(config('commercial.rules_evidence')))) {
+            if ($final && (Gate::denies(Ability::ApproveCommercial->value) || ! config('commercial.rules_approved') || blank(config('commercial.rules_evidence')))) {
                 throw ValidationException::withMessages(['approval' => 'Aprovação real bloqueada: confirme as regras comerciais e a autoridade do aprovador. Use a revisão de demonstração.']);
             }
             $items = $budget->items()->get();

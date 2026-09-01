@@ -6,7 +6,7 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": "^8.3",
+        "php": "^8.4",
         "dompdf/dompdf": "^3.1",
         "inertiajs/inertia-laravel": "^2.0",
         "james-heinrich/getid3": "^1.9",
@@ -51,6 +51,17 @@
             "@php artisan config:clear --ansi @no_additional_args",
             "@php artisan test"
         ],
+        "lint": "@php vendor/bin/pint --test app bootstrap/app.php config database routes tests",
+        "test:sqlite": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test"
+        ],
+        "quality": [
+            "@composer validate --strict --no-check-publish",
+            "@composer lint",
+            "@composer test:sqlite",
+            "@composer audit --locked --no-interaction"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
@@ -79,6 +90,9 @@
         "optimize-autoloader": true,
         "preferred-install": "dist",
         "sort-packages": true,
+        "platform": {
+            "php": "8.4.1"
+        },
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true

@@ -8,15 +8,22 @@ use App\AI\DemoAiProvider;
 use App\AI\MeteredAiProvider;
 use App\AI\NullAiProvider;
 use App\AI\OpenAiAudioTranscriber;
+use App\AI\OpenAiContextIntelligenceExtractor;
 use App\Contracts\AudioTranscriber;
 use App\Contracts\ContextIntelligenceExtractor;
-use App\AI\OpenAiContextIntelligenceExtractor;
+use App\Contracts\MediaPreparationProvider;
 use App\Contracts\OdooCostExporter;
+use App\Enums\Ability;
 use App\Integrations\Odoo\Json2OdooCostExporter;
 use App\Integrations\Odoo\NullOdooCostExporter;
-use App\Contracts\MediaPreparationProvider;
 use App\Media\PassThroughMediaPreparationProvider;
+use App\Models\User;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -49,6 +56,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::define(Ability::OperateWorkspace->value, fn (User $user): bool => $user->is_active);
+        Gate::define(Ability::ManageTeam->value, fn (User $user): bool => $user->is_active && $user->isAdmin());
+        Gate::define(Ability::ManageAi->value, fn (User $user): bool => $user->is_active && $user->isAdmin());
+        Gate::define(Ability::ViewPilotFeedback->value, fn (User $user): bool => $user->is_active && $user->isAdmin());
+        Gate::define(Ability::ManageDemo->value, fn (User $user): bool => $user->is_active && $user->isAdmin());
+        Gate::define(Ability::ApproveCommercial->value, fn (User $user): bool => $user->is_active && $user->can_approve_commercial);
+
+        RateLimiter::for('login', function (Request $request): Limit {
+            $email = Str::lower(Str::squish((string) $request->input('email')));
+
+            return Limit::perMinute(5)->by($email.'|'.$request->ip());
+        });
     }
 }

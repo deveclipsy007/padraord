@@ -62,6 +62,6 @@ class DocumentRevisionTest extends TestCase
         $data = ['title' => 'Proposta', 'purpose' => 'management', 'expected_version' => 0, 'sections' => ['objective' => 'Teste', 'scope' => 'Teste', 'conditions' => 'Teste']];
         $this->postJson("/opportunities/$o->id/proposal", $data)->assertRedirect();
         $this->postJson("/opportunities/$o->id/proposal", $data)->assertUnprocessable();
-        $this->assertDatabaseCount('documents',1);
+        $this->assertDatabaseCount('documents', 1);
     }
 }

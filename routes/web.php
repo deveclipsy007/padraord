@@ -6,10 +6,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BriefingAudioController;
 use App\Http\Controllers\BriefingController;
 use App\Http\Controllers\BudgetController;
-use App\Http\Controllers\CaseJourneyController;
 use App\Http\Controllers\CaseContextController;
-use App\Http\Controllers\ContextAudioUploadController;
+use App\Http\Controllers\CaseJourneyController;
 use App\Http\Controllers\ContextAudioReviewController;
+use App\Http\Controllers\ContextAudioUploadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentsHubController;
@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'show'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.store');
 });
 
 Route::middleware('auth')->group(function (): void {
@@ -48,9 +48,9 @@ Route::middleware('auth')->group(function (): void {
 
         return back()->with('success', 'Item incluído no rascunho. Revise antes de aprovar.');
     });
-    Route::get('/settings/ai', [AiSettingsController::class, 'show']);
-    Route::post('/settings/ai', [AiSettingsController::class, 'store']);
-    Route::post('/settings/ai/test', [AiSettingsController::class, 'test'])->middleware('throttle:5,1');
+    Route::get('/settings/ai', [AiSettingsController::class, 'show'])->middleware('can:manage-ai');
+    Route::post('/settings/ai', [AiSettingsController::class, 'store'])->middleware('can:manage-ai');
+    Route::post('/settings/ai/test', [AiSettingsController::class, 'test'])->middleware(['can:manage-ai', 'throttle:5,1']);
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::get('/projects', [PrototypeController::class, 'index'])->name('projects');
@@ -66,9 +66,10 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/clients/{client}', [FoundationController::class, 'clientUpdate']);
     Route::post('/clients/{client}/contacts', [FoundationController::class, 'contactStore']);
     Route::patch('/clients/{client}/contacts/{contact}', [FoundationController::class, 'contactUpdate']);
-    Route::post('/team', [FoundationController::class, 'userStore']);
-    Route::patch('/team/{user}', [FoundationController::class, 'userUpdate']);
-    Route::post('/team/{user}/password', [FoundationController::class, 'userPassword']);
+    Route::post('/team', [FoundationController::class, 'userStore'])->middleware('can:manage-team');
+    Route::patch('/team/{user}', [FoundationController::class, 'userUpdate'])->middleware('can:manage-team');
+    Route::post('/team/{user}/password', [FoundationController::class, 'userPassword'])->middleware('can:manage-team');
+    Route::post('/team/{user}/commercial-authority', [FoundationController::class, 'commercialAuthority'])->middleware('can:manage-team');
     Route::post('/activities', [FoundationController::class, 'activityStore']);
     Route::patch('/activities/{activity}', [FoundationController::class, 'activityUpdate']);
     Route::delete('/activities/{activity}', [FoundationController::class, 'activityDestroy']);

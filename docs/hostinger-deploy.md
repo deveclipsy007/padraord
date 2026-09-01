@@ -9,6 +9,7 @@ O servidor público é `public_html/index.php`. O Laravel fica em `app_core`, no
 3. Criar banco MariaDB e preencher manualmente `app_core/.env` no servidor.
 4. Criar a conta SFTP/SSH e testar o caminho exibido em FTP Accounts.
 5. Executar `./scripts/deploy/build-hostinger-release.sh` localmente.
+   O script roda a suíte local, gera `dist/hostinger` e executa o verificador de superfície pública.
 6. Enviar `dist/hostinger` usando `./scripts/deploy/deploy-hostinger-sftp.sh`.
 7. Rodar o smoke test em `https://app.padraord.com.br/up` e na raiz.
 
@@ -21,6 +22,16 @@ No hPanel, criar um cron PHP a cada minuto apontando para:
 ```
 
 O scheduler processa a fila de banco de forma transitória. Não manter `queue:work` permanente em hospedagem compartilhada.
+
+## Verificação do pacote
+
+Antes de qualquer transporte, executar:
+
+```text
+./scripts/deploy/verify-hostinger-release.sh dist/hostinger
+```
+
+O verificador confirma checksums, manifest Vite, `public_html/index.php`, ausência de `index.html`, `.env`, SQLite, logs, source maps, código React/TypeScript e diretórios privados na área pública. O release `20260814161958` foi marcado como obsoleto e não deve ser enviado.
 
 ## FTP manual
 

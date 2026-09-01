@@ -65,6 +65,9 @@ test ! -e "${DIST_DIR}/app_core/.env"
 
 RELEASE_ID="$(date -u +%Y%m%d%H%M%S)"
 printf '{"release":"%s","app":"padrao-rd","php":"8.4","public_entry":"public_html/index.php"}\n' "${RELEASE_ID}" > "${DIST_DIR}/release.json"
+(printf '%s\n' "Previous release 20260814161958 is obsolete and must not be published." "Generated release: ${RELEASE_ID}" > "${DIST_DIR}/obsolete-files.txt")
 (cd "${DIST_DIR}" && find app_core public_html -type f -print0 | sort -z | xargs -0 shasum -a 256 > checksums.sha256)
+
+"${ROOT_DIR}/scripts/deploy/verify-hostinger-release.sh" "${DIST_DIR}"
 
 echo "Hostinger release ready: ${DIST_DIR}"

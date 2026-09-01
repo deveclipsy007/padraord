@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\ContextAudioAsset;
+use App\Jobs\PrepareContextAudio;
 use App\Models\AiSetting;
+use App\Models\ContextAudioAsset;
 use App\Models\Opportunity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Queue;
-use App\Jobs\PrepareContextAudio;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ContextAudioUploadTest extends TestCase
@@ -96,7 +96,8 @@ class ContextAudioUploadTest extends TestCase
 
     public function test_audio_is_preserved_without_dispatching_paid_work_when_ai_is_not_ready(): void
     {
-        Storage::fake('local'); Queue::fake();
+        Storage::fake('local');
+        Queue::fake();
         $opportunity = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);
         $wav = $this->wav();
         $start = $this->actingAs(User::factory()->create())->postJson("/opportunities/{$opportunity->id}/context/audio/uploads", [

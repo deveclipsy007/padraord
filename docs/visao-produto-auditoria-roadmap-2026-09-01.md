@@ -78,17 +78,17 @@ Os estados abaixo substituem percentuais subjetivos de progresso:
 
 ### Evidências técnicas coletadas
 
-- 94 rotas Laravel.
-- 25 controllers, 31 models e 20 migrations.
+- 96 rotas Laravel após as rotas protegidas de health e autoridade comercial.
+- 26 controllers, 31 models e 20 migrations após as adições deste ciclo.
 - 25 páginas React.
-- 112 testes PHP e 867 assertions passando.
+- 120 testes PHP e 918 assertions passando no SQLite.
 - 12 testes de interface passando.
 - TypeScript e build Vite passando.
-- Pint falhando em 19 arquivos.
-- Testes automatizados executados somente em SQLite.
-- Não existe suíte Playwright versionada no repositório.
-- Não existe pipeline de CI configurado.
-- O pacote Hostinger existente está desatualizado em relação ao código atual.
+- Pint passou sem arquivos pendentes após a correção dos 19 arquivos do baseline.
+- Testes PHP locais usam SQLite; MariaDB agora está coberto por configuração e script para CI.
+- Suíte Playwright versionada criada com 21 testes e três breakpoints.
+- Workflow GitHub Actions criado, aguardando repositório privado e execução remota.
+- Pacote Hostinger atual foi reconstruído e auditado pelo verificador de release.
 - O PHP local observado é 8.5.4; a produção deverá ser fixada e verificada em 8.4.
 - Telas principais foram observadas em desktop, tablet e celular sem rolagem horizontal global, mas o briefing móvel tem tabs contextuais com affordance fraca e os botões flutuantes de Assistente/Feedback disputam espaço com o dock inferior.
 - Há dois fluxos de áudio que precisam convergir: o legado do Briefing e o motor transversal de contexto.
@@ -400,8 +400,33 @@ O sistema estará concluído quando:
 
 ## 7. Estado de liberação
 
-**Estado atual:** funcional incompleto, com fundação local navegável e integrações de produção ainda não validadas.
+### Registro de evidências — Ciclo 01
 
-**Próximo bloqueio objetivo:** Ciclo 1 — Pint, CI, MariaDB, matriz de permissões, health check e inventário efetivo da Hostinger.
+Executado localmente em 01/09/2026, sem apagar dados existentes:
+
+| Verificação | Resultado |
+|---|---|
+| Backup SQLite | `cycle-01-backup-20260901/database.sqlite`; integridade `ok` |
+| PHPUnit SQLite | 119 testes, 909 assertions — passou |
+| Pint | passou sem arquivos pendentes |
+| Composer validate/audit | passou; nenhum advisory conhecido |
+| Vitest | 12 testes — passou |
+| TypeScript | passou |
+| Vite build | passou; manifest e assets compilados |
+| Playwright | 21 testes em desktop/tablet/mobile — passou |
+| Health protegido | token ausente/inválido retorna 401; token válido retorna contrato 200 |
+| Headers | request ID, nosniff, frame deny, referrer policy e permissions policy cobertos |
+| Release Hostinger | pacote atual gerado e verificado; `public_html/index.php`, sem `index.html`, secrets ou source |
+| MariaDB | teste e script preparados para CI; não executado localmente (sem servidor/cliente disponível) |
+| Git | branch `main` e baseline local commitada; nenhum remote GitHub configurado |
+| Hostinger | nenhum upload; inventário marcado como pendente por falta de acesso real |
+
+Arquivos de evidência do ciclo: `phpunit.mariadb.xml`, `scripts/ci/test-mariadb.sh`, `playwright.config.ts`, `tests/e2e/`, `.github/workflows/ci.yml`, `scripts/deploy/verify-hostinger-release.sh` e [inventário Hostinger](operations/hostinger-capabilities.md).
+
+O teste MariaDB será a validação primária no GitHub Actions quando o repositório privado estiver disponível. O pacote local não é prova de produção; PHP 8.4, MariaDB, cron, SMTP, Odoo e OpenAI continuam sem validação externa.
+
+**Estado atual:** fundação local validada; produção ainda não validada e o acesso remoto permanece bloqueado.
+
+**Próximo bloqueio objetivo:** ativar o repositório privado/CI e coletar o inventário real do hPanel/FTP. O Ciclo 01 não inclui upload nem migration em produção.
 
 **Critério para declarar produção:** somente após concluir o Ciclo 6, executar o piloto e comprovar deploy, smoke test, backup e rollback reais.

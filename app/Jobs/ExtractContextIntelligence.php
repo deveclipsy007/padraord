@@ -2,16 +2,17 @@
 
 namespace App\Jobs;
 
+use App\AI\AiConfiguration;
 use App\AI\ContextIntelligenceSchema;
+use App\AI\MeteredAiProvider;
 use App\Contracts\ContextIntelligenceExtractor;
 use App\Models\AiRun;
 use App\Models\AssistantPreview;
 use App\Models\CaseContextEntry;
 use App\Models\ViabilityProject;
 use App\Services\AiCostLedger;
-use App\Services\OdooCostOutboxService;
 use App\Services\CaseContextService;
-use App\AI\MeteredAiProvider;
+use App\Services\OdooCostOutboxService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Validation\ValidationException;
@@ -49,7 +50,7 @@ class ExtractContextIntelligence implements ShouldQueue
             'briefing_revision' => $opportunity->briefing_revision,
             'viability' => ViabilityProject::where('opportunity_id', $opportunity->id)->first()?->toArray(),
         ];
-        $setting = app(\App\AI\AiConfiguration::class)->setting();
+        $setting = app(AiConfiguration::class)->setting();
         $inputEstimate = max(1, (int) ceil(strlen($entry->segments->pluck('text')->implode(' ')) / 4));
         $estimatedCost = max(1, MeteredAiProvider::cost($inputEstimate, 6000, (int) $setting->input_price, (int) $setting->output_price));
         try {

@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\AI\AiConfiguration;
+use App\Jobs\ExtractContextIntelligence;
+use App\Jobs\PrepareContextAudio;
 use App\Models\AuditLog;
 use App\Models\CaseContextEntry;
 use App\Models\Opportunity;
-use App\AI\AiConfiguration;
-use App\Jobs\PrepareContextAudio;
-use App\Jobs\ExtractContextIntelligence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;

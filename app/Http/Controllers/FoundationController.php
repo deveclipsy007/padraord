@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Ability;
 use App\Models\Activity;
 use App\Models\AuditLog;
 use App\Models\Client;
@@ -9,6 +10,7 @@ use App\Models\Contact;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -69,7 +71,7 @@ class FoundationController extends Controller
 
     public function userStore(Request $request)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        Gate::authorize(Ability::ManageTeam->value);
         $data = $request->validate(['name' => 'required|string|max:160', 'email' => 'required|email|max:160|unique:users,email', 'password' => 'required|string|min:12|max:128', 'role' => ['required', Rule::in(['admin', 'producer'])]]);
         $user = User::create([...$data, 'is_active' => true, 'can_approve_commercial' => false]);
         $this->audit($request, 'user.created', $user);
@@ -79,7 +81,7 @@ class FoundationController extends Controller
 
     public function userUpdate(Request $request, User $user)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        Gate::authorize(Ability::ManageTeam->value);
         $data = $request->validate(['name' => 'required|string|max:160', 'email' => ['required', 'email', 'max:160', Rule::unique('users')->ignore($user->id)], 'role' => ['required', Rule::in(['admin', 'producer'])], 'is_active' => 'required|boolean']);
         if ($user->id === $request->user()->id && (! $data['is_active'] || $data['role'] !== 'admin')) {
             return back()->withErrors(['is_active' => 'Não é permitido retirar seu próprio acesso administrativo.']);
@@ -92,7 +94,7 @@ class FoundationController extends Controller
 
     public function userPassword(Request $request, User $user)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        Gate::authorize(Ability::ManageTeam->value);
         $data = $request->validate(['password' => 'required|string|min:12|max:128']);
         $user->update([...$data, 'remember_token' => null]);
         if (config('session.driver') === 'database') {
@@ -101,6 +103,28 @@ class FoundationController extends Controller
         $this->audit($request, 'user.password_reset', $user);
 
         return back()->with('success', 'Senha redefinida. Compartilhe pelo canal seguro da equipe.');
+    }
+
+    public function commercialAuthority(Request $request, User $user)
+    {
+        Gate::authorize(Ability::ManageTeam->value);
+        $data = $request->validate([
+            'password' => ['required', 'current_password'],
+            'enabled' => ['required', 'boolean'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+        $before = (bool) $user->can_approve_commercial;
+        $enabled = (bool) $data['enabled'];
+        $user->update(['can_approve_commercial' => $enabled]);
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'user.commercial_authority_changed',
+            'subject_type' => User::class,
+            'subject_id' => $user->id,
+            'metadata' => ['before' => $before, 'after' => $enabled, 'reason' => $data['reason']],
+        ]);
+
+        return back()->with('success', $enabled ? 'Autoridade comercial concedida.' : 'Autoridade comercial removida.');
     }
 
     public function activityStore(Request $request)

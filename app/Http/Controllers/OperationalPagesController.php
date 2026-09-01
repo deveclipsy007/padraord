@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Ability;
 use App\Models\Activity;
 use App\Models\AuditLog;
 use App\Models\Client;
@@ -9,6 +10,7 @@ use App\Models\Opportunity;
 use App\Models\ProductionTask;
 use App\Models\PrototypeFeedback;
 use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -46,7 +48,7 @@ class OperationalPagesController extends Controller
         if ($opportunity?->exists) {
             $query->where('subject_type', Opportunity::class)->where('subject_id', $opportunity->id);
         }
-        if (! request()->user()->isAdmin()) {
+        if (! Gate::allows(Ability::ViewPilotFeedback->value)) {
             $query->where('subject_type', '!=', User::class);
         }
         $search = mb_substr((string) request('q', ''), 0, 100);
@@ -74,13 +76,13 @@ class OperationalPagesController extends Controller
             'records' => $query->limit(100)->get()->map(fn ($log) => ['id' => $log->id, 'action' => $log->action, 'user' => User::find($log->user_id)?->name ?? 'Sistema', 'caseId' => $log->subject_type === Opportunity::class ? $log->subject_id : null, 'metadata' => $log->metadata, 'createdAt' => $log->created_at->format('d/m/Y H:i')]),
             'search' => $search, 'filters' => ['module' => $module, 'person' => $person ?: '', 'from' => $from ?: '', 'to' => $to ?: ''], 'case' => $opportunity?->only(['id', 'title']),
             'users' => User::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'feedback' => request()->user()->isAdmin() ? PrototypeFeedback::latest()->limit(20)->get()->map(fn ($item) => ['rating' => $item->rating, 'category' => $item->category, 'comment' => $item->comment, 'createdAt' => $item->created_at->format('d/m/Y H:i')])->values() : [],
+            'feedback' => Gate::allows(Ability::ViewPilotFeedback->value) ? PrototypeFeedback::latest()->limit(20)->get()->map(fn ($item) => ['rating' => $item->rating, 'category' => $item->category, 'comment' => $item->comment, 'createdAt' => $item->created_at->format('d/m/Y H:i')])->values() : [],
         ]);
     }
 
     public function team(): Response
     {
-        abort_unless(request()->user()?->isAdmin(), 403);
+        Gate::authorize(Ability::ManageTeam->value);
 
         return Inertia::render('Team', ['users' => User::query()->orderBy('name')->get()->map(fn ($user) => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role, 'active' => $user->is_active, 'canApproveCommercial' => $user->can_approve_commercial])->values()]);
     }

@@ -6,10 +6,14 @@
         "build": "vite build",
         "test:ui": "vitest run",
         "typecheck": "tsc --noEmit",
+        "test:e2e": "playwright test",
+        "test:e2e:install": "playwright install chromium",
+        "quality": "npm run test:ui && npm run typecheck && npm run build",
         "check": "npm run typecheck && npm run build",
         "dev": "vite"
     },
     "devDependencies": {
+        "@playwright/test": "^1.62.1",
         "@tailwindcss/vite": "^4.0.0",
         "@types/node": "^24.13.3",
         "concurrently": "^10.0.3",

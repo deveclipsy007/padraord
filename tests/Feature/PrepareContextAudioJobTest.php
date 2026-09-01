@@ -2,15 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Contracts\MediaPreparationProvider;
 use App\Jobs\PrepareContextAudio;
+use App\Jobs\TranscribeContextAudio;
 use App\Models\CaseContextEntry;
 use App\Models\ContextAudioAsset;
 use App\Models\Opportunity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Queue;
-use App\Jobs\TranscribeContextAudio;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PrepareContextAudioJobTest extends TestCase
@@ -35,7 +36,7 @@ class PrepareContextAudioJobTest extends TestCase
             'digest' => str_repeat('a', 64), 'status' => 'queued',
         ]);
 
-        (new PrepareContextAudio($asset->id))->handle(app(\App\Contracts\MediaPreparationProvider::class));
+        (new PrepareContextAudio($asset->id))->handle(app(MediaPreparationProvider::class));
 
         $asset->refresh();
         $this->assertSame('prepared', $asset->status);
@@ -61,7 +62,7 @@ class PrepareContextAudioJobTest extends TestCase
             'digest' => str_repeat('b', 64), 'status' => 'queued',
         ]);
 
-        (new PrepareContextAudio($asset->id))->handle(app(\App\Contracts\MediaPreparationProvider::class));
+        (new PrepareContextAudio($asset->id))->handle(app(MediaPreparationProvider::class));
 
         $asset->refresh();
         $this->assertSame('failed', $asset->status);

@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\AI\AiConfiguration;
 use App\AI\AiProvider;
+use App\Enums\Ability;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -15,7 +17,7 @@ class AiSettingsController extends Controller
 {
     public function show(Request $request, AiConfiguration $config)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        Gate::authorize(Ability::ManageAi->value);
 
         return Inertia::render('AiSettings', ['settings' => $config->publicState(),
             'attempts' => DB::table('ai_consumptions')->latest('id')->limit(20)->get(['id', 'action', 'status', 'reserved_micros', 'charged_micros', 'created_at'])]);
@@ -23,7 +25,7 @@ class AiSettingsController extends Controller
 
     public function store(Request $request, AiConfiguration $config)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        Gate::authorize(Ability::ManageAi->value);
         $v = $request->validate([
             'password' => ['required', 'current_password'], 'mode' => ['required', Rule::in(['manual', 'demo', 'openai'])],
             'credential_source' => ['required', Rule::in(['environment', 'settings'])],
@@ -55,7 +57,7 @@ class AiSettingsController extends Controller
 
     public function test(Request $request, AiConfiguration $config)
     {
-        abort_unless($request->user()->isAdmin(), 403);
+        Gate::authorize(Ability::ManageAi->value);
         $request->validate(['password' => ['required', 'current_password']]);
         if ($config->publicState()['status'] !== 'ready') {
             throw ValidationException::withMessages(['ai' => 'Configure chave, política, tarifas e limites antes do teste pago.']);

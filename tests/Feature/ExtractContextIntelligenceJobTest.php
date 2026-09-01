@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Contracts\ContextIntelligenceExtractor;
 use App\Jobs\ExtractContextIntelligence;
 use App\Models\AiSetting;
+use App\Models\AssistantPreview;
 use App\Models\CaseContextEntry;
 use App\Models\CaseContextSegment;
 use App\Models\ContextAudioAsset;
@@ -68,7 +69,7 @@ class ExtractContextIntelligenceJobTest extends TestCase
         $this->assertDatabaseHas('ai_runs', ['opportunity_id' => $opportunity->id, 'action' => 'context_intelligence', 'status' => 'success']);
         $this->assertDatabaseHas('ai_cost_entries', ['case_context_entry_id' => $entry->id, 'operation' => 'extraction', 'status' => 'reported']);
         $this->assertDatabaseHas('odoo_cost_outbox', ['case_context_entry_id' => $entry->id, 'status' => 'pending']);
-        $preview = \App\Models\AssistantPreview::firstOrFail();
+        $preview = AssistantPreview::firstOrFail();
         $this->assertSame($segment->id, $preview->actions[0]['evidence_segment_ids'][0]);
         $this->actingAs($user)->post("/opportunities/{$opportunity->id}/context/{$entry->id}/preview/{$preview->id}/confirm", [
             'modules' => ['briefing'],

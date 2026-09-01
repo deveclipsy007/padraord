@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Contracts\AudioTranscriber;
+use App\Jobs\ExtractContextIntelligence;
 use App\Jobs\TranscribeContextAudio;
 use App\Models\AiSetting;
 use App\Models\CaseContextEntry;
@@ -11,9 +12,8 @@ use App\Models\Opportunity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Queue;
-use App\Jobs\ExtractContextIntelligence;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TranscribeContextAudioJobTest extends TestCase

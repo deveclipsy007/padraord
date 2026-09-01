@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ExtractContextIntelligence;
+use App\Jobs\PrepareContextAudio;
+use App\Models\AiSetting;
 use App\Models\CaseContextEntry;
 use App\Models\CaseContextSegment;
 use App\Models\ContextAudioAsset;
 use App\Models\Opportunity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Queue;
-use App\Jobs\PrepareContextAudio;
-use App\Jobs\ExtractContextIntelligence;
-use App\Models\AiSetting;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ContextAudioReviewTest extends TestCase
@@ -59,7 +59,8 @@ class ContextAudioReviewTest extends TestCase
 
     public function test_preserved_audio_can_be_started_after_ai_configuration_becomes_ready(): void
     {
-        Storage::fake('local'); Queue::fake();
+        Storage::fake('local');
+        Queue::fake();
         config(['ai.audio_validated' => true, 'ai.audio_price_micros_per_minute' => 6000]);
         AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret', 'policy_approved' => true, 'monthly_micros' => 1_000_000, 'processing_micros' => 100_000, 'input_price' => 200_000, 'output_price' => 1_200_000]);
         $opportunity = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);

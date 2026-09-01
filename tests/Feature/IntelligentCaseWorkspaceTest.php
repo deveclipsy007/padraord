@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AssistantPreview;
 use App\Models\Opportunity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -73,7 +74,7 @@ class IntelligentCaseWorkspaceTest extends TestCase
         $this->assertDatabaseCount('assistant_previews', 1);
         $this->assertNull($case->fresh()->briefing_data);
 
-        $preview = \App\Models\AssistantPreview::firstOrFail();
+        $preview = AssistantPreview::firstOrFail();
         $this->actingAs($user)->post("/opportunities/{$case->id}/context/{$preview->context['entry_id']}/preview/{$preview->id}/confirm", [
             'modules' => ['briefing', 'viability'],
         ])->assertSessionHasNoErrors();
@@ -98,7 +99,7 @@ class IntelligentCaseWorkspaceTest extends TestCase
             'body' => "Objetivo: integrar a liderança\nPúblico: 300 pessoas\nConceito: encontro imersivo",
         ])->assertSessionHasNoErrors();
 
-        $preview = \App\Models\AssistantPreview::firstOrFail();
+        $preview = AssistantPreview::firstOrFail();
         $this->actingAs($user)->post("/opportunities/{$case->id}/context/{$preview->context['entry_id']}/preview/{$preview->id}/confirm", [
             'modules' => ['briefing'],
             'changes' => [0],

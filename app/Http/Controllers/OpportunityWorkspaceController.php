@@ -3,12 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Enums\OpportunityStage;
-use App\Models\AuditLog;
 use App\Models\AssistantPreview;
+use App\Models\AuditLog;
 use App\Models\CaseContextEntry;
-use App\Models\CaseJourney;
 use App\Models\Opportunity;
-use App\Models\ViabilityProject;
 use App\Services\AssistancePreparation;
 use App\Services\CaseWorkspaceSummary;
 use Illuminate\Http\Request;
