@@ -10,11 +10,11 @@ class Activity extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['opportunity_id', 'user_id', 'title', 'description', 'type', 'priority', 'due_at', 'completed_at', 'status'];
+    protected $fillable = ['opportunity_id', 'user_id', 'title', 'description', 'type', 'priority', 'due_at', 'completed_at', 'status', 'is_next_action'];
 
     protected function casts(): array
     {
-        return ['due_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['due_at' => 'datetime', 'completed_at' => 'datetime', 'is_next_action' => 'boolean'];
     }
 
     public function opportunity(): BelongsTo

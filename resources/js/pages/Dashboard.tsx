@@ -1,6 +1,6 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2, CircleAlert, Clock3, Filter, Plus, Search, Sparkles, X } from 'lucide-react';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { AppLayout, PrimaryButton } from '../layout';
 import { TodayQueue, type QueueTask } from '../components/TodayQueue';
 import { BentoGrid, BentoItem } from '../components/ui/BentoGrid';
@@ -20,10 +20,7 @@ type Props = {
     metrics: { activeOpportunities: number; pendingBriefings: number; nextActions: number };
 };
 
-const stageColors: Record<string, string> = {
-    lead: 'violet', qualification: 'blue', briefing: 'amber', budget: 'violet', proposal: 'violet',
-    negotiation: 'amber', contract: 'green', pre_production: 'green', production: 'green', post_event: 'gray', closed: 'gray',
-};
+const stageColors: Record<string, string> = { lead: 'gray', qualification: 'blue', meeting: 'amber', initial_briefing: 'violet', viability_offer: 'violet', viability_contracted: 'green', lost: 'gray', cancelled: 'gray' };
 
 function money(cents: number | null) {
     if (cents === null) return 'Sem valor definido';
@@ -32,12 +29,13 @@ function money(cents: number | null) {
 
 export default function Dashboard({ opportunities, columns, metrics, todayQueue, currentUserId, todayLabel, aiMode }: Props) {
     const [showForm, setShowForm] = useState(false);
-    const { data, setData, post, processing, errors, reset } = useForm({ title: '', client_name: '', contact_name: '', contact_email: '' });
-    const grouped = useMemo(() => Object.fromEntries(columns.map((column) => [column.id, opportunities.filter((opportunity) => opportunity.stage === column.id)])), [columns, opportunities]);
+    const { data, setData, post, processing, errors, reset } = useForm({ title: '', client_name: '', contact_name: '', contact_email: '', origin: 'other', priority: 'normal', next_action: '', next_action_at: '' });
+    const grouped = useMemo(() => Object.fromEntries(columns.map((column) => [column.id, opportunities.filter((opportunity) => opportunity.commercialStage === column.id)])), [columns, opportunities]);
     const demoOpportunityId = opportunities[0]?.id;
     const pendingDecisions = opportunities.filter((item) => item.briefingStatus !== 'complete').slice(0, 3);
     const activeStages = columns.filter((column) => column.count > 0).sort((a, b) => b.count - a.count).slice(0, 5);
     const totalInStages = Math.max(1, activeStages.reduce((sum, column) => sum + column.count, 0));
+    useEffect(() => { if (new URLSearchParams(window.location.search).get('action') === 'new-opportunity') setShowForm(true); }, []);
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -106,7 +104,7 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                 </BentoItem>
             </BentoGrid>
 
-            {showForm && <div className="modal-backdrop" role="presentation"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><span className="eyebrow">NOVA OPORTUNIDADE</span><h2 id="modal-title">Começar pelo contexto.</h2></div><button className="icon-button" onClick={() => setShowForm(false)} aria-label="Fechar"><X size={17} /></button></div><form onSubmit={submit} className="form-grid"><label>Nome da oportunidade<input value={data.title} onChange={(event) => setData('title', event.target.value)} autoFocus />{errors.title && <small className="field-error">{errors.title}</small>}</label><label>Cliente<input value={data.client_name} onChange={(event) => setData('client_name', event.target.value)} />{errors.client_name && <small className="field-error">{errors.client_name}</small>}</label><label>Contato<input value={data.contact_name} onChange={(event) => setData('contact_name', event.target.value)} /></label><label>E-mail<input type="email" value={data.contact_email} onChange={(event) => setData('contact_email', event.target.value)} /></label><div className="form-actions"><button type="button" className="button button-subtle" onClick={() => setShowForm(false)}>Cancelar</button><button type="submit" className="button button-primary" disabled={processing}><Plus size={16} />{processing ? 'Criando…' : 'Criar oportunidade'}</button></div></form></div></div>}
+            {showForm && <div className="modal-backdrop" role="presentation"><div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><div className="modal-heading"><div><span className="eyebrow">NOVA OPORTUNIDADE</span><h2 id="modal-title">Começar pelo contexto.</h2></div><button className="icon-button" type="button" onClick={() => setShowForm(false)} aria-label="Fechar"><X size={17} /></button></div><p className="drawer-intro">Preencha só o essencial para que a equipe saiba quem deve agir e quando.</p><form onSubmit={submit} className="form-grid"><label>Nome da oportunidade<input value={data.title} onChange={(event) => setData('title', event.target.value)} autoFocus />{errors.title && <small className="field-error">{errors.title}</small>}</label><label>Cliente<input value={data.client_name} onChange={(event) => setData('client_name', event.target.value)} />{errors.client_name && <small className="field-error">{errors.client_name}</small>}</label><label>Contato principal<input value={data.contact_name} onChange={(event) => setData('contact_name', event.target.value)} /></label><label>E-mail<input type="email" value={data.contact_email} onChange={(event) => setData('contact_email', event.target.value)} /></label><label>Origem<select value={data.origin} onChange={(event) => setData('origin', event.target.value)}><option value="other">Outro</option><option value="referral">Indicação</option><option value="inbound">Entrada</option><option value="outbound">Prospecção</option><option value="returning_client">Cliente recorrente</option><option value="partner">Parceiro</option><option value="organic">Orgânico</option></select></label><label>Prioridade<select value={data.priority} onChange={(event) => setData('priority', event.target.value)}><option value="low">Baixa</option><option value="normal">Normal</option><option value="high">Alta</option></select></label><label>Próxima ação<input value={data.next_action} onChange={(event) => setData('next_action', event.target.value)} placeholder="Ex.: Confirmar data da reunião" /></label><label>Prazo da próxima ação<input type="datetime-local" value={data.next_action_at} onChange={(event) => setData('next_action_at', event.target.value)} /></label><div className="form-actions"><button type="button" className="button button-subtle" onClick={() => setShowForm(false)}>Cancelar</button><button type="submit" className="button button-primary" disabled={processing}><Plus size={16} />{processing ? 'Criando…' : 'Criar oportunidade'}</button></div></form></div></div>}
         </AppLayout>
     );
 }

@@ -10,10 +10,25 @@ class Contact extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['client_id', 'name', 'email', 'phone', 'role'];
+    protected $fillable = ['client_id', 'name', 'email', 'phone', 'role', 'archived_at', 'archived_by', 'archive_reason'];
+
+    protected function casts(): array
+    {
+        return ['archived_at' => 'datetime'];
+    }
 
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function archivedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'archived_by');
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereNull('archived_at');
     }
 }

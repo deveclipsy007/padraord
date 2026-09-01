@@ -430,3 +430,30 @@ O teste MariaDB será a validação primária no GitHub Actions quando o reposit
 **Próximo bloqueio objetivo:** ativar o repositório privado/CI e coletar o inventário real do hPanel/FTP. O Ciclo 01 não inclui upload nem migration em produção.
 
 **Critério para declarar produção:** somente após concluir o Ciclo 6, executar o piloto e comprovar deploy, smoke test, backup e rollback reais.
+
+## 8. Registro de evidências — Ciclo 02
+
+Implementado localmente em 01/09/2026, sem deploy ou alteração de produção:
+
+| Entrega | Evidência |
+|---|---|
+| Estágios comerciais | `CommercialStage` com seis colunas ativas e estados terminais consultáveis |
+| Migração expansiva | `commercial_stage`, origem, prioridade, revisão e arquivamento; `stage` antigo preservado |
+| Qualificação | Checklist persistente, desconhecido explícito e bloqueios de avanço |
+| Transições | Serviço único para seletor, arraste e rotas; perda, cancelamento e retorno exigem justificativa |
+| Próxima ação | Atividade `is_next_action`, sincronização sem duplicação e ações rápidas |
+| Clientes | Busca/filtro server-side, paginação, arquivamento e restauração sem exclusão física |
+| Pipeline | Kanban horizontal, lista, filtros compartilhados, detalhe e seletor acessível |
+| Hoje e agenda | Fila pessoal/equipe, filtros por URL e ações de concluir/reabrir/reagendar |
+| Busca global | Grupos de casos, clientes, contatos e tarefas; ações rápidas, debounce e teclado |
+| Histórico | Rótulos humanos, módulo, usuário e metadados preservados |
+| Verificação | 133 testes PHP/1042 assertions, Vitest 12, TypeScript, build Vite e Playwright 21/21 |
+
+### Pendências do ciclo
+
+- Validação MariaDB continua dependente da CI/recurso externo; não há servidor local disponível.
+- CRUD de contatos em drawer e perfil de cliente será refinado no próximo ciclo junto ao briefing/Viabilidade.
+- O arraste mantém a mesma validação server-side, mas o teste automatizado de drag real permanece como cobertura complementar; seletor e teclado são os caminhos acessíveis.
+- Nenhuma alteração de produção foi feita; Hostinger, SMTP, Odoo e credenciais reais continuam gates do Ciclo 6.
+
+**Estado do Ciclo 02:** fluxo comercial local funcional e persistente; pronto para validação da equipe e início do Ciclo 03.

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\CommercialStage;
 use App\Models\AuditLog;
 use App\Models\CaseJourney;
 use App\Models\Opportunity;
@@ -21,7 +22,7 @@ final class CaseJourneyService
     public function apply(Opportunity $case, User $actor, array $data): void
     {
         DB::transaction(function () use ($case, $actor, $data) {
-            Opportunity::whereKey($case->id)->lockForUpdate()->firstOrFail();
+            $lockedCase = Opportunity::whereKey($case->id)->lockForUpdate()->firstOrFail();
             $journey = CaseJourney::where('opportunity_id', $case->id)->lockForUpdate()->first();
             if (($journey?->revision ?? 0) !== (int) $data['revision']) {
                 $this->fail('revision', 'O caso foi alterado por outra pessoa. Atualize antes de decidir.');
@@ -75,6 +76,12 @@ final class CaseJourneyService
             }
             $journey->revision = (int) $data['revision'] + 1;
             $journey->save();
+            if ($action === 'contract_viability') {
+                $lockedCase->update([
+                    'commercial_stage' => CommercialStage::VIABILITY_CONTRACTED,
+                    'commercial_revision' => (int) $lockedCase->commercial_revision + 1,
+                ]);
+            }
             AuditLog::create(['user_id' => $actor->id, 'subject_type' => Opportunity::class, 'subject_id' => $case->id, 'action' => 'journey.'.$action, 'metadata' => ['cycle' => $journey->cycle, 'mode' => $journey->mode, 'revision' => $journey->revision, 'evidence' => $data['evidence'] ?? null]]);
         });
     }

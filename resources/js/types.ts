@@ -13,6 +13,10 @@ export type OpportunityStage =
     | 'lost'
     | 'cancelled';
 
+export type CommercialStage = 'lead' | 'qualification' | 'meeting' | 'initial_briefing' | 'viability_offer' | 'viability_contracted' | 'lost' | 'cancelled';
+export type OpportunityPriority = 'low' | 'normal' | 'high';
+export type OpportunityOrigin = 'referral' | 'inbound' | 'outbound' | 'returning_client' | 'partner' | 'organic' | 'other';
+
 export type Opportunity = {
     id: number;
     title: string;
@@ -23,12 +27,61 @@ export type Opportunity = {
     eventDate: string | null;
     estimatedValueCents: number | null;
     briefingStatus: string;
+    commercialStage: CommercialStage;
+    commercialStageLabel: string;
+    ownerId: number | null;
+    ownerName: string | null;
+    priority: OpportunityPriority;
+    origin: OpportunityOrigin;
+    nextActionAt?: string | null;
+    commercialRevision?: number;
+    archived?: boolean;
 };
 
 export type PipelineColumn = {
-    id: OpportunityStage;
+    id: CommercialStage;
     label: string;
     count: number;
+    estimatedValueCents?: number;
+};
+
+export type QualificationChecklist = {
+    revision: number;
+    needSummary: string | null;
+    decisionMakerStatus: 'unknown' | 'identified' | 'not_applicable';
+    decisionMakerContactId: number | null;
+    eventDateStatus: 'unknown' | 'estimated' | 'confirmed';
+    budgetStatus: 'unknown' | 'range' | 'confirmed';
+    fitStatus: 'unknown' | 'low' | 'medium' | 'high';
+    notes: string | null;
+    status: 'not_started' | 'in_progress' | 'qualified' | 'disqualified';
+};
+
+export type WorkQueueItem = {
+    id: number;
+    kind: 'activity' | 'follow_up' | 'review' | 'case';
+    title: string;
+    context: string;
+    href: string;
+    owner: string | null;
+    ownerId: number | null;
+    dueAt: string | null;
+    priority: OpportunityPriority;
+    status: string;
+    overdue: boolean;
+    availableActions: string[];
+};
+
+export type PipelineFilters = {
+    view: 'kanban' | 'list';
+    q: string;
+    stage: CommercialStage | '';
+    owner: string;
+    priority: OpportunityPriority | '';
+    origin: OpportunityOrigin | '';
+    overdue: boolean;
+    unassigned: boolean;
+    status: 'active' | 'archived' | 'all';
 };
 
 export type BriefingMessage = {
