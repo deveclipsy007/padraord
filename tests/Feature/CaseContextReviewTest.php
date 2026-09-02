@@ -60,4 +60,24 @@ class CaseContextReviewTest extends TestCase
         $this->assertSame('Centro de Eventos', $opportunity->fresh()->location);
         $this->assertSame('confirmed', $preview->fresh()->status);
     }
+
+    public function test_explicit_location_in_manual_context_becomes_a_reviewable_case_draft(): void
+    {
+        $user = User::factory()->create();
+        $opportunity = Opportunity::create([
+            'title' => 'Conferência Horizonte',
+            'client_name' => 'Horizonte',
+            'stage' => 'briefing',
+        ]);
+
+        $preview = app(CaseContextService::class)->createPreview($opportunity, $user, [
+            'kind' => 'text',
+            'phase' => 'briefing',
+            'body' => 'Local: Centro de Eventos',
+        ]);
+
+        $this->assertSame('case', $preview->actions[0]['module']);
+        $this->assertSame('location', $preview->actions[0]['field']);
+        $this->assertSame('Centro de Eventos', $preview->actions[0]['suggested']);
+    }
 }
