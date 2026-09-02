@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AuditLog;
 use App\Models\Opportunity;
 use App\Models\User;
+use App\Models\ViabilityDeliverable;
 use App\Models\ViabilityProject;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -41,6 +42,31 @@ class ViabilityWorkspaceService
             AuditLog::create(['user_id' => $actor->id, 'subject_type' => Opportunity::class, 'subject_id' => $case->id, 'action' => 'viability.draft_saved', 'metadata' => ['revision' => $project->revision, 'modality' => $project->modality]]);
 
             return $project->fresh('deliverables');
+        }, 3);
+    }
+
+    public function updateDeliverable(ViabilityDeliverable $deliverable, User $actor, array $data): ViabilityDeliverable
+    {
+        return DB::transaction(function () use ($deliverable, $actor, $data): ViabilityDeliverable {
+            $locked = ViabilityDeliverable::lockForUpdate()->findOrFail($deliverable->id);
+            if ($data['status'] === 'ready' && trim((string) ($data['evidence'] ?? '')) === '') {
+                throw ValidationException::withMessages(['evidence' => 'Vincule uma evidência antes de liberar este entregável.']);
+            }
+            $before = $locked->only(['status', 'content', 'evidence']);
+            $locked->update([
+                'status' => $data['status'],
+                'content' => $data['content'] ?? $locked->content,
+                'evidence' => filled($data['evidence'] ?? null) ? ['note' => trim($data['evidence'])] : $locked->evidence,
+            ]);
+            AuditLog::create([
+                'user_id' => $actor->id,
+                'subject_type' => ViabilityProject::class,
+                'subject_id' => $locked->viability_project_id,
+                'action' => 'viability.deliverable_updated',
+                'metadata' => ['deliverable_id' => $locked->id, 'before' => $before, 'after' => $locked->only(['status', 'content', 'evidence'])],
+            ]);
+
+            return $locked->fresh();
         }, 3);
     }
 }

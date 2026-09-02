@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\AI\AiConfiguration;
 use App\AI\AudioInspector;
-use App\Jobs\AnalyzeBriefing;
+use App\Jobs\ExtractContextIntelligence;
 use App\Jobs\TranscribeBriefing;
 use App\Models\AuditLog;
 use App\Models\BriefingAudio;
+use App\Models\CaseContextEntry;
+use App\Models\CaseContextSegment;
 use App\Models\Opportunity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -86,7 +88,7 @@ class BriefingAudioController extends Controller
     public function forward(Request $request, Opportunity $opportunity, BriefingAudio $audio)
     {
         abort_unless($audio->opportunity_id === $opportunity->id, 404);
-        $message = DB::transaction(function () use ($audio, $opportunity) {
+        $forwarded = DB::transaction(function () use ($audio, $opportunity, $request) {
             DB::table('briefing_audio')->where('id', $audio->id)->update(['updated_at' => now()]);
             $a = $audio->fresh();
             if ($a->status !== 'transcribed' || $a->forwarded_revision === $a->revision) {
@@ -94,15 +96,42 @@ class BriefingAudioController extends Controller
             }
             $body = collect($a->segments)->map(fn ($s) => '['.$s['start'].'s · '.($a->speaker_names[$s['speaker']] ?? $s['speaker']).'] '.$s['text'])->implode("\n");
             $message = $opportunity->briefingMessages()->create(['role' => 'user', 'source' => 'audio', 'body' => $body, 'metadata' => ['audio_id' => $a->id, 'transcript_revision' => $a->revision]]);
+            $entry = CaseContextEntry::firstOrCreate(
+                ['opportunity_id' => $opportunity->id, 'digest' => hash('sha256', $a->digest.'|legacy-briefing|'.$a->revision)],
+                [
+                    'user_id' => $request->user()->id,
+                    'kind' => 'audio',
+                    'phase' => 'briefing',
+                    'status' => 'transcribed',
+                    'path' => $a->path,
+                    'body' => $body,
+                    'metadata' => ['source' => 'legacy_briefing_audio', 'briefing_audio_id' => $a->id, 'briefing_message_id' => $message->id],
+                    'expires_at' => $a->expires_at,
+                ],
+            );
+            if ($entry->wasRecentlyCreated) {
+                foreach ($a->segments as $index => $segment) {
+                    CaseContextSegment::create([
+                        'case_context_entry_id' => $entry->id,
+                        'sequence' => $index,
+                        'source_chunk' => 0,
+                        'speaker_key' => (string) $segment['speaker'],
+                        'speaker_name' => $a->speaker_names[$segment['speaker']] ?? null,
+                        'start_ms' => (int) round(((float) $segment['start']) * 1000),
+                        'end_ms' => (int) round(((float) $segment['end']) * 1000),
+                        'text' => (string) $segment['text'],
+                    ]);
+                }
+            }
             $a->update(['forwarded_revision' => $a->revision]);
 
-            return $message;
+            return ['message' => $message, 'entry' => $entry];
         }, 3);
-        if ($message) {
+        if ($forwarded) {
             $canProcess = in_array(app(AiConfiguration::class)->publicState()['status'], ['ready', 'demo']);
             $opportunity->update(['briefing_status' => $canProcess ? 'processing' : 'manual']);
             if ($canProcess) {
-                AnalyzeBriefing::dispatch($message->id);
+                ExtractContextIntelligence::dispatch($forwarded['entry']->id);
             }
         }
 

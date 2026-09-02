@@ -93,6 +93,8 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/opportunities/{opportunity}/journey', [CaseJourneyController::class, 'update']);
     Route::get('/opportunities/{opportunity}/feasibility', [FeasibilityController::class, 'show'])->name('opportunities.feasibility');
     Route::post('/opportunities/{opportunity}/feasibility', [FeasibilityController::class, 'store']);
+    Route::post('/opportunities/{opportunity}/feasibility/lifecycle', [FeasibilityController::class, 'lifecycle']);
+    Route::post('/opportunities/{opportunity}/feasibility/deliverables/{deliverable}', [FeasibilityController::class, 'updateDeliverable']);
     Route::get('/opportunities/{opportunity}/documents', DocumentsHubController::class)->name('opportunities.documents');
     Route::post('/opportunities/{opportunity}/context', [CaseContextController::class, 'store']);
     Route::post('/opportunities/{opportunity}/context/audio/uploads', [ContextAudioUploadController::class, 'start'])->middleware('throttle:20,1');

@@ -13,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 
 class CaseContextService
 {
+    private const CASE = ['data' => 'event_date', 'local' => 'location', 'objetivo do evento' => 'objective'];
+
     private const BRIEFING = ['objetivo' => 'objective', 'público' => 'audience', 'publico' => 'audience', 'data' => 'event_date', 'local' => 'location', 'investimento' => 'budget', 'orçamento' => 'budget', 'escopo' => 'scope', 'restrições' => 'restrictions', 'restricoes' => 'restrictions', 'referências' => 'references', 'referencias' => 'references'];
 
     private const VIABILITY = ['conceito' => 'concept', 'experiência' => 'experience', 'experiencia' => 'experience', 'premissas técnicas' => 'technical_assumptions', 'premissas tecnicas' => 'technical_assumptions', 'estimativa' => 'estimate_notes', 'fornecedores' => 'supplier_needs', 'cronograma' => 'schedule_notes'];
@@ -63,6 +65,13 @@ class CaseContextService
                     $briefing[$change['field']] = $change['suggested'];
                 }
             }
+            $caseChanges = array_filter($accepted, fn (array $change) => $change['module'] === 'case' && $change['kind'] === 'fact' && in_array($change['field'], ['event_date', 'location', 'objective'], true));
+            foreach ($caseChanges as $change) {
+                $freshCase->{$change['field']} = $change['suggested'];
+            }
+            if ($caseChanges) {
+                $freshCase->save();
+            }
             if (in_array('briefing', $modules, true) && $briefing !== ($freshCase->briefing_data ?? [])) {
                 $freshCase->update(['briefing_data' => $briefing, 'briefing_revision' => $freshCase->briefing_revision + 1, 'briefing_status' => 'awaiting_review']);
             }
@@ -94,12 +103,12 @@ class CaseContextService
             }
             $label = mb_strtolower(trim($match[1]));
             $value = trim($match[2]);
-            $module = isset(self::BRIEFING[$label]) ? 'briefing' : (isset(self::VIABILITY[$label]) ? 'viability' : null);
-            $field = self::BRIEFING[$label] ?? self::VIABILITY[$label] ?? null;
+            $module = isset(self::CASE[$label]) ? 'case' : (isset(self::BRIEFING[$label]) ? 'briefing' : (isset(self::VIABILITY[$label]) ? 'viability' : null));
+            $field = self::CASE[$label] ?? self::BRIEFING[$label] ?? self::VIABILITY[$label] ?? null;
             if (! $module || ! $field) {
                 continue;
             }
-            $current = $module === 'briefing' ? data_get($case->briefing_data, $field) : ViabilityProject::where('opportunity_id', $case->id)->value($field);
+            $current = $module === 'case' ? $case->{$field} : ($module === 'briefing' ? data_get($case->briefing_data, $field) : ViabilityProject::where('opportunity_id', $case->id)->value($field));
             $changes[] = ['module' => $module, 'field' => $field, 'current' => $current, 'suggested' => $value, 'reason' => 'Informação explicitamente identificada no contexto.', 'kind' => 'fact', 'evidence' => $line, 'impacts' => $module === 'briefing' && $field === 'scope' ? ['viability', 'budget', 'documents', 'production'] : [$module]];
         }
 

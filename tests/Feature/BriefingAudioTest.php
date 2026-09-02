@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ExtractContextIntelligence;
 use App\Jobs\TranscribeBriefing;
 use App\Models\AiSetting;
 use App\Models\BriefingAudio;
+use App\Models\CaseContextEntry;
 use App\Models\Opportunity;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -88,5 +90,8 @@ class BriefingAudioTest extends TestCase
         $this->post("/opportunities/$o->id/briefing/audio/$audio->id/forward")->assertRedirect();
         $this->post("/opportunities/$o->id/briefing/audio/$audio->id/forward")->assertRedirect();
         $this->assertDatabaseCount('briefing_messages', 1);
+        $this->assertDatabaseCount('case_context_entries', 1);
+        $this->assertSame('audio', CaseContextEntry::firstOrFail()->kind);
+        Queue::assertPushed(ExtractContextIntelligence::class);
     }
 }
