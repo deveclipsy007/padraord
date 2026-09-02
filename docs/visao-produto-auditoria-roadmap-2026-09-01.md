@@ -457,3 +457,25 @@ Implementado localmente em 01/09/2026, sem deploy ou alteração de produção:
 - Nenhuma alteração de produção foi feita; Hostinger, SMTP, Odoo e credenciais reais continuam gates do Ciclo 6.
 
 **Estado do Ciclo 02:** fluxo comercial local funcional e persistente; pronto para validação da equipe e início do Ciclo 03.
+
+## 9. Registro de evidências — Ciclo 03 em andamento
+
+Implementado localmente em 02/09/2026, sem ativar OpenAI real, SMTP, Odoo ou produção:
+
+| Entrega | Evidência |
+|---|---|
+| Compatibilidade de áudio | Áudio legado encaminhado também cria CaseContextEntry e segmentos privados, sem duplicar o briefing original |
+| Revisão de contexto | Alterações explícitas de dados do caso entram como rascunho, exigem confirmação e usam proteção por revisão |
+| Demonstração | O extrator transversal possui modo determinístico sem rede, custo ou outbox externo |
+| Viabilidade | Estados controlados de desenvolvimento, entrega, aceite e encerramento sem Gestão |
+| Entregáveis | Evidência obrigatória para liberar entregável; decisão e antes/depois entram na auditoria |
+| Avaliação | Protocolo para dez briefings foi registrado em operations/ai-briefing-evaluation.md |
+| Verificação parcial | 141 testes PHP, Vitest, TypeScript, Pint e build Vite passaram localmente |
+
+### Pendências abertas do ciclo
+
+- Segmentação de mídia de áudio acima do limite direto continua dependente de um preparador no navegador. O sistema preserva o arquivo privado e falha de forma recuperável, sem enviar arquivo grande indevidamente à API.
+- A prova de até uma hora em dispositivos e codecs reais depende dos dez briefings autorizados e da validação de tarifa, política e limite de áudio.
+- MariaDB, OpenAI real e Hostinger permanecem gates externos; não houve chamada com dados de cliente nem deploy.
+
+**Estado do Ciclo 03:** fundação de contexto e Viabilidade em progresso; não declarar concluído até validar o caminho de áudio longo e a matriz de avaliação.
