@@ -51,10 +51,11 @@ class ExtractContextIntelligence implements ShouldQueue
             'viability' => ViabilityProject::where('opportunity_id', $opportunity->id)->first()?->toArray(),
         ];
         $setting = app(AiConfiguration::class)->setting();
+        $isDemo = app(AiConfiguration::class)->publicState()['mode'] === 'demo';
         $inputEstimate = max(1, (int) ceil(strlen($entry->segments->pluck('text')->implode(' ')) / 4));
         $estimatedCost = max(1, MeteredAiProvider::cost($inputEstimate, 6000, (int) $setting->input_price, (int) $setting->output_price));
         try {
-            $cost = app(AiCostLedger::class)->reserve([
+            $cost = $isDemo ? null : app(AiCostLedger::class)->reserve([
                 'opportunity_id' => $opportunity->id,
                 'case_context_entry_id' => $entry->id,
                 'operation' => 'extraction',
@@ -91,7 +92,7 @@ class ExtractContextIntelligence implements ShouldQueue
             }
             $preview = AssistantPreview::create([
                 'user_id' => $entry->user_id,
-                'mode' => 'review',
+                'mode' => $result->provider === 'demo' ? 'demo' : 'review',
                 'message' => $result->payload['summary'],
                 'context' => [
                     'entry_id' => $entry->id,
@@ -122,13 +123,17 @@ class ExtractContextIntelligence implements ShouldQueue
             $entry->update(['status' => 'review_ready', 'metadata' => array_merge($entry->metadata ?? [], ['preview_id' => $preview->id, 'summary' => $result->payload['summary']])]);
             $entry->audioAsset?->update(['status' => 'review_ready']);
             $reported = MeteredAiProvider::cost($result->inputTokens, $result->outputTokens, (int) $setting->input_price, (int) $setting->output_price);
-            app(AiCostLedger::class)->report($cost, ['input_tokens' => $result->inputTokens, 'output_tokens' => $result->outputTokens], $reported, $result->requestId);
-            $outbox = app(OdooCostOutboxService::class)->enqueue($entry->fresh());
-            if (config('odoo.mode') === 'json2') {
-                ExportAiCostToOdoo::dispatch($outbox->id);
+            if ($cost) {
+                app(AiCostLedger::class)->report($cost, ['input_tokens' => $result->inputTokens, 'output_tokens' => $result->outputTokens], $reported, $result->requestId);
+                $outbox = app(OdooCostOutboxService::class)->enqueue($entry->fresh());
+                if (config('odoo.mode') === 'json2') {
+                    ExportAiCostToOdoo::dispatch($outbox->id);
+                }
             }
         } catch (Throwable $exception) {
-            app(AiCostLedger::class)->uncertain($cost, ['error' => class_basename($exception)]);
+            if (isset($cost) && $cost) {
+                app(AiCostLedger::class)->uncertain($cost, ['error' => class_basename($exception)]);
+            }
             $entry->update(['status' => 'uncertain']);
             $entry->audioAsset?->update(['status' => 'uncertain', 'error_code' => 'extraction_failed', 'error_message' => $exception->getMessage()]);
             throw $exception;

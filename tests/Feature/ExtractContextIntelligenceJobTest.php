@@ -109,4 +109,43 @@ class ExtractContextIntelligenceJobTest extends TestCase
         $this->assertDatabaseCount('ai_cost_entries', 0);
         Http::assertNothingSent();
     }
+
+    public function test_demo_mode_creates_the_same_reviewable_context_preview_without_network_access(): void
+    {
+        AiSetting::create([
+            'id' => 1,
+            'mode' => 'demo',
+            'credential_source' => 'settings',
+            'monthly_micros' => 10_000_000,
+            'processing_micros' => 2_000_000,
+            'input_price' => 200_000,
+            'output_price' => 1_200_000,
+        ]);
+        $user = User::factory()->create();
+        $opportunity = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);
+        $entry = CaseContextEntry::create([
+            'opportunity_id' => $opportunity->id,
+            'user_id' => $user->id,
+            'kind' => 'audio',
+            'phase' => 'briefing',
+            'status' => 'transcribed',
+            'path' => 'private.wav',
+            'digest' => str_repeat('e', 64),
+        ]);
+        $segment = CaseContextSegment::create([
+            'case_context_entry_id' => $entry->id,
+            'sequence' => 0,
+            'speaker_key' => 'A',
+            'start_ms' => 0,
+            'end_ms' => 1000,
+            'text' => 'Objetivo: integrar a liderança.',
+        ]);
+
+        (new ExtractContextIntelligence($entry->id))->handle(app(ContextIntelligenceExtractor::class));
+
+        $preview = AssistantPreview::firstOrFail();
+        $this->assertSame('demo', $preview->mode);
+        $this->assertSame($segment->id, $preview->actions[0]['evidence_segment_ids'][0]);
+        Http::assertNothingSent();
+    }
 }
