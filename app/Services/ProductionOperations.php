@@ -206,8 +206,19 @@ final class ProductionOperations
                 $validation->invalidated_at = now();
                 $validation->invalidated_reason = 'Dados técnicos alterados; reconfirmação obrigatória.';
             }
+            // O local do caso é a régua das medidas. Descobrir na montagem que a
+            // estrutura não passa pela porta custa o evento. Conferido antes de
+            // gravar: recusar depois de salvar desfaria o registro sem motivo.
+            $venue = $opportunity->venue;
+            $conflicts = $venue ? $venue->accessConflicts($validation->measurements ?? []) : [];
+            $this->require(
+                $conflicts === [],
+                'A medida não passa pelo acesso do local: '.implode(' ', $conflicts).' Ajuste a medida ou cadastre a exceção acordada com o local.',
+                'measurements',
+            );
+            $validation->venue_id = $venue?->id;
             $validation->save();
-            AuditLog::create(['user_id' => $actor->id, 'action' => 'production.technical_validation_saved', 'subject_type' => TechnicalValidation::class, 'subject_id' => $validation->id, 'metadata' => ['opportunity_id' => $opportunity->id, 'revision' => $validation->revision, 'invalidated' => $changed && $validation->status === 'pending']]);
+            AuditLog::create(['user_id' => $actor->id, 'action' => 'production.technical_validation_saved', 'subject_type' => TechnicalValidation::class, 'subject_id' => $validation->id, 'metadata' => ['opportunity_id' => $opportunity->id, 'revision' => $validation->revision, 'invalidated' => $changed && $validation->status === 'pending', 'venue_id' => $venue?->id]]);
 
             return $validation->fresh();
         }, 3);

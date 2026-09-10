@@ -8,6 +8,7 @@ import {
     History,
     LayoutDashboard,
     LogOut,
+    MapPin,
     Menu,
     Plus,
     Search,
@@ -61,6 +62,7 @@ const navigation: NavigationItem[] = [
     { label: 'Tarefas e agenda', href: '/agenda', icon: CalendarDays },
     { label: 'Clientes', href: '/clients', icon: Users },
     { label: 'Fornecedores', href: '/suppliers', icon: Building2 },
+    { label: 'Locais', href: '/venues', icon: MapPin },
     { label: 'Histórico', href: '/history', icon: History },
 ];
 function isActive(pathname: string, href: string) {
@@ -271,6 +273,7 @@ export function AppLayout({ children }: PropsWithChildren) {
                     <Link href="/projects">Projetos e laboratório</Link>
                     <Link href="/clients">Clientes</Link>
                     <Link href="/suppliers">Fornecedores</Link>
+                    <Link href="/venues">Locais</Link>
                     <Link href="/history">Histórico</Link>
                     <Link href="/help">Ajuda e tour</Link>
                     {user?.isAdmin && (

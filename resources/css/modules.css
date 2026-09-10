@@ -515,3 +515,16 @@
     .agenda-activity-row { grid-template-columns: 28px minmax(0,1fr); }
     .agenda-activity-row > .status-pill { grid-column: 2; justify-self: start; }
 }
+
+/* Local de evento: os fatos que decidem a montagem, visíveis sem abrir edição. */
+.venue-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: var(--rd-space-4); margin-bottom: var(--rd-space-4); }
+.venue-fact { display: flex; gap: var(--rd-space-3); align-items: flex-start; }
+.venue-fact svg { flex-shrink: 0; margin-top: 2px; color: var(--rd-violet); }
+.venue-fact > div { min-width: 0; display: grid; gap: 2px; }
+.venue-fact strong { font-size: var(--rd-text-body); overflow-wrap: anywhere; }
+.venue-fact small { font-size: var(--rd-text-small); line-height: var(--rd-leading-normal); color: var(--rd-muted); overflow-wrap: anywhere; }
+.venue-restrictions { margin-bottom: var(--rd-space-4); }
+.venue-restrictions p { margin: var(--rd-space-2) 0 0; line-height: var(--rd-leading-loose); }
+.venue-history { display: grid; gap: var(--rd-space-2); }
+.venue-history a { display: grid; gap: 2px; padding: var(--rd-space-3); border-radius: var(--rd-radius-item); background: var(--rd-neutral-surface); }
+.venue-history small { font-size: var(--rd-text-small); color: var(--rd-muted); }

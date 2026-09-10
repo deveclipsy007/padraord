@@ -28,6 +28,7 @@ use App\Http\Controllers\PrototypeController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierSourcingController;
+use App\Http\Controllers\VenueController;
 use App\Models\Opportunity;
 use App\Services\BudgetIntake;
 use Illuminate\Http\Request;
@@ -137,6 +138,10 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/suppliers/{supplier}/inquiries', [SupplierController::class, 'inquiry']);
     Route::patch('/suppliers/{supplier}', [SupplierController::class, 'update']);
     Route::post('/suppliers/{supplier}/quotes', [SupplierController::class, 'quote']);
+    Route::get('/venues', [VenueController::class, 'index'])->name('venues');
+    Route::post('/venues', [VenueController::class, 'store']);
+    Route::get('/venues/{venue}', [VenueController::class, 'show'])->name('venues.show');
+    Route::patch('/venues/{venue}', [VenueController::class, 'update']);
     Route::get('/history', [OperationalPagesController::class, 'history'])->name('history');
     Route::get('/opportunities/{opportunity}/history', [OperationalPagesController::class, 'history']);
     Route::get('/team', [OperationalPagesController::class, 'team'])->name('team');

@@ -38,6 +38,8 @@ class Opportunity extends Model
         'title',
         'client_id',
         'contact_id',
+        'venue_id',
+        'location_note',
         'owner_id',
         'client_name',
         'contact_name',
@@ -69,6 +71,11 @@ class Opportunity extends Model
             'archived_at' => 'datetime',
             'commercial_revision' => 'integer',
         ];
+    }
+
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Venue::class);
     }
 
     public function client(): BelongsTo
