@@ -25,9 +25,16 @@ describe('context audio upload', () => {
     });
 
     it('renders speaker naming and source timestamps as a review step', () => {
-        const html = renderToStaticMarkup(createElement(SpeakerReview, { caseId: 3, entryId: 8, revision: 0, segments: [
-            { id: 10, speaker_key: 'A', speaker_name: null, start_ms: 62000, end_ms: 65000, text: 'Precisamos de iluminação.' },
-        ] }));
+        const html = renderToStaticMarkup(
+            createElement(SpeakerReview, {
+                caseId: 3,
+                entryId: 8,
+                revision: 0,
+                segments: [
+                    { id: 10, speaker_key: 'A', speaker_name: null, start_ms: 62000, end_ms: 65000, text: 'Precisamos de iluminação.' },
+                ],
+            }),
+        );
 
         expect(html).toContain('Quem participou?');
         expect(html).toContain('Pessoa 1');

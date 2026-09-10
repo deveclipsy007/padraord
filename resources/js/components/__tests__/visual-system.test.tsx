@@ -22,7 +22,9 @@ describe('clean iOS visual system', () => {
 
     it('renders an accent surface with explicit depth and padding', () => {
         const html = renderToStaticMarkup(
-            <Surface tone="accent" padding="lg" interactive>Conteúdo</Surface>,
+            <Surface tone="accent" padding="lg" interactive>
+                Conteúdo
+            </Surface>,
         );
 
         expect(html).toContain('ui-surface ui-surface--accent ui-surface--pad-lg is-interactive');
@@ -38,7 +40,9 @@ describe('clean iOS visual system', () => {
     it('renders responsive bento spans as a typed contract', () => {
         const html = renderToStaticMarkup(
             <BentoGrid>
-                <BentoItem colSpan={2} rowSpan={2}>Operação hoje</BentoItem>
+                <BentoItem colSpan={2} rowSpan={2}>
+                    Operação hoje
+                </BentoItem>
             </BentoGrid>,
         );
 

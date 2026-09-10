@@ -1,33 +1,311 @@
 import { Head, useForm } from '@inertiajs/react';
 import { AppLayout } from '../layout';
 
-export const aiLabels: Record<string, string> = { manual: 'Operação manual', demo: 'Demonstração · sem envio externo', ready: 'Pronta para processar', missing_key: 'Falta cadastrar a chave', policy_pending: 'Política de uso pendente', limits_pending: 'Configure tarifas e limites', limit_reached: 'Limite mensal atingido' };
+export const aiLabels: Record<string, string> = {
+    manual: 'Operação manual',
+    demo: 'Demonstração · sem envio externo',
+    ready: 'Pronta para processar',
+    missing_key: 'Falta cadastrar a chave',
+    policy_pending: 'Política de uso pendente',
+    limits_pending: 'Configure tarifas e limites',
+    limit_reached: 'Limite mensal atingido',
+};
 type Engine = { key: string; label: string; model: string; note: string };
-type Settings = { mode: string; status: string; has_key: boolean; credential_source: string; policy_approved: boolean; monthly_usd: number; processing_usd: number; input_price: number; output_price: number; retention_days: number; used_usd: number; model: string; engines: Engine[]; audio_enabled: boolean; audio_price_per_minute_usd: number; audio_ready: boolean; chat_model: string; chat_input_price: number; chat_output_price: number; calculated_usd: number; reserved_usd: number };
-export default function AiSettings({ settings, attempts }: { settings: Settings; attempts: {id:number; action:string; status:string; reserved_micros:number; charged_micros:number|null; created_at:string}[] }) {
-    const form = useForm({ mode: settings.mode, credential_source: settings.credential_source, api_key: '', remove_key: false, password: '', monthly_usd: String(settings.monthly_usd), processing_usd: String(settings.processing_usd), input_price: String(settings.input_price), output_price: String(settings.output_price), policy_approved: settings.policy_approved, retention_days: settings.retention_days, audio_enabled: settings.audio_enabled, audio_price_per_minute_usd: String(settings.audio_price_per_minute_usd) });
+type Settings = {
+    mode: string;
+    status: string;
+    has_key: boolean;
+    credential_source: string;
+    policy_approved: boolean;
+    monthly_usd: number;
+    processing_usd: number;
+    input_price: number;
+    output_price: number;
+    retention_days: number;
+    used_usd: number;
+    model: string;
+    engines: Engine[];
+    audio_enabled: boolean;
+    audio_price_per_minute_usd: number;
+    audio_ready: boolean;
+    chat_model: string;
+    chat_input_price: number;
+    chat_output_price: number;
+    calculated_usd: number;
+    reserved_usd: number;
+};
+export default function AiSettings({
+    settings,
+    attempts,
+}: {
+    settings: Settings;
+    attempts: { id: number; action: string; status: string; reserved_micros: number; charged_micros: number | null; created_at: string }[];
+}) {
+    const form = useForm({
+        mode: settings.mode,
+        credential_source: settings.credential_source,
+        api_key: '',
+        remove_key: false,
+        password: '',
+        monthly_usd: String(settings.monthly_usd),
+        processing_usd: String(settings.processing_usd),
+        input_price: String(settings.input_price),
+        output_price: String(settings.output_price),
+        policy_approved: settings.policy_approved,
+        retention_days: settings.retention_days,
+        audio_enabled: settings.audio_enabled,
+        audio_price_per_minute_usd: String(settings.audio_price_per_minute_usd),
+    });
     const test = useForm({ password: '' });
-    return <AppLayout><Head title="Inteligência artificial" /><header className="topbar"><div><span className="eyebrow">ADMINISTRAÇÃO</span><h1>Inteligência artificial</h1><p>Você controla o motor, os dados e quanto pode gastar.</p></div></header>
-        <section className="assistance-banner"><div><strong>{aiLabels[settings.status]}</strong><p>{settings.has_key ? 'Credencial cadastrada' : 'Sem credencial'} · Transcrição de reunião: {settings.audio_ready ? 'autorizada' : 'não autorizada'} · Limite comprometido neste mês: US$ {settings.used_usd.toFixed(4)}</p></div></section>
-        <section className="ai-cost-grid" aria-label="Consumo da inteligência artificial"><article><small>Consumo calculado · mês atual</small><strong>US$ {settings.calculated_usd.toFixed(4)}</strong><small>Calculado pelos tokens retornados e tarifas registradas; pode diferir da fatura.</small></article><article><small>Reservas em aberto</small><strong>US$ {settings.reserved_usd.toFixed(4)}</strong><small>Inclui chamadas em andamento e tentativas incertas, sem repetição automática.</small></article><article><small>Limite mensal compartilhado</small><strong>US$ {settings.monthly_usd.toFixed(2)}</strong><small>Disponível: US$ {Math.max(0, settings.monthly_usd - settings.used_usd).toFixed(4)}. Chat e demais processamentos usam este limite.</small></article></section>
-        <section className="glass-surface assistance-panel"><h2>Motores em uso</h2><p>Cada etapa usa um modelo próprio. Confira o que está configurado antes de liberar processamento pago.</p><ul className="ai-engine-list">{settings.engines.map(engine => <li key={engine.key}><strong>{engine.label}</strong><code>{engine.model}</code><small>{engine.note}</small></li>)}</ul></section>
-        <section className="glass-surface assistance-panel"><h2>Assistente de conversa · Luna</h2><p>Modelo: {settings.chat_model}. Usa a chave cadastrada abaixo e os mesmos limites de segurança. Briefing e transcrição mantêm seus motores específicos.</p><p>Tarifa de referência do chat: US$ {settings.chat_input_price.toFixed(2)} de entrada e US$ {settings.chat_output_price.toFixed(2)} de saída por milhão de tokens. Verificada em 10/09/2026; cálculo conservador sem desconto de cache.</p><a href="https://developers.openai.com/api/docs/models/gpt-5.6-luna" target="_blank" rel="noreferrer">Consultar modelo e tarifas oficiais →</a></section>
-        <div className="assistance-grid"><form className="glass-surface assistance-panel form-grid" autoComplete="off" onSubmit={e => {e.preventDefault(); form.post('/settings/ai', {preserveScroll:true, onFinish:()=>form.reset('api_key','password')});}}>
-            <h2>Funcionamento e segurança</h2>
-            <label>Modo<select value={form.data.mode} onChange={e=>form.setData('mode',e.target.value)}><option value="manual">Manual — sem chamadas externas</option><option value="demo">Demonstração — respostas simuladas</option><option value="openai">OpenAI — processamento pago</option></select></label>
-            <label>Origem da chave<select value={form.data.credential_source} onChange={e=>form.setData('credential_source',e.target.value)}><option value="settings">Cadastrada nesta administração</option><option value="environment">Ambiente privado do servidor</option></select></label>
-            <label>Nova chave OpenAI<input type="password" autoComplete="new-password" value={form.data.api_key} onChange={e=>form.setData('api_key',e.target.value)} placeholder="Deixe vazio para manter a atual" /></label>
-            <label className="assistance-check"><input type="checkbox" checked={form.data.remove_key} onChange={e=>form.setData('remove_key',e.target.checked)} /> Remover chave ativa e desabilitar envio externo</label>
-            <label className="assistance-check"><input type="checkbox" checked={form.data.policy_approved} onChange={e=>form.setData('policy_approved',e.target.checked)} /> Confirmo que a equipe validou quais dados podem ser enviados à OpenAI.</label>
-            <h2>Orçamento de processamento</h2><p>Limites compartilhados em dólares, válidos para todos os motores juntos. As tarifas por token abaixo são aplicadas à organização de contexto e briefing ({settings.model}). O chat usa a referência própria exibida acima e a transcrição usa a tarifa por minuto mais adiante. Confirme limites e política antes de habilitar.</p>
-            {([['monthly_usd','Limite mensal (US$)'],['processing_usd','Limite por processamento (US$)'],['input_price','Tarifa de entrada (US$ / milhão)'],['output_price','Tarifa de saída (US$ / milhão)']] as const).map(([key,label])=><label key={key}>{label}<input type="number" min="0" step="0.000001" value={form.data[key]} onChange={e=>form.setData(key,e.target.value)} /></label>)}
-            <h2>Transcrição de reunião</h2><p>A transcrição é cobrada por minuto de áudio, separada das tarifas por token acima. Enquanto não estiver autorizada aqui, a equipe continua podendo enviar o áudio, revisar e colar a transcrição manualmente — nenhum caso fica bloqueado.</p>
-            <label className="assistance-check"><input type="checkbox" checked={form.data.audio_enabled} onChange={e=>form.setData('audio_enabled',e.target.checked)} /> Autorizo enviar áudio das reuniões para transcrição paga ({settings.engines.find(engine=>engine.key==='transcription')?.model}).</label>
-            <label>Tarifa por minuto de áudio (US$)<input type="number" min="0" step="0.000001" value={form.data.audio_price_per_minute_usd} onChange={e=>form.setData('audio_price_per_minute_usd',e.target.value)} /><small className="field-help">Consulte a tarifa vigente do provedor e registre o valor real. O sistema estima o custo por minutos inteiros, arredondando para cima; não é a fatura oficial.</small></label>
-            <label>Retenção de áudio (dias)<input type="number" min="1" max="365" value={form.data.retention_days} onChange={e=>form.setData('retention_days',Number(e.target.value))} /><small className="field-help">Após esse prazo o arquivo de áudio é apagado e a transcrição é preservada.</small></label>
-            <label>Confirme sua senha<input type="password" autoComplete="current-password" required value={form.data.password} onChange={e=>form.setData('password',e.target.value)} /></label>
-            {Object.values(form.errors).map((error,i)=><p className="assistance-error" role="alert" key={i}>{error}</p>)}
-            <button className="button button-primary" disabled={form.processing}>Salvar configurações</button>
-        </form><aside className="glass-surface assistance-panel"><h2>Teste seguro</h2><p>Usa apenas um cenário fictício. O custo é contabilizado. Salve as configurações primeiro.</p><form className="form-grid" onSubmit={e=>{e.preventDefault();test.post('/settings/ai/test',{preserveScroll:true,onFinish:()=>test.reset()});}}><label>Sua senha<input type="password" autoComplete="current-password" value={test.data.password} onChange={e=>test.setData('password',e.target.value)} /></label>{Object.values(test.errors).map((error,i)=><p role="alert" key={i}>{error}</p>)}<button className="button button-subtle" disabled={test.processing||settings.status!=='ready'}>{test.processing?'Testando…':'Testar conexão'}</button></form><h2>Últimos processamentos</h2><p>Reservas incluem tentativas sem confirmação de cobrança; não representam a fatura oficial.</p>{attempts.length===0?<p>Nenhuma chamada paga registrada.</p>:attempts.map(a=><article className="assistance-record" key={a.id}><strong>{a.action} · {a.status}</strong><p>US$ {((a.charged_micros??a.reserved_micros)/1000000).toFixed(6)} · {a.created_at}</p></article>)}</aside></div>
-    </AppLayout>;
+    return (
+        <AppLayout>
+            <Head title="Inteligência artificial" />
+            <header className="topbar">
+                <div>
+                    <span className="eyebrow">ADMINISTRAÇÃO</span>
+                    <h1>Inteligência artificial</h1>
+                    <p>Você controla o motor, os dados e quanto pode gastar.</p>
+                </div>
+            </header>
+            <section className="assistance-banner">
+                <div>
+                    <strong>{aiLabels[settings.status]}</strong>
+                    <p>
+                        {settings.has_key ? 'Credencial cadastrada' : 'Sem credencial'} · Transcrição de reunião:{' '}
+                        {settings.audio_ready ? 'autorizada' : 'não autorizada'} · Limite comprometido neste mês: US${' '}
+                        {settings.used_usd.toFixed(4)}
+                    </p>
+                </div>
+            </section>
+            <section className="ai-cost-grid" aria-label="Consumo da inteligência artificial">
+                <article>
+                    <small>Consumo calculado · mês atual</small>
+                    <strong>US$ {settings.calculated_usd.toFixed(4)}</strong>
+                    <small>Calculado pelos tokens retornados e tarifas registradas; pode diferir da fatura.</small>
+                </article>
+                <article>
+                    <small>Reservas em aberto</small>
+                    <strong>US$ {settings.reserved_usd.toFixed(4)}</strong>
+                    <small>Inclui chamadas em andamento e tentativas incertas, sem repetição automática.</small>
+                </article>
+                <article>
+                    <small>Limite mensal compartilhado</small>
+                    <strong>US$ {settings.monthly_usd.toFixed(2)}</strong>
+                    <small>
+                        Disponível: US$ {Math.max(0, settings.monthly_usd - settings.used_usd).toFixed(4)}. Chat e demais processamentos
+                        usam este limite.
+                    </small>
+                </article>
+            </section>
+            <section className="glass-surface assistance-panel">
+                <h2>Motores em uso</h2>
+                <p>Cada etapa usa um modelo próprio. Confira o que está configurado antes de liberar processamento pago.</p>
+                <ul className="ai-engine-list">
+                    {settings.engines.map((engine) => (
+                        <li key={engine.key}>
+                            <strong>{engine.label}</strong>
+                            <code>{engine.model}</code>
+                            <small>{engine.note}</small>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+            <section className="glass-surface assistance-panel">
+                <h2>Assistente de conversa · Luna</h2>
+                <p>
+                    Modelo: {settings.chat_model}. Usa a chave cadastrada abaixo e os mesmos limites de segurança. Briefing e transcrição
+                    mantêm seus motores específicos.
+                </p>
+                <p>
+                    Tarifa de referência do chat: US$ {settings.chat_input_price.toFixed(2)} de entrada e US${' '}
+                    {settings.chat_output_price.toFixed(2)} de saída por milhão de tokens. Verificada em 10/09/2026; cálculo conservador sem
+                    desconto de cache.
+                </p>
+                <a href="https://developers.openai.com/api/docs/models/gpt-5.6-luna" target="_blank" rel="noreferrer">
+                    Consultar modelo e tarifas oficiais →
+                </a>
+            </section>
+            <div className="assistance-grid">
+                <form
+                    className="glass-surface assistance-panel form-grid"
+                    autoComplete="off"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        form.post('/settings/ai', { preserveScroll: true, onFinish: () => form.reset('api_key', 'password') });
+                    }}
+                >
+                    <h2>Funcionamento e segurança</h2>
+                    <label>
+                        Modo
+                        <select value={form.data.mode} onChange={(e) => form.setData('mode', e.target.value)}>
+                            <option value="manual">Manual — sem chamadas externas</option>
+                            <option value="demo">Demonstração — respostas simuladas</option>
+                            <option value="openai">OpenAI — processamento pago</option>
+                        </select>
+                    </label>
+                    <label>
+                        Origem da chave
+                        <select value={form.data.credential_source} onChange={(e) => form.setData('credential_source', e.target.value)}>
+                            <option value="settings">Cadastrada nesta administração</option>
+                            <option value="environment">Ambiente privado do servidor</option>
+                        </select>
+                    </label>
+                    <label>
+                        Nova chave OpenAI
+                        <input
+                            type="password"
+                            autoComplete="new-password"
+                            value={form.data.api_key}
+                            onChange={(e) => form.setData('api_key', e.target.value)}
+                            placeholder="Deixe vazio para manter a atual"
+                        />
+                    </label>
+                    <label className="assistance-check">
+                        <input
+                            type="checkbox"
+                            checked={form.data.remove_key}
+                            onChange={(e) => form.setData('remove_key', e.target.checked)}
+                        />{' '}
+                        Remover chave ativa e desabilitar envio externo
+                    </label>
+                    <label className="assistance-check">
+                        <input
+                            type="checkbox"
+                            checked={form.data.policy_approved}
+                            onChange={(e) => form.setData('policy_approved', e.target.checked)}
+                        />{' '}
+                        Confirmo que a equipe validou quais dados podem ser enviados à OpenAI.
+                    </label>
+                    <h2>Orçamento de processamento</h2>
+                    <p>
+                        Limites compartilhados em dólares, válidos para todos os motores juntos. As tarifas por token abaixo são aplicadas à
+                        organização de contexto e briefing ({settings.model}). O chat usa a referência própria exibida acima e a transcrição
+                        usa a tarifa por minuto mais adiante. Confirme limites e política antes de habilitar.
+                    </p>
+                    {(
+                        [
+                            ['monthly_usd', 'Limite mensal (US$)'],
+                            ['processing_usd', 'Limite por processamento (US$)'],
+                            ['input_price', 'Tarifa de entrada (US$ / milhão)'],
+                            ['output_price', 'Tarifa de saída (US$ / milhão)'],
+                        ] as const
+                    ).map(([key, label]) => (
+                        <label key={key}>
+                            {label}
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.000001"
+                                value={form.data[key]}
+                                onChange={(e) => form.setData(key, e.target.value)}
+                            />
+                        </label>
+                    ))}
+                    <h2>Transcrição de reunião</h2>
+                    <p>
+                        A transcrição é cobrada por minuto de áudio, separada das tarifas por token acima. Enquanto não estiver autorizada
+                        aqui, a equipe continua podendo enviar o áudio, revisar e colar a transcrição manualmente — nenhum caso fica
+                        bloqueado.
+                    </p>
+                    <label className="assistance-check">
+                        <input
+                            type="checkbox"
+                            checked={form.data.audio_enabled}
+                            onChange={(e) => form.setData('audio_enabled', e.target.checked)}
+                        />{' '}
+                        Autorizo enviar áudio das reuniões para transcrição paga (
+                        {settings.engines.find((engine) => engine.key === 'transcription')?.model}).
+                    </label>
+                    <label>
+                        Tarifa por minuto de áudio (US$)
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.000001"
+                            value={form.data.audio_price_per_minute_usd}
+                            onChange={(e) => form.setData('audio_price_per_minute_usd', e.target.value)}
+                        />
+                        <small className="field-help">
+                            Consulte a tarifa vigente do provedor e registre o valor real. O sistema estima o custo por minutos inteiros,
+                            arredondando para cima; não é a fatura oficial.
+                        </small>
+                    </label>
+                    <label>
+                        Retenção de áudio (dias)
+                        <input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={form.data.retention_days}
+                            onChange={(e) => form.setData('retention_days', Number(e.target.value))}
+                        />
+                        <small className="field-help">Após esse prazo o arquivo de áudio é apagado e a transcrição é preservada.</small>
+                    </label>
+                    <label>
+                        Confirme sua senha
+                        <input
+                            type="password"
+                            autoComplete="current-password"
+                            required
+                            value={form.data.password}
+                            onChange={(e) => form.setData('password', e.target.value)}
+                        />
+                    </label>
+                    {Object.values(form.errors).map((error, i) => (
+                        <p className="assistance-error" role="alert" key={i}>
+                            {error}
+                        </p>
+                    ))}
+                    <button className="button button-primary" disabled={form.processing}>
+                        Salvar configurações
+                    </button>
+                </form>
+                <aside className="glass-surface assistance-panel">
+                    <h2>Teste seguro</h2>
+                    <p>Usa apenas um cenário fictício. O custo é contabilizado. Salve as configurações primeiro.</p>
+                    <form
+                        className="form-grid"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            test.post('/settings/ai/test', { preserveScroll: true, onFinish: () => test.reset() });
+                        }}
+                    >
+                        <label>
+                            Sua senha
+                            <input
+                                type="password"
+                                autoComplete="current-password"
+                                value={test.data.password}
+                                onChange={(e) => test.setData('password', e.target.value)}
+                            />
+                        </label>
+                        {Object.values(test.errors).map((error, i) => (
+                            <p role="alert" key={i}>
+                                {error}
+                            </p>
+                        ))}
+                        <button className="button button-subtle" disabled={test.processing || settings.status !== 'ready'}>
+                            {test.processing ? 'Testando…' : 'Testar conexão'}
+                        </button>
+                    </form>
+                    <h2>Últimos processamentos</h2>
+                    <p>Reservas incluem tentativas sem confirmação de cobrança; não representam a fatura oficial.</p>
+                    {attempts.length === 0 ? (
+                        <p>Nenhuma chamada paga registrada.</p>
+                    ) : (
+                        attempts.map((a) => (
+                            <article className="assistance-record" key={a.id}>
+                                <strong>
+                                    {a.action} · {a.status}
+                                </strong>
+                                <p>
+                                    US$ {((a.charged_micros ?? a.reserved_micros) / 1000000).toFixed(6)} · {a.created_at}
+                                </p>
+                            </article>
+                        ))
+                    )}
+                </aside>
+            </div>
+        </AppLayout>
+    );
 }

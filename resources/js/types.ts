@@ -13,7 +13,8 @@ export type OpportunityStage =
     | 'lost'
     | 'cancelled';
 
-export type CommercialStage = 'lead' | 'qualification' | 'meeting' | 'initial_briefing' | 'viability_offer' | 'viability_contracted' | 'lost' | 'cancelled';
+export type CommercialStage =
+    'lead' | 'qualification' | 'meeting' | 'initial_briefing' | 'viability_offer' | 'viability_contracted' | 'lost' | 'cancelled';
 export type OpportunityPriority = 'low' | 'normal' | 'high';
 export type OpportunityOrigin = 'referral' | 'inbound' | 'outbound' | 'returning_client' | 'partner' | 'organic' | 'other';
 
@@ -92,7 +93,8 @@ export type BriefingMessage = {
     createdAt: string;
 };
 
-export type CaseModuleKey = 'overview' | 'journey' | 'briefing' | 'viability' | 'budget' | 'documents' | 'production' | 'post_event' | 'history';
+export type CaseModuleKey =
+    'overview' | 'journey' | 'briefing' | 'viability' | 'budget' | 'documents' | 'production' | 'post_event' | 'history';
 export type CaseModuleState = 'empty' | 'draft' | 'needs_review' | 'approved' | 'blocked' | 'complete' | 'stale';
 
 export type CaseModuleStatus = {

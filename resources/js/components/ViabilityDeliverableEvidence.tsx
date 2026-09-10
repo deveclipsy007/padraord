@@ -1,4 +1,4 @@
-import { useForm } from "@inertiajs/react";
+import { useForm } from '@inertiajs/react';
 
 type Deliverable = {
     id?: number;
@@ -10,17 +10,11 @@ type Deliverable = {
     evidence?: { note?: string } | null;
 };
 
-export function ViabilityDeliverableEvidence({
-    caseId,
-    deliverable,
-}: {
-    caseId: number;
-    deliverable: Deliverable;
-}) {
+export function ViabilityDeliverableEvidence({ caseId, deliverable }: { caseId: number; deliverable: Deliverable }) {
     const form = useForm({
-        status: deliverable.status === "pending" ? "draft" : deliverable.status,
-        content: deliverable.content ?? "",
-        evidence: deliverable.evidence?.note ?? "",
+        status: deliverable.status === 'pending' ? 'draft' : deliverable.status,
+        content: deliverable.content ?? '',
+        evidence: deliverable.evidence?.note ?? '',
     });
 
     if (!deliverable.id) return null;
@@ -32,23 +26,12 @@ export function ViabilityDeliverableEvidence({
                 className="form-grid"
                 onSubmit={(event) => {
                     event.preventDefault();
-                    form.post(
-                        "/opportunities/" +
-                            caseId +
-                            "/feasibility/deliverables/" +
-                            deliverable.id,
-                        { preserveScroll: true },
-                    );
+                    form.post('/opportunities/' + caseId + '/feasibility/deliverables/' + deliverable.id, { preserveScroll: true });
                 }}
             >
                 <label>
                     Estado
-                    <select
-                        value={form.data.status}
-                        onChange={(event) =>
-                            form.setData("status", event.target.value)
-                        }
-                    >
+                    <select value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
                         <option value="pending">Pendente</option>
                         <option value="draft">Em rascunho</option>
                         <option value="ready">Pronto para entrega</option>
@@ -57,22 +40,14 @@ export function ViabilityDeliverableEvidence({
                 </label>
                 <label>
                     Conteúdo ou referência
-                    <textarea
-                        rows={2}
-                        value={form.data.content}
-                        onChange={(event) =>
-                            form.setData("content", event.target.value)
-                        }
-                    />
+                    <textarea rows={2} value={form.data.content} onChange={(event) => form.setData('content', event.target.value)} />
                 </label>
                 <label>
                     Evidência
                     <textarea
                         rows={2}
                         value={form.data.evidence}
-                        onChange={(event) =>
-                            form.setData("evidence", event.target.value)
-                        }
+                        onChange={(event) => form.setData('evidence', event.target.value)}
                         placeholder="Mensagem, documento ou decisão que comprova o entregável."
                     />
                 </label>
@@ -81,10 +56,7 @@ export function ViabilityDeliverableEvidence({
                         {error}
                     </p>
                 ))}
-                <button
-                    className="button button-subtle"
-                    disabled={form.processing}
-                >
+                <button className="button button-subtle" disabled={form.processing}>
                     Salvar evidência
                 </button>
             </form>

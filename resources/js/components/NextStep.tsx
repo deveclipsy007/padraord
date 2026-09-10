@@ -1,8 +1,99 @@
 import { Link, useForm } from '@inertiajs/react';
 import { AssistanceSteps } from './AssistanceSteps';
-export type NextStepData={step:number;title:string;href:string;reason:string;owner:string;due:string|null};
-export type Preparation={revision:number;stale:boolean;payload:{warning:string;budget:{description:string}[];proposal:Record<string,string>}}|null;
-export function NextStep({id,revision,next,preparation,approved}:{id:number;revision:number;next:NextStepData;preparation:Preparation;approved:boolean}){
-    const form=useForm({revision});
-    return <><AssistanceSteps current={next.step}/><section className="assistance-banner"><div><span className="eyebrow">PRÓXIMO PASSO</span><h2>{next.title}</h2><p>{next.reason}</p><p>{next.owner} · {next.due??'Prazo a definir'}</p></div><Link className="button button-primary" href={next.href}>{next.title}</Link></section><section id="preparation" className="assistance-panel" style={{marginBottom:24}}><details open={next.step===3}><summary>Preparar entrega a partir do briefing</summary>{!approved?<p>Revise o briefing para preparar conteúdo sem reconstruir o contexto.</p>:<form onSubmit={e=>{e.preventDefault();form.transform(()=>({revision}));form.post(`/opportunities/${id}/prepare`,{preserveScroll:true});}}><p>Prepara um roteiro de cotações, conteúdo inicial de proposta e uma tarefa de revisão. Não cria preços, documentos aprovados ou contratos.</p>{Object.values(form.errors).map((error,i)=><p role="alert" key={i}>{error}</p>)}<button className="button button-primary" disabled={form.processing||Boolean(preparation&&!preparation.stale)}>Preparar rascunhos e tarefa</button></form>}{preparation&&<><p>{preparation.stale?'O briefing mudou. Revise os impactos antes de reutilizar esta preparação.':`Origem: briefing aprovado r${preparation.revision}`}</p><p>{preparation.payload.warning}</p><h3>Roteiro para cotar</h3>{preparation.payload.budget.map((item,i)=><p key={i}>{item.description} · quantidade, custo e fornecedor a conferir</p>)}<h3>Conteúdo inicial da proposta</h3>{Object.entries(preparation.payload.proposal).map(([key,value])=><p key={key}>{value}</p>)}<div className="assistance-actions"><Link className="button button-subtle" href={`/opportunities/${id}/budget`}>Revisar orçamento</Link><Link className="button button-subtle" href="/agenda">Ver tarefa de revisão</Link></div></>}</details></section></>;
+export type NextStepData = { step: number; title: string; href: string; reason: string; owner: string; due: string | null };
+export type Preparation = {
+    revision: number;
+    stale: boolean;
+    payload: { warning: string; budget: { description: string }[]; proposal: Record<string, string> };
+} | null;
+export function NextStep({
+    id,
+    revision,
+    next,
+    preparation,
+    approved,
+}: {
+    id: number;
+    revision: number;
+    next: NextStepData;
+    preparation: Preparation;
+    approved: boolean;
+}) {
+    const form = useForm({ revision });
+    return (
+        <>
+            <AssistanceSteps current={next.step} />
+            <section className="assistance-banner">
+                <div>
+                    <span className="eyebrow">PRÓXIMO PASSO</span>
+                    <h2>{next.title}</h2>
+                    <p>{next.reason}</p>
+                    <p>
+                        {next.owner} · {next.due ?? 'Prazo a definir'}
+                    </p>
+                </div>
+                <Link className="button button-primary" href={next.href}>
+                    {next.title}
+                </Link>
+            </section>
+            <section id="preparation" className="assistance-panel" style={{ marginBottom: 24 }}>
+                <details open={next.step === 3}>
+                    <summary>Preparar entrega a partir do briefing</summary>
+                    {!approved ? (
+                        <p>Revise o briefing para preparar conteúdo sem reconstruir o contexto.</p>
+                    ) : (
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                form.transform(() => ({ revision }));
+                                form.post(`/opportunities/${id}/prepare`, { preserveScroll: true });
+                            }}
+                        >
+                            <p>
+                                Prepara um roteiro de cotações, conteúdo inicial de proposta e uma tarefa de revisão. Não cria preços,
+                                documentos aprovados ou contratos.
+                            </p>
+                            {Object.values(form.errors).map((error, i) => (
+                                <p role="alert" key={i}>
+                                    {error}
+                                </p>
+                            ))}
+                            <button
+                                className="button button-primary"
+                                disabled={form.processing || Boolean(preparation && !preparation.stale)}
+                            >
+                                Preparar rascunhos e tarefa
+                            </button>
+                        </form>
+                    )}
+                    {preparation && (
+                        <>
+                            <p>
+                                {preparation.stale
+                                    ? 'O briefing mudou. Revise os impactos antes de reutilizar esta preparação.'
+                                    : `Origem: briefing aprovado r${preparation.revision}`}
+                            </p>
+                            <p>{preparation.payload.warning}</p>
+                            <h3>Roteiro para cotar</h3>
+                            {preparation.payload.budget.map((item, i) => (
+                                <p key={i}>{item.description} · quantidade, custo e fornecedor a conferir</p>
+                            ))}
+                            <h3>Conteúdo inicial da proposta</h3>
+                            {Object.entries(preparation.payload.proposal).map(([key, value]) => (
+                                <p key={key}>{value}</p>
+                            ))}
+                            <div className="assistance-actions">
+                                <Link className="button button-subtle" href={`/opportunities/${id}/budget`}>
+                                    Revisar orçamento
+                                </Link>
+                                <Link className="button button-subtle" href="/agenda">
+                                    Ver tarefa de revisão
+                                </Link>
+                            </div>
+                        </>
+                    )}
+                </details>
+            </section>
+        </>
+    );
 }

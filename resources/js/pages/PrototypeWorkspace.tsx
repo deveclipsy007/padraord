@@ -4,24 +4,177 @@ import { AppLayout } from '../layout';
 import { GlassSurface } from '../components/GlassSurface';
 import { AssistanceSteps } from '../components/AssistanceSteps';
 
-type Item = { id: number; description: string; quantity: number; costCents: number; supplier: string; baseCents: number; managementCents: number; administrationCents: number; totalCents: number };
+type Item = {
+    id: number;
+    description: string;
+    quantity: number;
+    costCents: number;
+    supplier: string;
+    baseCents: number;
+    managementCents: number;
+    administrationCents: number;
+    totalCents: number;
+};
 type Snapshot = { version: number; totalCents: number; items: Item[] };
 type Doc = { id: number; version: number; type: string; purpose: string; status: string; notes: string; stale: boolean; budget: Snapshot };
 type Task = { id: number; title: string; owner: string; due: string; phase: string; status: string; dependency: number; priority: string };
-type State = { client: string; owner: string; origin: string; priority: string; due: string; next: string; stage: string; viability: string; modality: string; management: string; outcome: string | null; messages: { id: number; body: string; author: string; at: string }[]; briefing: Record<string, string>; briefingApproved: boolean; suggestions: { id: number; messageId: number; field: string; current: string; suggested: string; status: string }[]; quotes: { id: number; supplier: string; service: string; costCents: number; validUntil: string; conditions: string; evidence: string }[]; items: Item[]; budgetStatus: string; budgetVersion: number; budgetSnapshots: Snapshot[]; documents: Doc[]; technical: { description: string; quantity: number; confirmed: boolean; evidence: string }; tasks: Task[]; occurrences: { description: string; solution: string; extraCents: number; at: string }[]; impacts: string[]; deliverables: string[]; history: { action: string; user: string; at: string; evidence: string; revision: number }[]; completedSteps: string[]; post: { summary: string; learning: string; actualCents: number; rating: number } };
+type State = {
+    client: string;
+    owner: string;
+    origin: string;
+    priority: string;
+    due: string;
+    next: string;
+    stage: string;
+    viability: string;
+    modality: string;
+    management: string;
+    outcome: string | null;
+    messages: { id: number; body: string; author: string; at: string }[];
+    briefing: Record<string, string>;
+    briefingApproved: boolean;
+    suggestions: { id: number; messageId: number; field: string; current: string; suggested: string; status: string }[];
+    quotes: {
+        id: number;
+        supplier: string;
+        service: string;
+        costCents: number;
+        validUntil: string;
+        conditions: string;
+        evidence: string;
+    }[];
+    items: Item[];
+    budgetStatus: string;
+    budgetVersion: number;
+    budgetSnapshots: Snapshot[];
+    documents: Doc[];
+    technical: { description: string; quantity: number; confirmed: boolean; evidence: string };
+    tasks: Task[];
+    occurrences: { description: string; solution: string; extraCents: number; at: string }[];
+    impacts: string[];
+    deliverables: string[];
+    history: { action: string; user: string; at: string; evidence: string; revision: number }[];
+    completedSteps: string[];
+    post: { summary: string; learning: string; actualCents: number; rating: number };
+};
 type Props = { record: { id: number; title: string; revision: number; mode: string; state: State }; section: string };
 type Field = { key: string; label: string; type?: string; value?: string; options?: [string, string][]; optional?: boolean };
-const sections = [['overview', 'Visão geral'], ['commercial', 'Comercial'], ['briefing', 'Briefing'], ['viability', 'Viabilidade'], ['suppliers', 'Cotações'], ['budget', 'Orçamento'], ['documents', 'Documentos'], ['production', 'Produção'], ['post-event', 'Pós-evento'], ['history', 'Histórico']] as const;
-const briefingLabels: Record<string, string> = { objective: 'Objetivo', audience: 'Público', date: 'Data', location: 'Local', investment: 'Investimento disponível', scope: 'Escopo', restrictions: 'Restrições', references: 'Referências' };
-const deliverables: Record<string, string> = { concept: 'Conceito', estimate: 'Estimativa', suppliers: 'Mapa de fornecedores', schedule: 'Cronograma', model_3d: 'Referência da maquete 3D', floor_plan: 'Referência da planta baixa' };
-const status: Record<string, string> = { not_contracted: 'Não contratado', in_progress: 'Em desenvolvimento', delivered: 'Entrega aguardando aceite', accepted: 'Entrega aceita', planning: 'Preparação', execution: 'Montagem e evento', post_event: 'Pós-evento', draft: 'Rascunho', reviewed: 'Revisado · demonstração', review: 'Aguardando revisão', approved_demo: 'Revisado · demonstração', sent_demo: 'Envio simulado', accepted_demo: 'Aceite simulado', todo: 'Pendente', done: 'Concluída', preparation: 'Preparação', setup: 'Montagem', event: 'Evento', teardown: 'Desmontagem' };
+const sections = [
+    ['overview', 'Visão geral'],
+    ['commercial', 'Comercial'],
+    ['briefing', 'Briefing'],
+    ['viability', 'Viabilidade'],
+    ['suppliers', 'Cotações'],
+    ['budget', 'Orçamento'],
+    ['documents', 'Documentos'],
+    ['production', 'Produção'],
+    ['post-event', 'Pós-evento'],
+    ['history', 'Histórico'],
+] as const;
+const briefingLabels: Record<string, string> = {
+    objective: 'Objetivo',
+    audience: 'Público',
+    date: 'Data',
+    location: 'Local',
+    investment: 'Investimento disponível',
+    scope: 'Escopo',
+    restrictions: 'Restrições',
+    references: 'Referências',
+};
+const deliverables: Record<string, string> = {
+    concept: 'Conceito',
+    estimate: 'Estimativa',
+    suppliers: 'Mapa de fornecedores',
+    schedule: 'Cronograma',
+    model_3d: 'Referência da maquete 3D',
+    floor_plan: 'Referência da planta baixa',
+};
+const status: Record<string, string> = {
+    not_contracted: 'Não contratado',
+    in_progress: 'Em desenvolvimento',
+    delivered: 'Entrega aguardando aceite',
+    accepted: 'Entrega aceita',
+    planning: 'Preparação',
+    execution: 'Montagem e evento',
+    post_event: 'Pós-evento',
+    draft: 'Rascunho',
+    reviewed: 'Revisado · demonstração',
+    review: 'Aguardando revisão',
+    approved_demo: 'Revisado · demonstração',
+    sent_demo: 'Envio simulado',
+    accepted_demo: 'Aceite simulado',
+    todo: 'Pendente',
+    done: 'Concluída',
+    preparation: 'Preparação',
+    setup: 'Montagem',
+    event: 'Evento',
+    teardown: 'Desmontagem',
+};
 const money = (cents: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
 const evidenceField: Field = { key: 'evidence', label: 'Evidência / referência simulada', type: 'textarea' };
 
-function ActionForm({ title, action, fields, run, button = 'Salvar', extra = {} }: { title: string; action: string; fields: Field[]; run: (action: string, data: Record<string, unknown>, done?: () => void) => void; button?: string; extra?: Record<string, unknown> }) {
-    const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(fields.map(f => [f.key, f.value ?? ''])));
-    function submit(event: FormEvent) { event.preventDefault(); run(action, { ...values, ...extra }); }
-    return <GlassSurface className="prototype-panel"><h2>{title}</h2><form className="form-grid" onSubmit={submit}>{fields.map(field => <label key={field.key}>{field.label}{field.type === 'textarea' ? <textarea rows={3} required={!field.optional} value={values[field.key] ?? ''} onChange={e => setValues(v => ({ ...v, [field.key]: e.target.value }))} /> : field.options ? <select required={!field.optional} value={values[field.key] ?? ''} onChange={e => setValues(v => ({ ...v, [field.key]: e.target.value }))}><option value="">Selecione</option>{field.options.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select> : <input required={!field.optional} type={field.type ?? 'text'} step={field.type === 'number' ? '.01' : undefined} value={values[field.key] ?? ''} onChange={e => setValues(v => ({ ...v, [field.key]: e.target.value }))} />}</label>)}<button className="button button-primary">{button}</button></form></GlassSurface>;
+function ActionForm({
+    title,
+    action,
+    fields,
+    run,
+    button = 'Salvar',
+    extra = {},
+}: {
+    title: string;
+    action: string;
+    fields: Field[];
+    run: (action: string, data: Record<string, unknown>, done?: () => void) => void;
+    button?: string;
+    extra?: Record<string, unknown>;
+}) {
+    const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(fields.map((f) => [f.key, f.value ?? ''])));
+    function submit(event: FormEvent) {
+        event.preventDefault();
+        run(action, { ...values, ...extra });
+    }
+    return (
+        <GlassSurface className="prototype-panel">
+            <h2>{title}</h2>
+            <form className="form-grid" onSubmit={submit}>
+                {fields.map((field) => (
+                    <label key={field.key}>
+                        {field.label}
+                        {field.type === 'textarea' ? (
+                            <textarea
+                                rows={3}
+                                required={!field.optional}
+                                value={values[field.key] ?? ''}
+                                onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
+                            />
+                        ) : field.options ? (
+                            <select
+                                required={!field.optional}
+                                value={values[field.key] ?? ''}
+                                onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
+                            >
+                                <option value="">Selecione</option>
+                                {field.options.map(([value, label]) => (
+                                    <option key={value} value={value}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                required={!field.optional}
+                                type={field.type ?? 'text'}
+                                step={field.type === 'number' ? '.01' : undefined}
+                                value={values[field.key] ?? ''}
+                                onChange={(e) => setValues((v) => ({ ...v, [field.key]: e.target.value }))}
+                            />
+                        )}
+                    </label>
+                ))}
+                <button className="button button-primary">{button}</button>
+            </form>
+        </GlassSurface>
+    );
 }
 
 export default function PrototypeWorkspace({ record, section }: Props) {
@@ -33,32 +186,838 @@ export default function PrototypeWorkspace({ record, section }: Props) {
     const [taskFilter, setTaskFilter] = useState('all');
     const [search, setSearch] = useState('');
     const [guideOpen, setGuideOpen] = useState(false);
-    useEffect(() => { setBriefing(record.state.briefing); setChecked(record.state.deliverables); }, [record.id, record.revision]);
+    useEffect(() => {
+        setBriefing(record.state.briefing);
+        setChecked(record.state.deliverables);
+    }, [record.id, record.revision]);
     const href = (target: string) => '/prototype/' + record.id + '/' + target;
     const run = (action: string, data: Record<string, unknown> = {}, done?: () => void) => {
         if (busy) return;
-        setErrors([]); setBusy(true);
-        router.post('/prototype/' + record.id + '/actions', { ...data, action, revision: record.revision }, { preserveScroll: true, onError: result => setErrors(Object.values(result)), onSuccess: () => done?.(), onFinish: () => setBusy(false) });
+        setErrors([]);
+        setBusy(true);
+        router.post(
+            '/prototype/' + record.id + '/actions',
+            { ...data, action, revision: record.revision },
+            {
+                preserveScroll: true,
+                onError: (result) => setErrors(Object.values(result)),
+                onSuccess: () => done?.(),
+                onFinish: () => setBusy(false),
+            },
+        );
     };
-    const guide = [['message', 'briefing', 'Enviar contexto'], ['briefing_approve', 'briefing', 'Revisar o briefing'], ['contract_viability', 'viability', 'Contratar Viabilidade'], ['quote', 'suppliers', 'Registrar cotação'], ['budget_review', 'budget', 'Revisar orçamento'], ['document_accept', 'documents', 'Revisar e simular aceite'], ['technical_confirm', 'production', 'Reconfirmar medidas'], ['task_done', 'production', 'Concluir uma tarefa'], ['close_event', 'post-event', 'Encerrar o evento']];
+    const guide = [
+        ['message', 'briefing', 'Enviar contexto'],
+        ['briefing_approve', 'briefing', 'Revisar o briefing'],
+        ['contract_viability', 'viability', 'Contratar Viabilidade'],
+        ['quote', 'suppliers', 'Registrar cotação'],
+        ['budget_review', 'budget', 'Revisar orçamento'],
+        ['document_accept', 'documents', 'Revisar e simular aceite'],
+        ['technical_confirm', 'production', 'Reconfirmar medidas'],
+        ['task_done', 'production', 'Concluir uma tarefa'],
+        ['close_event', 'post-event', 'Encerrar o evento'],
+    ];
     const total = s.items.reduce((sum, item) => sum + item.totalCents, 0);
-    const missing = Object.keys(briefingLabels).filter(key => !s.briefing[key]);
-    const quoteFields: Field[] = [{ key: 'supplier', label: 'Fornecedor fictício' }, { key: 'description', label: 'Serviço / escopo' }, { key: 'cost', label: 'Custo unitário (R$)', value: '1200,00' }, { key: 'valid_until', label: 'Válida até', type: 'date' }, { key: 'conditions', label: 'Condições', optional: true }, evidenceField];
-    return <AppLayout><Head title={sections.find(([key]) => key === section)?.[1] + ' · Horizonte'} /><header className="topbar"><div><Link className="back-link" href="/projects">← Projetos e cenários</Link><span className="eyebrow">DEMO-{record.id} · REVISÃO {record.revision}</span><h1>{record.title}</h1><p>{s.client} · {s.owner} · Prazo {s.due}</p></div><span className="status-pill violet">Demonstração persistente</span></header>
-        <div className="prototype-safety"><strong>Laboratório isolado</strong><span>Somente dados fictícios. Nenhum envio, contratação ou chamada à IA externa. Registros e documentos permanecem marcados como demonstração.</span></div>
-        <AssistanceSteps current={!s.messages.length?0:!s.briefingApproved?1:s.budgetStatus==='draft'?3:s.management==='not_contracted'?4:5}/><nav className="prototype-tabs" aria-label="Módulos do caso">{sections.map(([key, label]) => <Link key={key} href={href(key)} className={section === key ? 'active' : ''} aria-current={section === key ? 'page' : undefined}>{label}</Link>)}</nav>
-        <div className="prototype-feedback" aria-live="polite">{busy && <p>Salvando alterações…</p>}{errors.length > 0 && <div role="alert"><strong>Precisamos resolver antes de continuar</strong>{errors.map(error => <p key={error}>{error}</p>)}<button className="button button-subtle" onClick={() => router.reload()}>Atualizar dados do caso</button><small>Copie qualquer texto ainda não salvo antes de atualizar.</small></div>}{s.outcome && <p className="prototype-success">{s.outcome === 'viability_completed' ? 'Viabilidade concluída sem Gestão — resultado válido, não é perda.' : s.outcome === 'event_completed' ? 'Evento encerrado. Aprendizados preservados.' : 'Cenário encerrado: ' + s.outcome} <Link href="/projects">Criar outro teste →</Link></p>}</div>
-        <fieldset key={section} className="prototype-fieldset" disabled={busy || !!s.outcome}>
-        {section === 'overview' && <><GlassSurface className="prototype-panel"><div className="panel-heading"><div><span className="eyebrow">PRÓXIMA AÇÃO</span><h2>{s.next}</h2></div><button className="button button-subtle" onClick={() => setGuideOpen(!guideOpen)}>{guideOpen ? 'Recolher roteiro' : 'Mostrar roteiro'}</button></div><p>Responsável: {s.owner} · Prioridade: {s.priority} · {s.tasks.filter(task => task.status !== 'done').length} tarefas pendentes</p>{guideOpen && <div className="prototype-guide">{guide.map(([action, target, label]) => <Link key={action} href={href(target)}><span className={s.completedSteps.includes(action) ? 'checked' : ''}>{s.completedSteps.includes(action) ? '✓' : '○'}</span>{label}</Link>)}<Link href={href('viability')}>Caminho alternativo: encerrar sem Gestão →</Link></div>}</GlassSurface><div className="prototype-card-grid">{[['Briefing', s.briefingApproved ? 'Revisado' : missing.length + ' campos sem informação', 'briefing'], ['Viabilidade', status[s.viability], 'viability'], ['Orçamento', money(total), 'budget'], ['Revisões', s.documents.filter(d => d.status === 'review' || d.stale).length + ' documentos', 'documents'], ['Gestão', status[s.management], 'production'], ['Validação técnica', s.technical.confirmed ? 'Reconfirmada' : 'Pendente', 'production']].map(([title, value, target]) => <Link className="prototype-project" key={title} href={href(target)}><span className="eyebrow">{title}</span><h2>{value}</h2><strong>Abrir →</strong></Link>)}</div><GlassSurface className="prototype-panel"><h2>Impactos das últimas alterações</h2>{s.impacts.length ? s.impacts.slice(-4).map((impact, i) => <p key={i}>{impact}</p>) : <p>Nenhuma mudança com impacto registrada ainda.</p>}</GlassSurface></>}
-        {section === 'commercial' && <div className="prototype-two"><ActionForm title="Contexto comercial" action="case_save" run={run} fields={[{ key: 'client', label: 'Cliente', value: s.client }, { key: 'owner', label: 'Responsável', value: s.owner }, { key: 'origin', label: 'Origem', value: s.origin }, { key: 'priority', label: 'Prioridade', value: s.priority, options: [['low', 'Baixa'], ['normal', 'Normal'], ['high', 'Alta']] }, { key: 'due', label: 'Prazo', type: 'date', value: s.due }, { key: 'next', label: 'Próxima ação', value: s.next }]} /><ActionForm title={'Etapa atual: ' + s.stage} action="stage" run={run} fields={[{ key: 'stage', label: 'Próxima etapa', options: [['lead', 'Lead'], ['qualification', 'Qualificação'], ['briefing', 'Briefing inicial'], ['lost', 'Perdido'], ['cancelled', 'Cancelado']] }, { ...evidenceField, optional: true }]} button="Registrar mudança" /></div>}
-        {section === 'briefing' && <div className="prototype-two"><div><GlassSurface className="prototype-panel"><h2>Conversa e evidências</h2>{!s.messages.length && <p>Comece colando a transcrição ou descrevendo o evento. A demonstração identifica campos explícitos, como “Objetivo: …”. Sem rótulos, sugere o texto como escopo. Não é IA real.</p>}{s.messages.map(message => <article className="prototype-message" key={message.id}><small>Mensagem #{message.id} · {message.author}</small><p>{message.body}</p></article>)}</GlassSurface><ActionForm title="Adicionar contexto" action="message" run={run} fields={[{ key: 'text', label: 'Texto ou transcrição', type: 'textarea' }]} button="Enviar contexto" /><GlassSurface className="prototype-panel"><h2>Sugestões revisáveis · demonstração</h2>{s.suggestions.map(suggestion => <article className="prototype-message" key={suggestion.id}><strong>{briefingLabels[suggestion.field]} · origem: mensagem #{suggestion.messageId}</strong><p>Atual: {suggestion.current || 'Vazio'}</p><p>Sugestão: {suggestion.suggested}</p>{suggestion.status === 'pending' ? <div className="prototype-actions"><button className="button button-primary" onClick={() => run('suggestion', { id: suggestion.id, decision: 'accepted' })}>Aceitar</button><button className="button button-subtle" onClick={() => run('suggestion', { id: suggestion.id, decision: 'rejected' })}>Rejeitar</button></div> : <p>{suggestion.status === 'accepted' ? 'Aceita' : 'Rejeitada'}</p>}</article>)}<p>Anexos privados reais serão integrados na próxima entrega. Aqui, registre a referência textual, sem enviar arquivos pessoais.</p></GlassSurface></div><GlassSurface className="prototype-panel"><h2>Briefing estruturado</h2><p>{s.briefingApproved ? 'Revisão humana registrada' : 'Lacunas: ' + missing.map(key => briefingLabels[key]).join(', ')}</p><form className="form-grid" onSubmit={e => { e.preventDefault(); run('briefing_save', { briefing }); }}>{Object.entries(briefingLabels).map(([key, label]) => <label key={key}>{label}<textarea rows={2} value={briefing[key]} onChange={e => setBriefing(values => ({ ...values, [key]: e.target.value }))} /></label>)}<button className="button button-primary">Salvar briefing manual</button></form><button className="button button-subtle" onClick={() => run('briefing_approve')}>Registrar revisão humana</button></GlassSurface></div>}
-        {section === 'viability' && <div className="prototype-two"><GlassSurface className="prototype-panel"><h2>Uma entrega independente</h2><p>{status[s.viability]} · {s.modality === 'complete' ? 'Completo' : 'Express'}</p><p>Contratar o projeto não significa aceitar sua entrega nem contratar a Gestão.</p>{Object.entries(deliverables).filter(([key]) => s.modality === 'complete' || !['model_3d', 'floor_plan'].includes(key)).map(([key, label]) => <label className="prototype-check" key={key}><input type="checkbox" checked={checked.includes(key)} onChange={e => setChecked(values => e.target.checked ? [...values, key] : values.filter(value => value !== key))} />{label}</label>)}<p>3D e planta são entregáveis externos: neste protótipo, registre suas referências na evidência de entrega.</p><p>Projeto estratégico: escopo e preço ainda pendentes de definição.</p></GlassSurface><div>{s.viability === 'not_contracted' && <ActionForm title="Contratação da Viabilidade" action="contract_viability" run={run} fields={[{ key: 'modality', label: 'Modalidade', value: 'express', options: [['express', 'Express'], ['complete', 'Completo']] }, evidenceField]} button="Simular contratação" />}{s.viability === 'in_progress' && <ActionForm title="Entrega do projeto" action="deliver_viability" run={run} fields={[evidenceField]} extra={{ deliverables: checked }} button="Registrar entrega" />}{s.viability === 'delivered' && <ActionForm title="Aceite da entrega" action="accept_viability" run={run} fields={[evidenceField]} button="Registrar aceite simulado" />}{s.viability === 'accepted' && s.management === 'not_contracted' && <><ActionForm title="Encerrar sem Gestão" action="close_viability" run={run} fields={[evidenceField]} button="Concluir Viabilidade" /><ActionForm title="Continuar com Gestão" action="contract_management" run={run} fields={[evidenceField]} button="Registrar contratação de Gestão" /><p>Para contratar Gestão, primeiro prepare e registre o aceite da proposta na aba Documentos.</p></>}</div></div>}
-        {section === 'suppliers' && <div className="prototype-two"><GlassSurface className="prototype-panel"><h2>Comparar cotações</h2><p>Fornecedores fictícios deste cenário. Seleção não equivale a contratação.</p>{s.quotes.map(quote => <article className="prototype-message" key={quote.id}><strong>{quote.supplier} · {money(quote.costCents)}</strong><p>{quote.service} · válida até {quote.validUntil}</p><p>{quote.conditions}</p><small>Evidência: {quote.evidence}</small><Link className="button button-subtle" href={href('budget')}>Usar no orçamento →</Link></article>)}{!s.quotes.length && <p>Nenhuma cotação registrada.</p>}</GlassSurface><ActionForm title="Nova cotação demonstrativa" action="quote" run={run} fields={quoteFields} /></div>}
-        {section === 'budget' && <><GlassSurface className="prototype-panel"><div className="panel-heading"><div><span className="eyebrow">VERSÃO {s.budgetVersion} · {status[s.budgetStatus]}</span><h2>{money(total)}</h2></div><div className="prototype-actions"><button className="button button-subtle" onClick={() => run('budget_version')}>Nova versão</button><button className="button button-primary" onClick={() => run('budget_review')}>Revisar demonstração</button></div></div><p>Taxas livres para testar o cálculo, sem aprovação comercial real. Investimento informado: {s.briefing.investment || 'Não informado'}. Taxas percentuais simuladas; administração sobre custo + Gestão.</p><div className="prototype-table-wrap"><table><thead><tr><th>Item</th><th>Qtd.</th><th>Custo</th><th>Gestão</th><th>Administração</th><th>Total</th><th>Ação</th></tr></thead><tbody>{s.items.map(item => <tr key={item.id}><td>{item.description}<small>{item.supplier}</small></td><td>{item.quantity}</td><td>{money(item.baseCents)}</td><td>{money(item.managementCents)}</td><td>{money(item.administrationCents)}</td><td>{money(item.totalCents)}</td><td><button className="button button-subtle" disabled={s.budgetStatus === 'reviewed'} onClick={() => run('item_remove', { id: item.id })}>Remover</button></td></tr>)}</tbody></table></div></GlassSurface><div className="prototype-two"><ActionForm title="Adicionar item" action="item" run={run} fields={[{ key: 'description', label: 'Descrição' }, { key: 'quote_id', label: 'Cotação (opcional)', optional: true, options: s.quotes.map(q => [String(q.id), q.supplier + ' · ' + money(q.costCents)]) }, { key: 'quantity', label: 'Quantidade', type: 'number', value: '1' }, { key: 'cost', label: 'Custo unitário R$ (substituído pela cotação selecionada)', value: '1200,00' }, { key: 'management_percent', label: 'Gestão (%) · simulação', type: 'number', value: '0' }, { key: 'administration_percent', label: 'Administração (%) · simulação', type: 'number', value: '0' }]} /><GlassSurface className="prototype-panel"><h2>Versões revisadas preservadas</h2>{s.budgetSnapshots.map((snapshot, i) => <p key={i}>v{snapshot.version} · {money(snapshot.totalCents)} · {snapshot.items.length} itens · demonstração</p>)}<p>O orçamento real completo, com contingência e edição de itens, continua disponível nos casos da equipe. Aqui validamos o fluxo conectado sem alterar esses registros.</p></GlassSurface></div></>}
-        {section === 'documents' && <div className="prototype-two"><div><ActionForm title="Preparar nova versão" action="document" run={run} fields={[{ key: 'document_type', label: 'Documento', value: 'proposal', options: [['proposal', 'Proposta'], ['contract', 'Contrato demonstrativo']] }, { key: 'purpose', label: 'Contratação', value: 'management', options: [['viability', 'Viabilidade'], ['management', 'Gestão']] }, { key: 'text', label: 'Escopo, condições e observações', type: 'textarea' }]} button="Gerar a partir dos snapshots" /><p>Contratos são apenas estrutura demonstrativa, sem cláusulas jurídicas aprovadas. A impressão permite salvar PDF pelo navegador; geração automática de PDF final ainda não está integrada.</p></div><GlassSurface className="prototype-panel"><h2>Fila de revisão e versões</h2>{s.documents.map(doc => <article className="prototype-document" key={doc.id}><strong>{doc.type === 'contract' ? 'Contrato' : 'Proposta'} de {doc.purpose === 'management' ? 'Gestão' : 'Viabilidade'} · v{doc.version}</strong><p>{status[doc.status]} · Orçamento v{doc.budget.version} · {money(doc.budget.totalCents)}</p><p>{doc.notes}</p>{doc.stale && <p className="prototype-warning">Alterações posteriores: gere uma nova versão.</p>}<a className="button button-subtle" href={'/prototype/' + record.id + '/documents/' + doc.id + '/print'} target="_blank" rel="noreferrer">Preview / impressão</a>{!doc.stale && doc.status !== 'accepted_demo' && <ActionForm title={doc.status === 'review' ? 'Decisão do revisor' : doc.status === 'approved_demo' ? 'Registrar envio simulado' : 'Registrar aceite simulado'} action={doc.status === 'review' ? 'document_review' : doc.status === 'approved_demo' ? 'document_send' : 'document_accept'} run={run} extra={{ id: doc.id }} fields={[evidenceField]} />}</article>)}{!s.documents.length && <p>Revise briefing e orçamento para preparar a primeira versão.</p>}</GlassSurface></div>}
-        {section === 'production' && <><GlassSurface className="prototype-panel"><div className="panel-heading"><div><h2>{status[s.management]}</h2><p>Tempos e movimentos · preparação, montagem, evento e retirada.</p></div><div className="prototype-actions"><button className="button button-primary" disabled={s.management !== 'planning'} onClick={() => run('execution')}>Liberar montagem / evento</button><button className="button button-subtle" disabled={s.management !== 'execution'} onClick={() => run('post_start')}>Passar ao pós-evento</button></div></div></GlassSurface><div className="prototype-two"><div><ActionForm title="Visita técnica" action="technical_save" run={run} fields={[{ key: 'description', label: 'Medidas, desenho de referência e item', value: s.technical.description }, { key: 'quantity', label: 'Quantidade', type: 'number', value: String(s.technical.quantity || 1) }]} /><ActionForm title={s.technical.confirmed ? 'Fornecedor reconfirmado' : 'Reconfirmação pendente'} action="technical_confirm" run={run} fields={[evidenceField]} button="Registrar reconfirmação" /><p>{s.technical.evidence}</p></div><ActionForm title="Tarefa / compromisso" action="task" run={run} fields={[{ key: 'text', label: 'O que precisa ser feito?' }, { key: 'owner', label: 'Responsável', value: s.owner }, { key: 'due', label: 'Prazo', type: 'date', value: s.due }, { key: 'phase', label: 'Fase', value: 'preparation', options: [['preparation', 'Preparação'], ['setup', 'Montagem'], ['event', 'Evento'], ['teardown', 'Desmontagem']] }, { key: 'priority', label: 'Prioridade', value: 'normal', options: [['low', 'Baixa'], ['normal', 'Normal'], ['high', 'Alta']] }, { key: 'dependency', label: 'Depende de (opcional)', optional: true, options: s.tasks.map(task => [String(task.id), task.title]) }]} /></div><GlassSurface className="prototype-panel"><h2>Agora e a seguir</h2><label>Filtrar tarefas<select value={taskFilter} onChange={e => setTaskFilter(e.target.value)}><option value="all">Todas</option><option value="todo">Pendentes</option><option value="done">Concluídas</option></select></label>{s.tasks.filter(task => taskFilter === 'all' || task.status === taskFilter).map(task => <article className="prototype-task" key={task.id}><div><strong>{task.title}</strong><p>{task.owner} · {task.due} · {status[task.phase]} · {task.priority}</p><small>{task.dependency ? 'Depende da tarefa #' + task.dependency : 'Sem dependência'} · {status[task.status]}</small></div><button className="button button-subtle" disabled={task.status === 'done'} onClick={() => run('task_done', { id: task.id })}>Concluir</button></article>)}</GlassSurface></>}
-        {section === 'post-event' && <><div className="prototype-two"><ActionForm title="Ocorrência e solução" action="occurrence" run={run} fields={[{ key: 'text', label: 'O que aconteceu?', type: 'textarea' }, { key: 'solution', label: 'Solução / decisão', type: 'textarea' }, { key: 'cost', label: 'Custo extra (R$)', value: '0' }]} /><ActionForm title="Memória do evento" action="post_save" run={run} fields={[{ key: 'text', label: 'Síntese', type: 'textarea', value: s.post.summary }, { key: 'learning', label: 'Aprendizado para o próximo evento', type: 'textarea', value: s.post.learning }, { key: 'cost', label: 'Valor realizado informado (R$)', value: (s.post.actualCents / 100).toFixed(2) }, { key: 'rating', label: 'Avaliação dos fornecedores · demonstração', value: String(s.post.rating || 5), options: [['1', '1 · Ruim'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5 · Ótimo']] }]} /></div><GlassSurface className="prototype-panel"><h2>Previsto × realizado informado</h2><p>Último orçamento revisado: {money(s.budgetSnapshots.at(-1)?.totalCents ?? 0)} · Realizado: {money(s.post.actualCents)}</p>{s.occurrences.map((occurrence, i) => <article className="prototype-message" key={i}><strong>{occurrence.description}</strong><p>{occurrence.solution} · Extra {money(occurrence.extraCents)}</p></article>)}<p>Antes de encerrar: concluir tarefas, registrar síntese e aprendizado e resolver revisões técnicas/orçamentárias.</p><button className="button button-primary" onClick={() => run('close_event')}>Encerrar cenário do evento</button></GlassSurface></>}
-        </fieldset>
-        {section === 'history' && <GlassSurface className="prototype-panel"><h2>Histórico e aprendizado</h2><label>Buscar ação, pessoa ou evidência<input value={search} onChange={e => setSearch(e.target.value)} /></label><p>{s.history.length} ações registradas neste teste · tempos e conversões reais ainda sem amostra validada.</p>{s.history.filter(entry => (entry.action + entry.user + entry.evidence).toLowerCase().includes(search.toLowerCase())).slice().reverse().map(entry => <article className="prototype-message" key={entry.revision}><strong>{entry.action} · revisão {entry.revision}</strong><p>{entry.user} · {new Date(entry.at).toLocaleString('pt-BR')}</p><p>{entry.evidence}</p><small>Demonstração · DEMO-{record.id}</small></article>)}{s.post.learning && <p><strong>Aprendizado registrado:</strong> {s.post.learning}</p>}</GlassSurface>}
-    </AppLayout>;
+    const missing = Object.keys(briefingLabels).filter((key) => !s.briefing[key]);
+    const quoteFields: Field[] = [
+        { key: 'supplier', label: 'Fornecedor fictício' },
+        { key: 'description', label: 'Serviço / escopo' },
+        { key: 'cost', label: 'Custo unitário (R$)', value: '1200,00' },
+        { key: 'valid_until', label: 'Válida até', type: 'date' },
+        { key: 'conditions', label: 'Condições', optional: true },
+        evidenceField,
+    ];
+    return (
+        <AppLayout>
+            <Head title={sections.find(([key]) => key === section)?.[1] + ' · Horizonte'} />
+            <header className="topbar">
+                <div>
+                    <Link className="back-link" href="/projects">
+                        ← Projetos e cenários
+                    </Link>
+                    <span className="eyebrow">
+                        DEMO-{record.id} · REVISÃO {record.revision}
+                    </span>
+                    <h1>{record.title}</h1>
+                    <p>
+                        {s.client} · {s.owner} · Prazo {s.due}
+                    </p>
+                </div>
+                <span className="status-pill violet">Demonstração persistente</span>
+            </header>
+            <div className="prototype-safety">
+                <strong>Laboratório isolado</strong>
+                <span>
+                    Somente dados fictícios. Nenhum envio, contratação ou chamada à IA externa. Registros e documentos permanecem marcados
+                    como demonstração.
+                </span>
+            </div>
+            <AssistanceSteps
+                current={
+                    !s.messages.length
+                        ? 0
+                        : !s.briefingApproved
+                          ? 1
+                          : s.budgetStatus === 'draft'
+                            ? 3
+                            : s.management === 'not_contracted'
+                              ? 4
+                              : 5
+                }
+            />
+            <nav className="prototype-tabs" aria-label="Módulos do caso">
+                {sections.map(([key, label]) => (
+                    <Link
+                        key={key}
+                        href={href(key)}
+                        className={section === key ? 'active' : ''}
+                        aria-current={section === key ? 'page' : undefined}
+                    >
+                        {label}
+                    </Link>
+                ))}
+            </nav>
+            <div className="prototype-feedback" aria-live="polite">
+                {busy && <p>Salvando alterações…</p>}
+                {errors.length > 0 && (
+                    <div role="alert">
+                        <strong>Precisamos resolver antes de continuar</strong>
+                        {errors.map((error) => (
+                            <p key={error}>{error}</p>
+                        ))}
+                        <button className="button button-subtle" onClick={() => router.reload()}>
+                            Atualizar dados do caso
+                        </button>
+                        <small>Copie qualquer texto ainda não salvo antes de atualizar.</small>
+                    </div>
+                )}
+                {s.outcome && (
+                    <p className="prototype-success">
+                        {s.outcome === 'viability_completed'
+                            ? 'Viabilidade concluída sem Gestão — resultado válido, não é perda.'
+                            : s.outcome === 'event_completed'
+                              ? 'Evento encerrado. Aprendizados preservados.'
+                              : 'Cenário encerrado: ' + s.outcome}{' '}
+                        <Link href="/projects">Criar outro teste →</Link>
+                    </p>
+                )}
+            </div>
+            <fieldset key={section} className="prototype-fieldset" disabled={busy || !!s.outcome}>
+                {section === 'overview' && (
+                    <>
+                        <GlassSurface className="prototype-panel">
+                            <div className="panel-heading">
+                                <div>
+                                    <span className="eyebrow">PRÓXIMA AÇÃO</span>
+                                    <h2>{s.next}</h2>
+                                </div>
+                                <button className="button button-subtle" onClick={() => setGuideOpen(!guideOpen)}>
+                                    {guideOpen ? 'Recolher roteiro' : 'Mostrar roteiro'}
+                                </button>
+                            </div>
+                            <p>
+                                Responsável: {s.owner} · Prioridade: {s.priority} ·{' '}
+                                {s.tasks.filter((task) => task.status !== 'done').length} tarefas pendentes
+                            </p>
+                            {guideOpen && (
+                                <div className="prototype-guide">
+                                    {guide.map(([action, target, label]) => (
+                                        <Link key={action} href={href(target)}>
+                                            <span className={s.completedSteps.includes(action) ? 'checked' : ''}>
+                                                {s.completedSteps.includes(action) ? '✓' : '○'}
+                                            </span>
+                                            {label}
+                                        </Link>
+                                    ))}
+                                    <Link href={href('viability')}>Caminho alternativo: encerrar sem Gestão →</Link>
+                                </div>
+                            )}
+                        </GlassSurface>
+                        <div className="prototype-card-grid">
+                            {[
+                                ['Briefing', s.briefingApproved ? 'Revisado' : missing.length + ' campos sem informação', 'briefing'],
+                                ['Viabilidade', status[s.viability], 'viability'],
+                                ['Orçamento', money(total), 'budget'],
+                                [
+                                    'Revisões',
+                                    s.documents.filter((d) => d.status === 'review' || d.stale).length + ' documentos',
+                                    'documents',
+                                ],
+                                ['Gestão', status[s.management], 'production'],
+                                ['Validação técnica', s.technical.confirmed ? 'Reconfirmada' : 'Pendente', 'production'],
+                            ].map(([title, value, target]) => (
+                                <Link className="prototype-project" key={title} href={href(target)}>
+                                    <span className="eyebrow">{title}</span>
+                                    <h2>{value}</h2>
+                                    <strong>Abrir →</strong>
+                                </Link>
+                            ))}
+                        </div>
+                        <GlassSurface className="prototype-panel">
+                            <h2>Impactos das últimas alterações</h2>
+                            {s.impacts.length ? (
+                                s.impacts.slice(-4).map((impact, i) => <p key={i}>{impact}</p>)
+                            ) : (
+                                <p>Nenhuma mudança com impacto registrada ainda.</p>
+                            )}
+                        </GlassSurface>
+                    </>
+                )}
+                {section === 'commercial' && (
+                    <div className="prototype-two">
+                        <ActionForm
+                            title="Contexto comercial"
+                            action="case_save"
+                            run={run}
+                            fields={[
+                                { key: 'client', label: 'Cliente', value: s.client },
+                                { key: 'owner', label: 'Responsável', value: s.owner },
+                                { key: 'origin', label: 'Origem', value: s.origin },
+                                {
+                                    key: 'priority',
+                                    label: 'Prioridade',
+                                    value: s.priority,
+                                    options: [
+                                        ['low', 'Baixa'],
+                                        ['normal', 'Normal'],
+                                        ['high', 'Alta'],
+                                    ],
+                                },
+                                { key: 'due', label: 'Prazo', type: 'date', value: s.due },
+                                { key: 'next', label: 'Próxima ação', value: s.next },
+                            ]}
+                        />
+                        <ActionForm
+                            title={'Etapa atual: ' + s.stage}
+                            action="stage"
+                            run={run}
+                            fields={[
+                                {
+                                    key: 'stage',
+                                    label: 'Próxima etapa',
+                                    options: [
+                                        ['lead', 'Lead'],
+                                        ['qualification', 'Qualificação'],
+                                        ['briefing', 'Briefing inicial'],
+                                        ['lost', 'Perdido'],
+                                        ['cancelled', 'Cancelado'],
+                                    ],
+                                },
+                                { ...evidenceField, optional: true },
+                            ]}
+                            button="Registrar mudança"
+                        />
+                    </div>
+                )}
+                {section === 'briefing' && (
+                    <div className="prototype-two">
+                        <div>
+                            <GlassSurface className="prototype-panel">
+                                <h2>Conversa e evidências</h2>
+                                {!s.messages.length && (
+                                    <p>
+                                        Comece colando a transcrição ou descrevendo o evento. A demonstração identifica campos explícitos,
+                                        como “Objetivo: …”. Sem rótulos, sugere o texto como escopo. Não é IA real.
+                                    </p>
+                                )}
+                                {s.messages.map((message) => (
+                                    <article className="prototype-message" key={message.id}>
+                                        <small>
+                                            Mensagem #{message.id} · {message.author}
+                                        </small>
+                                        <p>{message.body}</p>
+                                    </article>
+                                ))}
+                            </GlassSurface>
+                            <ActionForm
+                                title="Adicionar contexto"
+                                action="message"
+                                run={run}
+                                fields={[{ key: 'text', label: 'Texto ou transcrição', type: 'textarea' }]}
+                                button="Enviar contexto"
+                            />
+                            <GlassSurface className="prototype-panel">
+                                <h2>Sugestões revisáveis · demonstração</h2>
+                                {s.suggestions.map((suggestion) => (
+                                    <article className="prototype-message" key={suggestion.id}>
+                                        <strong>
+                                            {briefingLabels[suggestion.field]} · origem: mensagem #{suggestion.messageId}
+                                        </strong>
+                                        <p>Atual: {suggestion.current || 'Vazio'}</p>
+                                        <p>Sugestão: {suggestion.suggested}</p>
+                                        {suggestion.status === 'pending' ? (
+                                            <div className="prototype-actions">
+                                                <button
+                                                    className="button button-primary"
+                                                    onClick={() => run('suggestion', { id: suggestion.id, decision: 'accepted' })}
+                                                >
+                                                    Aceitar
+                                                </button>
+                                                <button
+                                                    className="button button-subtle"
+                                                    onClick={() => run('suggestion', { id: suggestion.id, decision: 'rejected' })}
+                                                >
+                                                    Rejeitar
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <p>{suggestion.status === 'accepted' ? 'Aceita' : 'Rejeitada'}</p>
+                                        )}
+                                    </article>
+                                ))}
+                                <p>
+                                    Anexos privados reais serão integrados na próxima entrega. Aqui, registre a referência textual, sem
+                                    enviar arquivos pessoais.
+                                </p>
+                            </GlassSurface>
+                        </div>
+                        <GlassSurface className="prototype-panel">
+                            <h2>Briefing estruturado</h2>
+                            <p>
+                                {s.briefingApproved
+                                    ? 'Revisão humana registrada'
+                                    : 'Lacunas: ' + missing.map((key) => briefingLabels[key]).join(', ')}
+                            </p>
+                            <form
+                                className="form-grid"
+                                onSubmit={(e) => {
+                                    e.preventDefault();
+                                    run('briefing_save', { briefing });
+                                }}
+                            >
+                                {Object.entries(briefingLabels).map(([key, label]) => (
+                                    <label key={key}>
+                                        {label}
+                                        <textarea
+                                            rows={2}
+                                            value={briefing[key]}
+                                            onChange={(e) => setBriefing((values) => ({ ...values, [key]: e.target.value }))}
+                                        />
+                                    </label>
+                                ))}
+                                <button className="button button-primary">Salvar briefing manual</button>
+                            </form>
+                            <button className="button button-subtle" onClick={() => run('briefing_approve')}>
+                                Registrar revisão humana
+                            </button>
+                        </GlassSurface>
+                    </div>
+                )}
+                {section === 'viability' && (
+                    <div className="prototype-two">
+                        <GlassSurface className="prototype-panel">
+                            <h2>Uma entrega independente</h2>
+                            <p>
+                                {status[s.viability]} · {s.modality === 'complete' ? 'Completo' : 'Express'}
+                            </p>
+                            <p>Contratar o projeto não significa aceitar sua entrega nem contratar a Gestão.</p>
+                            {Object.entries(deliverables)
+                                .filter(([key]) => s.modality === 'complete' || !['model_3d', 'floor_plan'].includes(key))
+                                .map(([key, label]) => (
+                                    <label className="prototype-check" key={key}>
+                                        <input
+                                            type="checkbox"
+                                            checked={checked.includes(key)}
+                                            onChange={(e) =>
+                                                setChecked((values) =>
+                                                    e.target.checked ? [...values, key] : values.filter((value) => value !== key),
+                                                )
+                                            }
+                                        />
+                                        {label}
+                                    </label>
+                                ))}
+                            <p>3D e planta são entregáveis externos: neste protótipo, registre suas referências na evidência de entrega.</p>
+                            <p>Projeto estratégico: escopo e preço ainda pendentes de definição.</p>
+                        </GlassSurface>
+                        <div>
+                            {s.viability === 'not_contracted' && (
+                                <ActionForm
+                                    title="Contratação da Viabilidade"
+                                    action="contract_viability"
+                                    run={run}
+                                    fields={[
+                                        {
+                                            key: 'modality',
+                                            label: 'Modalidade',
+                                            value: 'express',
+                                            options: [
+                                                ['express', 'Express'],
+                                                ['complete', 'Completo'],
+                                            ],
+                                        },
+                                        evidenceField,
+                                    ]}
+                                    button="Simular contratação"
+                                />
+                            )}
+                            {s.viability === 'in_progress' && (
+                                <ActionForm
+                                    title="Entrega do projeto"
+                                    action="deliver_viability"
+                                    run={run}
+                                    fields={[evidenceField]}
+                                    extra={{ deliverables: checked }}
+                                    button="Registrar entrega"
+                                />
+                            )}
+                            {s.viability === 'delivered' && (
+                                <ActionForm
+                                    title="Aceite da entrega"
+                                    action="accept_viability"
+                                    run={run}
+                                    fields={[evidenceField]}
+                                    button="Registrar aceite simulado"
+                                />
+                            )}
+                            {s.viability === 'accepted' && s.management === 'not_contracted' && (
+                                <>
+                                    <ActionForm
+                                        title="Encerrar sem Gestão"
+                                        action="close_viability"
+                                        run={run}
+                                        fields={[evidenceField]}
+                                        button="Concluir Viabilidade"
+                                    />
+                                    <ActionForm
+                                        title="Continuar com Gestão"
+                                        action="contract_management"
+                                        run={run}
+                                        fields={[evidenceField]}
+                                        button="Registrar contratação de Gestão"
+                                    />
+                                    <p>Para contratar Gestão, primeiro prepare e registre o aceite da proposta na aba Documentos.</p>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+                {section === 'suppliers' && (
+                    <div className="prototype-two">
+                        <GlassSurface className="prototype-panel">
+                            <h2>Comparar cotações</h2>
+                            <p>Fornecedores fictícios deste cenário. Seleção não equivale a contratação.</p>
+                            {s.quotes.map((quote) => (
+                                <article className="prototype-message" key={quote.id}>
+                                    <strong>
+                                        {quote.supplier} · {money(quote.costCents)}
+                                    </strong>
+                                    <p>
+                                        {quote.service} · válida até {quote.validUntil}
+                                    </p>
+                                    <p>{quote.conditions}</p>
+                                    <small>Evidência: {quote.evidence}</small>
+                                    <Link className="button button-subtle" href={href('budget')}>
+                                        Usar no orçamento →
+                                    </Link>
+                                </article>
+                            ))}
+                            {!s.quotes.length && <p>Nenhuma cotação registrada.</p>}
+                        </GlassSurface>
+                        <ActionForm title="Nova cotação demonstrativa" action="quote" run={run} fields={quoteFields} />
+                    </div>
+                )}
+                {section === 'budget' && (
+                    <>
+                        <GlassSurface className="prototype-panel">
+                            <div className="panel-heading">
+                                <div>
+                                    <span className="eyebrow">
+                                        VERSÃO {s.budgetVersion} · {status[s.budgetStatus]}
+                                    </span>
+                                    <h2>{money(total)}</h2>
+                                </div>
+                                <div className="prototype-actions">
+                                    <button className="button button-subtle" onClick={() => run('budget_version')}>
+                                        Nova versão
+                                    </button>
+                                    <button className="button button-primary" onClick={() => run('budget_review')}>
+                                        Revisar demonstração
+                                    </button>
+                                </div>
+                            </div>
+                            <p>
+                                Taxas livres para testar o cálculo, sem aprovação comercial real. Investimento informado:{' '}
+                                {s.briefing.investment || 'Não informado'}. Taxas percentuais simuladas; administração sobre custo + Gestão.
+                            </p>
+                            <div className="prototype-table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qtd.</th>
+                                            <th>Custo</th>
+                                            <th>Gestão</th>
+                                            <th>Administração</th>
+                                            <th>Total</th>
+                                            <th>Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {s.items.map((item) => (
+                                            <tr key={item.id}>
+                                                <td>
+                                                    {item.description}
+                                                    <small>{item.supplier}</small>
+                                                </td>
+                                                <td>{item.quantity}</td>
+                                                <td>{money(item.baseCents)}</td>
+                                                <td>{money(item.managementCents)}</td>
+                                                <td>{money(item.administrationCents)}</td>
+                                                <td>{money(item.totalCents)}</td>
+                                                <td>
+                                                    <button
+                                                        className="button button-subtle"
+                                                        disabled={s.budgetStatus === 'reviewed'}
+                                                        onClick={() => run('item_remove', { id: item.id })}
+                                                    >
+                                                        Remover
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </GlassSurface>
+                        <div className="prototype-two">
+                            <ActionForm
+                                title="Adicionar item"
+                                action="item"
+                                run={run}
+                                fields={[
+                                    { key: 'description', label: 'Descrição' },
+                                    {
+                                        key: 'quote_id',
+                                        label: 'Cotação (opcional)',
+                                        optional: true,
+                                        options: s.quotes.map((q) => [String(q.id), q.supplier + ' · ' + money(q.costCents)]),
+                                    },
+                                    { key: 'quantity', label: 'Quantidade', type: 'number', value: '1' },
+                                    { key: 'cost', label: 'Custo unitário R$ (substituído pela cotação selecionada)', value: '1200,00' },
+                                    { key: 'management_percent', label: 'Gestão (%) · simulação', type: 'number', value: '0' },
+                                    { key: 'administration_percent', label: 'Administração (%) · simulação', type: 'number', value: '0' },
+                                ]}
+                            />
+                            <GlassSurface className="prototype-panel">
+                                <h2>Versões revisadas preservadas</h2>
+                                {s.budgetSnapshots.map((snapshot, i) => (
+                                    <p key={i}>
+                                        v{snapshot.version} · {money(snapshot.totalCents)} · {snapshot.items.length} itens · demonstração
+                                    </p>
+                                ))}
+                                <p>
+                                    O orçamento real completo, com contingência e edição de itens, continua disponível nos casos da equipe.
+                                    Aqui validamos o fluxo conectado sem alterar esses registros.
+                                </p>
+                            </GlassSurface>
+                        </div>
+                    </>
+                )}
+                {section === 'documents' && (
+                    <div className="prototype-two">
+                        <div>
+                            <ActionForm
+                                title="Preparar nova versão"
+                                action="document"
+                                run={run}
+                                fields={[
+                                    {
+                                        key: 'document_type',
+                                        label: 'Documento',
+                                        value: 'proposal',
+                                        options: [
+                                            ['proposal', 'Proposta'],
+                                            ['contract', 'Contrato demonstrativo'],
+                                        ],
+                                    },
+                                    {
+                                        key: 'purpose',
+                                        label: 'Contratação',
+                                        value: 'management',
+                                        options: [
+                                            ['viability', 'Viabilidade'],
+                                            ['management', 'Gestão'],
+                                        ],
+                                    },
+                                    { key: 'text', label: 'Escopo, condições e observações', type: 'textarea' },
+                                ]}
+                                button="Gerar a partir dos snapshots"
+                            />
+                            <p>
+                                Contratos são apenas estrutura demonstrativa, sem cláusulas jurídicas aprovadas. A impressão permite salvar
+                                PDF pelo navegador; geração automática de PDF final ainda não está integrada.
+                            </p>
+                        </div>
+                        <GlassSurface className="prototype-panel">
+                            <h2>Fila de revisão e versões</h2>
+                            {s.documents.map((doc) => (
+                                <article className="prototype-document" key={doc.id}>
+                                    <strong>
+                                        {doc.type === 'contract' ? 'Contrato' : 'Proposta'} de{' '}
+                                        {doc.purpose === 'management' ? 'Gestão' : 'Viabilidade'} · v{doc.version}
+                                    </strong>
+                                    <p>
+                                        {status[doc.status]} · Orçamento v{doc.budget.version} · {money(doc.budget.totalCents)}
+                                    </p>
+                                    <p>{doc.notes}</p>
+                                    {doc.stale && <p className="prototype-warning">Alterações posteriores: gere uma nova versão.</p>}
+                                    <a
+                                        className="button button-subtle"
+                                        href={'/prototype/' + record.id + '/documents/' + doc.id + '/print'}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        Preview / impressão
+                                    </a>
+                                    {!doc.stale && doc.status !== 'accepted_demo' && (
+                                        <ActionForm
+                                            title={
+                                                doc.status === 'review'
+                                                    ? 'Decisão do revisor'
+                                                    : doc.status === 'approved_demo'
+                                                      ? 'Registrar envio simulado'
+                                                      : 'Registrar aceite simulado'
+                                            }
+                                            action={
+                                                doc.status === 'review'
+                                                    ? 'document_review'
+                                                    : doc.status === 'approved_demo'
+                                                      ? 'document_send'
+                                                      : 'document_accept'
+                                            }
+                                            run={run}
+                                            extra={{ id: doc.id }}
+                                            fields={[evidenceField]}
+                                        />
+                                    )}
+                                </article>
+                            ))}
+                            {!s.documents.length && <p>Revise briefing e orçamento para preparar a primeira versão.</p>}
+                        </GlassSurface>
+                    </div>
+                )}
+                {section === 'production' && (
+                    <>
+                        <GlassSurface className="prototype-panel">
+                            <div className="panel-heading">
+                                <div>
+                                    <h2>{status[s.management]}</h2>
+                                    <p>Tempos e movimentos · preparação, montagem, evento e retirada.</p>
+                                </div>
+                                <div className="prototype-actions">
+                                    <button
+                                        className="button button-primary"
+                                        disabled={s.management !== 'planning'}
+                                        onClick={() => run('execution')}
+                                    >
+                                        Liberar montagem / evento
+                                    </button>
+                                    <button
+                                        className="button button-subtle"
+                                        disabled={s.management !== 'execution'}
+                                        onClick={() => run('post_start')}
+                                    >
+                                        Passar ao pós-evento
+                                    </button>
+                                </div>
+                            </div>
+                        </GlassSurface>
+                        <div className="prototype-two">
+                            <div>
+                                <ActionForm
+                                    title="Visita técnica"
+                                    action="technical_save"
+                                    run={run}
+                                    fields={[
+                                        {
+                                            key: 'description',
+                                            label: 'Medidas, desenho de referência e item',
+                                            value: s.technical.description,
+                                        },
+                                        { key: 'quantity', label: 'Quantidade', type: 'number', value: String(s.technical.quantity || 1) },
+                                    ]}
+                                />
+                                <ActionForm
+                                    title={s.technical.confirmed ? 'Fornecedor reconfirmado' : 'Reconfirmação pendente'}
+                                    action="technical_confirm"
+                                    run={run}
+                                    fields={[evidenceField]}
+                                    button="Registrar reconfirmação"
+                                />
+                                <p>{s.technical.evidence}</p>
+                            </div>
+                            <ActionForm
+                                title="Tarefa / compromisso"
+                                action="task"
+                                run={run}
+                                fields={[
+                                    { key: 'text', label: 'O que precisa ser feito?' },
+                                    { key: 'owner', label: 'Responsável', value: s.owner },
+                                    { key: 'due', label: 'Prazo', type: 'date', value: s.due },
+                                    {
+                                        key: 'phase',
+                                        label: 'Fase',
+                                        value: 'preparation',
+                                        options: [
+                                            ['preparation', 'Preparação'],
+                                            ['setup', 'Montagem'],
+                                            ['event', 'Evento'],
+                                            ['teardown', 'Desmontagem'],
+                                        ],
+                                    },
+                                    {
+                                        key: 'priority',
+                                        label: 'Prioridade',
+                                        value: 'normal',
+                                        options: [
+                                            ['low', 'Baixa'],
+                                            ['normal', 'Normal'],
+                                            ['high', 'Alta'],
+                                        ],
+                                    },
+                                    {
+                                        key: 'dependency',
+                                        label: 'Depende de (opcional)',
+                                        optional: true,
+                                        options: s.tasks.map((task) => [String(task.id), task.title]),
+                                    },
+                                ]}
+                            />
+                        </div>
+                        <GlassSurface className="prototype-panel">
+                            <h2>Agora e a seguir</h2>
+                            <label>
+                                Filtrar tarefas
+                                <select value={taskFilter} onChange={(e) => setTaskFilter(e.target.value)}>
+                                    <option value="all">Todas</option>
+                                    <option value="todo">Pendentes</option>
+                                    <option value="done">Concluídas</option>
+                                </select>
+                            </label>
+                            {s.tasks
+                                .filter((task) => taskFilter === 'all' || task.status === taskFilter)
+                                .map((task) => (
+                                    <article className="prototype-task" key={task.id}>
+                                        <div>
+                                            <strong>{task.title}</strong>
+                                            <p>
+                                                {task.owner} · {task.due} · {status[task.phase]} · {task.priority}
+                                            </p>
+                                            <small>
+                                                {task.dependency ? 'Depende da tarefa #' + task.dependency : 'Sem dependência'} ·{' '}
+                                                {status[task.status]}
+                                            </small>
+                                        </div>
+                                        <button
+                                            className="button button-subtle"
+                                            disabled={task.status === 'done'}
+                                            onClick={() => run('task_done', { id: task.id })}
+                                        >
+                                            Concluir
+                                        </button>
+                                    </article>
+                                ))}
+                        </GlassSurface>
+                    </>
+                )}
+                {section === 'post-event' && (
+                    <>
+                        <div className="prototype-two">
+                            <ActionForm
+                                title="Ocorrência e solução"
+                                action="occurrence"
+                                run={run}
+                                fields={[
+                                    { key: 'text', label: 'O que aconteceu?', type: 'textarea' },
+                                    { key: 'solution', label: 'Solução / decisão', type: 'textarea' },
+                                    { key: 'cost', label: 'Custo extra (R$)', value: '0' },
+                                ]}
+                            />
+                            <ActionForm
+                                title="Memória do evento"
+                                action="post_save"
+                                run={run}
+                                fields={[
+                                    { key: 'text', label: 'Síntese', type: 'textarea', value: s.post.summary },
+                                    {
+                                        key: 'learning',
+                                        label: 'Aprendizado para o próximo evento',
+                                        type: 'textarea',
+                                        value: s.post.learning,
+                                    },
+                                    { key: 'cost', label: 'Valor realizado informado (R$)', value: (s.post.actualCents / 100).toFixed(2) },
+                                    {
+                                        key: 'rating',
+                                        label: 'Avaliação dos fornecedores · demonstração',
+                                        value: String(s.post.rating || 5),
+                                        options: [
+                                            ['1', '1 · Ruim'],
+                                            ['2', '2'],
+                                            ['3', '3'],
+                                            ['4', '4'],
+                                            ['5', '5 · Ótimo'],
+                                        ],
+                                    },
+                                ]}
+                            />
+                        </div>
+                        <GlassSurface className="prototype-panel">
+                            <h2>Previsto × realizado informado</h2>
+                            <p>
+                                Último orçamento revisado: {money(s.budgetSnapshots.at(-1)?.totalCents ?? 0)} · Realizado:{' '}
+                                {money(s.post.actualCents)}
+                            </p>
+                            {s.occurrences.map((occurrence, i) => (
+                                <article className="prototype-message" key={i}>
+                                    <strong>{occurrence.description}</strong>
+                                    <p>
+                                        {occurrence.solution} · Extra {money(occurrence.extraCents)}
+                                    </p>
+                                </article>
+                            ))}
+                            <p>
+                                Antes de encerrar: concluir tarefas, registrar síntese e aprendizado e resolver revisões
+                                técnicas/orçamentárias.
+                            </p>
+                            <button className="button button-primary" onClick={() => run('close_event')}>
+                                Encerrar cenário do evento
+                            </button>
+                        </GlassSurface>
+                    </>
+                )}
+            </fieldset>
+            {section === 'history' && (
+                <GlassSurface className="prototype-panel">
+                    <h2>Histórico e aprendizado</h2>
+                    <label>
+                        Buscar ação, pessoa ou evidência
+                        <input value={search} onChange={(e) => setSearch(e.target.value)} />
+                    </label>
+                    <p>{s.history.length} ações registradas neste teste · tempos e conversões reais ainda sem amostra validada.</p>
+                    {s.history
+                        .filter((entry) => (entry.action + entry.user + entry.evidence).toLowerCase().includes(search.toLowerCase()))
+                        .slice()
+                        .reverse()
+                        .map((entry) => (
+                            <article className="prototype-message" key={entry.revision}>
+                                <strong>
+                                    {entry.action} · revisão {entry.revision}
+                                </strong>
+                                <p>
+                                    {entry.user} · {new Date(entry.at).toLocaleString('pt-BR')}
+                                </p>
+                                <p>{entry.evidence}</p>
+                                <small>Demonstração · DEMO-{record.id}</small>
+                            </article>
+                        ))}
+                    {s.post.learning && (
+                        <p>
+                            <strong>Aprendizado registrado:</strong> {s.post.learning}
+                        </p>
+                    )}
+                </GlassSurface>
+            )}
+        </AppLayout>
+    );
 }

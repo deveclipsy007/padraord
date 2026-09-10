@@ -1,7 +1,11 @@
 import type { HTMLAttributes, ReactNode } from 'react';
 
 export function BentoGrid({ children, className = '', ...props }: HTMLAttributes<HTMLDivElement>) {
-    return <div className={`bento-grid ${className}`.trim()} {...props}>{children}</div>;
+    return (
+        <div className={`bento-grid ${className}`.trim()} {...props}>
+            {children}
+        </div>
+    );
 }
 
 type BentoItemProps = HTMLAttributes<HTMLDivElement> & {

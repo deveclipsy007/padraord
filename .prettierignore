@@ -1,0 +1,9 @@
+node_modules
+vendor
+public/build
+dist
+storage
+.playwright-cli
+test-results
+package-lock.json
+composer.lock

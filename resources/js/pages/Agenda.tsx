@@ -10,14 +10,129 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { Surface } from '../components/ui/Surface';
 
 type Option = { id: number; name?: string; title?: string };
-type Activity = { id: number; title: string; description: string | null; user_id: number | null; opportunity_id: number | null; status: string; priority: string; type: string; due_at: string | null; opportunity?: { title: string } | null; assignee?: { name: string } | null };
-type Task = { id: number; title: string; status: string; priority: string; due_date: string | null; opportunity_id: number; opportunity?: { title: string } };
-type Props = { activities: Activity[]; users: Option[]; opportunities: Option[]; tasks: Task[]; events: { id: number; title: string; event_date: string }[]; filters?: { owner?: string; status?: 'pending' | 'all'; priority?: string } };
-const eventDateLabel = (value: string) => { const parts = value.match(/^(\d{2})\/(\d{2})\/(\d{4})/) || value.match(/^(\d{4})-(\d{2})-(\d{2})/); if (!parts) return value; const iso = value.includes('-'); const day = iso ? Number(parts[3]) : Number(parts[1]); const month = Number(parts[2]); return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(new Date(2026, month - 1, day)); };
+type Activity = {
+    id: number;
+    title: string;
+    description: string | null;
+    user_id: number | null;
+    opportunity_id: number | null;
+    status: string;
+    priority: string;
+    type: string;
+    due_at: string | null;
+    opportunity?: { title: string } | null;
+    assignee?: { name: string } | null;
+};
+type Task = {
+    id: number;
+    title: string;
+    status: string;
+    priority: string;
+    due_date: string | null;
+    opportunity_id: number;
+    opportunity?: { title: string };
+};
+type Props = {
+    activities: Activity[];
+    users: Option[];
+    opportunities: Option[];
+    tasks: Task[];
+    events: { id: number; title: string; event_date: string }[];
+    filters?: { owner?: string; status?: 'pending' | 'all'; priority?: string };
+};
+const eventDateLabel = (value: string) => {
+    const parts = value.match(/^(\d{2})\/(\d{2})\/(\d{4})/) || value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!parts) return value;
+    const iso = value.includes('-');
+    const day = iso ? Number(parts[3]) : Number(parts[1]);
+    const month = Number(parts[2]);
+    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }).format(new Date(2026, month - 1, day));
+};
 
 function ActivityForm({ activity, users, opportunities }: { activity?: Activity; users: Option[]; opportunities: Option[] }) {
-    const form = useForm({ title: activity?.title || '', description: activity?.description || '', user_id: activity?.user_id?.toString() || '', opportunity_id: activity?.opportunity_id?.toString() || '', status: activity?.status || 'todo', priority: activity?.priority || 'normal', type: activity?.type || 'task', due_at: activity?.due_at?.slice(0, 16) || '' });
-    return <form className="form-grid" onSubmit={(event) => { event.preventDefault(); activity ? form.patch(`/activities/${activity.id}`) : form.post('/activities', { onSuccess: () => form.reset() }); }}><Field label="Atividade" error={form.errors.title}><input required value={form.data.title} onChange={(event) => form.setData('title', event.target.value)} /></Field><Field label="Descrição" error={form.errors.description}><textarea value={form.data.description} onChange={(event) => form.setData('description', event.target.value)} /></Field><Field label="Responsável" error={form.errors.user_id}><select value={form.data.user_id} onChange={(event) => form.setData('user_id', event.target.value)}><option value="">Sem responsável</option>{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></Field><Field label="Caso relacionado" error={form.errors.opportunity_id}><select value={form.data.opportunity_id} onChange={(event) => form.setData('opportunity_id', event.target.value)}><option value="">Tarefa interna (sem evento)</option>{opportunities.map((opportunity) => <option key={opportunity.id} value={opportunity.id}>{opportunity.title}</option>)}</select></Field><Field label="Prazo" error={form.errors.due_at}><input type="datetime-local" value={form.data.due_at} onChange={(event) => form.setData('due_at', event.target.value)} /></Field><Field label="Tipo" error={form.errors.type}><select value={form.data.type} onChange={(event) => form.setData('type', event.target.value)}><option value="task">Tarefa</option><option value="meeting">Reunião</option><option value="follow_up">Follow-up</option></select></Field><Field label="Prioridade" error={form.errors.priority}><select value={form.data.priority} onChange={(event) => form.setData('priority', event.target.value)}><option value="low">Baixa</option><option value="normal">Normal</option><option value="high">Alta</option></select></Field><Field label="Status" error={form.errors.status}><select value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}><option value="todo">A fazer</option><option value="in_progress">Em andamento</option><option value="done">Concluída</option><option value="cancelled">Cancelada</option></select></Field><FormErrors errors={form.errors} /><button className="button button-primary" disabled={form.processing}>{activity ? 'Salvar atividade' : 'Criar atividade'}</button>{activity && activity.status !== 'cancelled' && <ConfirmButton message="Cancelar esta atividade? O histórico será preservado." onConfirm={() => router.delete(`/activities/${activity.id}`)}>Cancelar atividade</ConfirmButton>}</form>;
+    const form = useForm({
+        title: activity?.title || '',
+        description: activity?.description || '',
+        user_id: activity?.user_id?.toString() || '',
+        opportunity_id: activity?.opportunity_id?.toString() || '',
+        status: activity?.status || 'todo',
+        priority: activity?.priority || 'normal',
+        type: activity?.type || 'task',
+        due_at: activity?.due_at?.slice(0, 16) || '',
+    });
+    return (
+        <form
+            className="form-grid"
+            onSubmit={(event) => {
+                event.preventDefault();
+                activity ? form.patch(`/activities/${activity.id}`) : form.post('/activities', { onSuccess: () => form.reset() });
+            }}
+        >
+            <Field label="Atividade" error={form.errors.title}>
+                <input required value={form.data.title} onChange={(event) => form.setData('title', event.target.value)} />
+            </Field>
+            <Field label="Descrição" error={form.errors.description}>
+                <textarea value={form.data.description} onChange={(event) => form.setData('description', event.target.value)} />
+            </Field>
+            <Field label="Responsável" error={form.errors.user_id}>
+                <select value={form.data.user_id} onChange={(event) => form.setData('user_id', event.target.value)}>
+                    <option value="">Sem responsável</option>
+                    {users.map((user) => (
+                        <option key={user.id} value={user.id}>
+                            {user.name}
+                        </option>
+                    ))}
+                </select>
+            </Field>
+            <Field label="Caso relacionado" error={form.errors.opportunity_id}>
+                <select value={form.data.opportunity_id} onChange={(event) => form.setData('opportunity_id', event.target.value)}>
+                    <option value="">Tarefa interna (sem evento)</option>
+                    {opportunities.map((opportunity) => (
+                        <option key={opportunity.id} value={opportunity.id}>
+                            {opportunity.title}
+                        </option>
+                    ))}
+                </select>
+            </Field>
+            <Field label="Prazo" error={form.errors.due_at}>
+                <input type="datetime-local" value={form.data.due_at} onChange={(event) => form.setData('due_at', event.target.value)} />
+            </Field>
+            <Field label="Tipo" error={form.errors.type}>
+                <select value={form.data.type} onChange={(event) => form.setData('type', event.target.value)}>
+                    <option value="task">Tarefa</option>
+                    <option value="meeting">Reunião</option>
+                    <option value="follow_up">Follow-up</option>
+                </select>
+            </Field>
+            <Field label="Prioridade" error={form.errors.priority}>
+                <select value={form.data.priority} onChange={(event) => form.setData('priority', event.target.value)}>
+                    <option value="low">Baixa</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">Alta</option>
+                </select>
+            </Field>
+            <Field label="Status" error={form.errors.status}>
+                <select value={form.data.status} onChange={(event) => form.setData('status', event.target.value)}>
+                    <option value="todo">A fazer</option>
+                    <option value="in_progress">Em andamento</option>
+                    <option value="done">Concluída</option>
+                    <option value="cancelled">Cancelada</option>
+                </select>
+            </Field>
+            <FormErrors errors={form.errors} />
+            <button className="button button-primary" disabled={form.processing}>
+                {activity ? 'Salvar atividade' : 'Criar atividade'}
+            </button>
+            {activity && activity.status !== 'cancelled' && (
+                <ConfirmButton
+                    message="Cancelar esta atividade? O histórico será preservado."
+                    onConfirm={() => router.delete(`/activities/${activity.id}`)}
+                >
+                    Cancelar atividade
+                </ConfirmButton>
+            )}
+        </form>
+    );
 }
 
 export default function Agenda({ activities, users, opportunities, tasks, events, filters = {} }: Props) {
@@ -26,9 +141,179 @@ export default function Agenda({ activities, users, opportunities, tasks, events
     const [priority, setPriority] = useState(filters.priority ?? '');
     const [creating, setCreating] = useState(false);
     const [editing, setEditing] = useState<Activity | null>(null);
-    const apply = (next: { owner?: string; status?: string; priority?: string }) => router.get('/agenda', { owner: next.owner ?? owner, status: next.status ?? status, priority: next.priority ?? priority }, { preserveState: true, preserveScroll: true, replace: true });
+    const apply = (next: { owner?: string; status?: string; priority?: string }) =>
+        router.get(
+            '/agenda',
+            { owner: next.owner ?? owner, status: next.status ?? status, priority: next.priority ?? priority },
+            { preserveState: true, preserveScroll: true, replace: true },
+        );
     const rows = activities;
-    const complete = (activity: Activity) => router.post(`/activities/${activity.id}/${activity.status === 'done' ? 'reopen' : 'complete'}`, {}, { preserveScroll: true });
+    const complete = (activity: Activity) =>
+        router.post(`/activities/${activity.id}/${activity.status === 'done' ? 'reopen' : 'complete'}`, {}, { preserveScroll: true });
     const visibleTasks = tasks;
-    return <AppLayout><Head title="Tarefas e agenda" /><PageHeader eyebrow="Fila da equipe" title="Tarefas e agenda" description="Trabalho interno, compromissos comerciais e produção em um lugar." primaryAction={<button className="button button-primary" type="button" onClick={() => setCreating(true)}><Plus size={16} /> Nova atividade</button>} /><Surface className="agenda-filter-surface" padding="sm"><FilterBar><Field label="Responsável"><select value={owner} onChange={(event) => { setOwner(event.target.value); apply({ owner: event.target.value }); }}><option value="">Todos</option>{users.map((user) => <option value={user.id} key={user.id}>{user.name}</option>)}</select></Field><Field label="Exibir"><select value={status} onChange={(event) => { setStatus(event.target.value as 'pending' | 'all'); apply({ status: event.target.value }); }}><option value="pending">Pendentes</option><option value="all">Todo histórico</option></select></Field><Field label="Prioridade"><select value={priority} onChange={(event) => { setPriority(event.target.value); apply({ priority: event.target.value }); }}><option value="">Todas</option><option value="low">Baixa</option><option value="normal">Normal</option><option value="high">Alta</option></select></Field></FilterBar></Surface><section className="agenda-workspace"><div className="agenda-workspace__main"><GlassSurface><div className="panel-heading"><div><span className="eyebrow">PRÓXIMOS MOVIMENTOS</span><h2>Atividades e follow-ups</h2></div><span className="status-pill violet">{rows.length}</span></div>{rows.map((activity) => <article className="agenda-activity-row" key={activity.id}><button className="task-check" type="button" aria-label={`${activity.status === 'done' ? 'Reabrir' : 'Concluir'} ${activity.title}`} onClick={() => complete(activity)}><Check size={13} /></button><button className="agenda-activity-main" type="button" onClick={() => setEditing(activity)}><strong>{activity.title}</strong><small>{activity.assignee?.name || 'Sem responsável'} · {activity.opportunity?.title || 'Tarefa interna'} · {activity.due_at ? new Date(activity.due_at).toLocaleString('pt-BR') : 'Sem prazo'}</small></button><span className={`status-pill ${activity.priority === 'high' ? 'amber' : 'gray'}`}>{activity.status === 'done' ? 'Concluída' : activity.priority === 'high' ? 'Alta' : 'Pendente'}</span></article>)}{!rows.length && <p className="inline-empty">Nenhuma atividade neste filtro.</p>}</GlassSurface><GlassSurface><div className="panel-heading"><div><span className="eyebrow">CHECKPOINTS</span><h2>Produção</h2></div><span className="status-pill gray">{visibleTasks.length}</span></div><div className="agenda-task-list">{visibleTasks.map((task) => <div className={`agenda-task-row ${task.status}`} key={task.id}><button className="task-check" type="button" aria-label={`${task.status === 'done' ? 'Reabrir' : 'Concluir'} ${task.title}`} onClick={() => router.patch(`/production/tasks/${task.id}`, { status: task.status === 'done' ? 'todo' : 'done' }, { preserveScroll: true })}><Check size={13} /></button><Link href={`/opportunities/${task.opportunity_id}/production`}><strong>{task.title}</strong><small>{task.opportunity?.title} · {task.due_date?.slice(0, 10) || 'Sem prazo'}</small></Link></div>)}</div>{!visibleTasks.length && <p className="inline-empty">Nenhum checkpoint de produção neste filtro.</p>}</GlassSurface></div><GlassSurface className="event-dates-card"><div className="panel-heading"><div><span className="eyebrow">CALENDÁRIO</span><h2>Datas de evento</h2></div><CalendarDays size={18} /> </div>{events.map((event) => <Link className="event-date-row" href={`/opportunities/${event.id}`} key={event.id}><span><strong>{eventDateLabel(event.event_date)}</strong></span><div><strong>{event.title}</strong><small>Abra o caso para revisar a preparação.</small></div></Link>)}{!events.length && <p className="inline-empty">Nenhuma data de evento definida.</p>}</GlassSurface></section><Drawer title={editing ? 'Editar atividade' : 'Nova atividade'} open={creating || Boolean(editing)} onClose={() => { setCreating(false); setEditing(null); }}><p className="drawer-intro">Crie a próxima ação e conecte-a ao responsável e ao caso quando necessário.</p><ActivityForm activity={editing ?? undefined} users={users} opportunities={opportunities} /></Drawer></AppLayout>;
+    return (
+        <AppLayout>
+            <Head title="Tarefas e agenda" />
+            <PageHeader
+                eyebrow="Fila da equipe"
+                title="Tarefas e agenda"
+                description="Trabalho interno, compromissos comerciais e produção em um lugar."
+                primaryAction={
+                    <button className="button button-primary" type="button" onClick={() => setCreating(true)}>
+                        <Plus size={16} /> Nova atividade
+                    </button>
+                }
+            />
+            <Surface className="agenda-filter-surface" padding="sm">
+                <FilterBar>
+                    <Field label="Responsável">
+                        <select
+                            value={owner}
+                            onChange={(event) => {
+                                setOwner(event.target.value);
+                                apply({ owner: event.target.value });
+                            }}
+                        >
+                            <option value="">Todos</option>
+                            {users.map((user) => (
+                                <option value={user.id} key={user.id}>
+                                    {user.name}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+                    <Field label="Exibir">
+                        <select
+                            value={status}
+                            onChange={(event) => {
+                                setStatus(event.target.value as 'pending' | 'all');
+                                apply({ status: event.target.value });
+                            }}
+                        >
+                            <option value="pending">Pendentes</option>
+                            <option value="all">Todo histórico</option>
+                        </select>
+                    </Field>
+                    <Field label="Prioridade">
+                        <select
+                            value={priority}
+                            onChange={(event) => {
+                                setPriority(event.target.value);
+                                apply({ priority: event.target.value });
+                            }}
+                        >
+                            <option value="">Todas</option>
+                            <option value="low">Baixa</option>
+                            <option value="normal">Normal</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </Field>
+                </FilterBar>
+            </Surface>
+            <section className="agenda-workspace">
+                <div className="agenda-workspace__main">
+                    <GlassSurface>
+                        <div className="panel-heading">
+                            <div>
+                                <span className="eyebrow">PRÓXIMOS MOVIMENTOS</span>
+                                <h2>Atividades e follow-ups</h2>
+                            </div>
+                            <span className="status-pill violet">{rows.length}</span>
+                        </div>
+                        {rows.map((activity) => (
+                            <article className="agenda-activity-row" key={activity.id}>
+                                <button
+                                    className="task-check"
+                                    type="button"
+                                    aria-label={`${activity.status === 'done' ? 'Reabrir' : 'Concluir'} ${activity.title}`}
+                                    onClick={() => complete(activity)}
+                                >
+                                    <Check size={13} />
+                                </button>
+                                <button className="agenda-activity-main" type="button" onClick={() => setEditing(activity)}>
+                                    <strong>{activity.title}</strong>
+                                    <small>
+                                        {activity.assignee?.name || 'Sem responsável'} · {activity.opportunity?.title || 'Tarefa interna'} ·{' '}
+                                        {activity.due_at ? new Date(activity.due_at).toLocaleString('pt-BR') : 'Sem prazo'}
+                                    </small>
+                                </button>
+                                <span className={`status-pill ${activity.priority === 'high' ? 'amber' : 'gray'}`}>
+                                    {activity.status === 'done' ? 'Concluída' : activity.priority === 'high' ? 'Alta' : 'Pendente'}
+                                </span>
+                            </article>
+                        ))}
+                        {!rows.length && <p className="inline-empty">Nenhuma atividade neste filtro.</p>}
+                    </GlassSurface>
+                    <GlassSurface>
+                        <div className="panel-heading">
+                            <div>
+                                <span className="eyebrow">CHECKPOINTS</span>
+                                <h2>Produção</h2>
+                            </div>
+                            <span className="status-pill gray">{visibleTasks.length}</span>
+                        </div>
+                        <div className="agenda-task-list">
+                            {visibleTasks.map((task) => (
+                                <div className={`agenda-task-row ${task.status}`} key={task.id}>
+                                    <button
+                                        className="task-check"
+                                        type="button"
+                                        aria-label={`${task.status === 'done' ? 'Reabrir' : 'Concluir'} ${task.title}`}
+                                        onClick={() =>
+                                            router.patch(
+                                                `/production/tasks/${task.id}`,
+                                                { status: task.status === 'done' ? 'todo' : 'done' },
+                                                { preserveScroll: true },
+                                            )
+                                        }
+                                    >
+                                        <Check size={13} />
+                                    </button>
+                                    <Link href={`/opportunities/${task.opportunity_id}/production`}>
+                                        <strong>{task.title}</strong>
+                                        <small>
+                                            {task.opportunity?.title} · {task.due_date?.slice(0, 10) || 'Sem prazo'}
+                                        </small>
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
+                        {!visibleTasks.length && <p className="inline-empty">Nenhum checkpoint de produção neste filtro.</p>}
+                    </GlassSurface>
+                </div>
+                <GlassSurface className="event-dates-card">
+                    <div className="panel-heading">
+                        <div>
+                            <span className="eyebrow">CALENDÁRIO</span>
+                            <h2>Datas de evento</h2>
+                        </div>
+                        <CalendarDays size={18} />{' '}
+                    </div>
+                    {events.map((event) => (
+                        <Link className="event-date-row" href={`/opportunities/${event.id}`} key={event.id}>
+                            <span>
+                                <strong>{eventDateLabel(event.event_date)}</strong>
+                            </span>
+                            <div>
+                                <strong>{event.title}</strong>
+                                <small>Abra o caso para revisar a preparação.</small>
+                            </div>
+                        </Link>
+                    ))}
+                    {!events.length && <p className="inline-empty">Nenhuma data de evento definida.</p>}
+                </GlassSurface>
+            </section>
+            <Drawer
+                title={editing ? 'Editar atividade' : 'Nova atividade'}
+                open={creating || Boolean(editing)}
+                onClose={() => {
+                    setCreating(false);
+                    setEditing(null);
+                }}
+            >
+                <p className="drawer-intro">Crie a próxima ação e conecte-a ao responsável e ao caso quando necessário.</p>
+                <ActivityForm activity={editing ?? undefined} users={users} opportunities={opportunities} />
+            </Drawer>
+        </AppLayout>
+    );
 }

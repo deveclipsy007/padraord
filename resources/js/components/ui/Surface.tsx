@@ -20,13 +20,13 @@ export function Surface({
     interactive = false,
     ...props
 }: SurfaceProps) {
-    const classes = [
-        'ui-surface',
-        `ui-surface--${tone}`,
-        `ui-surface--pad-${padding}`,
-        interactive ? 'is-interactive' : '',
-        className,
-    ].filter(Boolean).join(' ');
+    const classes = ['ui-surface', `ui-surface--${tone}`, `ui-surface--pad-${padding}`, interactive ? 'is-interactive' : '', className]
+        .filter(Boolean)
+        .join(' ');
 
-    return <Component className={classes} {...props}>{children}</Component>;
+    return (
+        <Component className={classes} {...props}>
+            {children}
+        </Component>
+    );
 }
