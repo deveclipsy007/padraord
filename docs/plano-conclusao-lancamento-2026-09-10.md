@@ -6,7 +6,21 @@ Data: 10/09/2026. Documento de trabalho da equipe. Complementa `docs/execucao/20
 
 O sistema (Laravel 13 + PHP 8.4, React 19 + TypeScript + Inertia 3, Vite 8, Tailwind 4) foi auditado com execução real das suítes: **PHPUnit 169/169** (1.219 asserções), **Vitest 12/12**, **TypeScript 0 erros**, **Playwright 27/27** em três breakpoints. Inventário: 127 rotas, 52 tabelas, 29 migrations, ~393 KB de PHP e ~314 KB de TS/TSX.
 
-Durante a própria auditoria entrou o assistente de conversa (`app/AI/AssistantChat.php`, migration `assistant_chat_turns`), levando a suíte a **177/177** (1.257 asserções). Todo o Ciclo 04 foi consolidado no commit `f51fa01`, na branch `ciclo-04-consolidacao` — o item I1 deste plano está feito.
+Durante a própria auditoria entrou o assistente de conversa (`app/AI/AssistantChat.php`, migration `assistant_chat_turns`), levando a suíte a **177/177** (1.257 asserções).
+
+## Executado até agora (branch `ciclo-04-consolidacao`)
+
+| Commit | Entrega | Item |
+|---|---|---|
+| `f51fa01` | Ciclo 04 inteiro sob versionamento, verificado | I1 |
+| `fe62287` | Dossiê de execução e este plano | — |
+| `712be04` | Autorização da transcrição migrada de `.env` para a administração; quatro motores visíveis; `SESSION_DRIVER` do e2e corrigido | B1 (parte), H2 (parte) |
+| `4a3220d` | Recuperação de senha completa, com revogação de sessões e limites | **E1** |
+| `0c2def0` | `padraord:doctor` e correção do falso verde de e-mail | I7 (parte) |
+
+**Estado das suítes: 196 testes PHP (1.343 asserções), 12 Vitest, TypeScript sem erros, 48 Playwright em três breakpoints, Pint limpo.**
+
+Descoberta que mudou a prioridade: a transcrição — requisito central — estava **inalcançável pela interface**. `ContextAudioReviewController`, `BriefingAudioController`, `ContextAudioUploadController` e `TranscribeBriefing` exigiam `AI_AUDIO_VALIDATED` e `AI_AUDIO_PRICE_MICROS_PER_MINUTE`, que só existiam no `.env` e vinham `false`/`0`. Corrigido.
 
 A engenharia de base é sólida — transações com lock, fingerprint de caso, versionamento por snapshot, idempotência, auditoria, salvaguardas de IA acima da média do mercado. **Nota de auditoria: 6,5/10, ≈35% pendente.**
 
@@ -257,8 +271,8 @@ Hoje o purge apaga o áudio após `retention_days` (padrão 30) e preserva só a
 
 Verificado em 10/09/2026: os modelos e parâmetros configurados estão **corretos**. `gpt-5.6-luna` existe, suporta structured outputs por JSON Schema, tem 1,05M de contexto e custa US$ 0,20/M entrada e US$ 1,20/M saída. `gpt-4o-transcribe-diarize` exige exatamente `response_format: diarized_json` + `chunking_strategy: auto` — que é o que `OpenAiAudioTranscriber::transcribe()` já envia. Não há correção de configuração a fazer.
 
-- [ ] **Bug real:** `AiConfiguration::publicState()` devolve `'model' => 'gpt-4o-mini'` fixo no código, enquanto extração usa `gpt-5.6-luna` e transcrição usa `gpt-4o-transcribe-diarize`. A tela de IA informa modelo errado ao operador. Derivar de `config('ai.*')`
-- [ ] `.env.example` ganha `AI_MODE` e `AI_DATA_POLICY_APPROVED` (ausentes hoje, mas lidos por `AiConfiguration::setting()`) e os modelos efetivos
+- [x] **Bug real:** `AiConfiguration::publicState()` devolve `'model' => 'gpt-4o-mini'` fixo no código, enquanto extração usa `gpt-5.6-luna` e transcrição usa `gpt-4o-transcribe-diarize`. A tela de IA informa modelo errado ao operador. Derivar de `config('ai.*')`
+- [x] `.env.example` ganha `AI_MODE` e `AI_DATA_POLICY_APPROVED` (ausentes hoje, mas lidos por `AiConfiguration::setting()`) e os modelos efetivos
 - [ ] Novo comando `php artisan ai:verify` — faz uma chamada real mínima de cada operação (transcrição curta, extração de poucos segmentos), grava resultado, custo e `request_id` em `AiRun`, e imprime relatório
 - [ ] `config/ai.php` ganha `models` com catálogo validado e data da última verificação; `ai:verify` atualiza
 - [ ] **Teste:** `ai:verify` com chave ausente falha com mensagem acionável, não com stack trace; com chave válida grava evidência
@@ -437,7 +451,7 @@ Hoje: zero `Mail::` ou `Notification` na aplicação. `MAIL_MAILER=log`. Envio �
 
 ---
 
-- [ ] **E1 — Recuperação de senha.** Tabela `password_reset_tokens` existe; rota não. Implementar solicitação, e-mail, token single-use com expiração, rate limit por e-mail e por IP, e invalidação de sessões após troca
+- [x] **E1 — Recuperação de senha.** Tabela `password_reset_tokens` existe; rota não. Implementar solicitação, e-mail, token single-use com expiração, rate limit por e-mail e por IP, e invalidação de sessões após troca
 - [ ] **E2 — Verificação de e-mail** para usuário criado pela equipe, com primeiro acesso guiado (`users.email_verified_at` já existe)
 - [ ] **E3 — Política de senha**: comprimento mínimo, checagem contra lista de senhas comuns, troca obrigatória no primeiro acesso, bloqueio após tentativas (o throttle de login já existe em `routes/web.php:37`)
 - [ ] **E4 — 2FA (TOTP)** opcional, **obrigatório** para quem tem `can_approve_commercial` — quem autoriza envio, assinatura e pagamento
@@ -589,7 +603,7 @@ Os testes atuais cobrem navegação e overflow, não operação.
 
 ---
 
-- [ ] **I1 — Commitar o Ciclo 04.** 33 arquivos modificados e 7 novos fora do git: compartilhamento de documentos, sourcing de fornecedores, validação técnica, métricas operacionais. Commits separados por domínio, não um commit único
+- [x] **I1 — Commitar o Ciclo 04.** 33 arquivos modificados e 7 novos fora do git: compartilhamento de documentos, sourcing de fornecedores, validação técnica, métricas operacionais. Commits separados por domínio, não um commit único
 - [ ] **I2 — CI verde de verdade.** O workflow em `.github/workflows/` existe e nunca rodou. Fazer passar: `composer quality`, MariaDB 11.4, `npm run quality`, `npm run test:e2e`, build e verificação do release Hostinger
 - [ ] **I3 — MariaDB validado.** `scripts/ci/test-mariadb.sh` nunca executou (conexão recusada). Rodar contra banco dedicado, cobrindo as novas tabelas dos blocos A e C
 - [ ] **I4 — Publicação.** Primeiro deploy real na Hostinger com `scripts/deploy/build-hostinger-release.sh` + `verify-hostinger-release.sh` (ambos já testados localmente), `.env` remoto, banco MariaDB, backup prévio no hPanel e smoke test roteirizado
