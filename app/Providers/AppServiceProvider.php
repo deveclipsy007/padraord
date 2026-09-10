@@ -73,5 +73,13 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($email.'|'.$request->ip());
         });
+
+        // Redefinição de senha envia e-mail e aceita token: limitar por conta
+        // alvo e por origem, para não virar sonda de e-mails nem força bruta.
+        RateLimiter::for('password-reset', function (Request $request): Limit {
+            $email = Str::lower(Str::squish((string) $request->input('email')));
+
+            return Limit::perMinutes(15, 5)->by($email.'|'.$request->ip());
+        });
     }
 }

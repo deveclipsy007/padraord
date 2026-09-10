@@ -21,6 +21,7 @@ use App\Http\Controllers\FoundationController;
 use App\Http\Controllers\OperationalPagesController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\OpportunityWorkspaceController;
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\PostEventController;
 use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\PrototypeController;
@@ -35,6 +36,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'show'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.store');
+    Route::get('/forgot-password', [PasswordResetController::class, 'request'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetController::class, 'send'])->middleware('throttle:password-reset')->name('password.email');
+    Route::get('/reset-password/{token}', [PasswordResetController::class, 'edit'])->name('password.reset');
+    Route::post('/reset-password', [PasswordResetController::class, 'update'])->middleware('throttle:password-reset')->name('password.update');
 });
 
 Route::get('/shared/proposal/{token}', [DocumentShareController::class, 'show'])->name('documents.shared.show');
