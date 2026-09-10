@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Activity, AlertTriangle, CheckCircle2, ClipboardCheck, Filter, History as HistoryIcon, Search } from 'lucide-react';
 import { FormEvent, useState } from 'react';
+import { BarSeries } from '../components/charts/BarSeries';
 import { AppLayout } from '../layout';
 import { CasePageHeader } from '../components/CasePageHeader';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -239,15 +240,12 @@ export default function History({ records, search, filters, users, case: current
                         </div>
                         <Activity size={18} />
                     </div>
-                    <div className="history-workload__grid">
-                        {metrics.workload.map((person) => (
-                            <div key={person.id}>
-                                <span>{person.name}</span>
-                                <strong>{person.openItems}</strong>
-                                <small>{person.openItems === 1 ? 'item aberto' : 'itens abertos'}</small>
-                            </div>
-                        ))}
-                    </div>
+                    <BarSeries
+                        title="Trabalho em aberto por pessoa"
+                        data={metrics.workload.map((person) => ({ label: person.name, value: person.openItems }))}
+                        format={(value) => `${value} ${value === 1 ? 'item' : 'itens'}`}
+                        emptyMessage="Nenhum item em aberto atribuído."
+                    />
                 </Surface>
             )}
             {feedback.length > 0 && (

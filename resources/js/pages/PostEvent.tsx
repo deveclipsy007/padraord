@@ -1,6 +1,7 @@
 import { Head, useForm } from '@inertiajs/react';
 import { BookOpen, Check, CircleAlert, RefreshCw, Sparkles } from 'lucide-react';
 import { FormEvent, useState } from 'react';
+import { ComparisonMeter } from '../components/charts/ComparisonMeter';
 import { AppLayout } from '../layout';
 import { GlassSurface } from '../components/GlassSurface';
 import { CasePageHeader } from '../components/CasePageHeader';
@@ -181,6 +182,14 @@ export default function PostEvent({ opportunity, report }: Props) {
                                 />
                             </label>
                         </div>
+                        {(report.plannedTotalCents ?? 0) + (report.actualTotalCents ?? 0) > 0 && (
+                            <ComparisonMeter
+                                title="Previsto contra realizado do evento"
+                                plannedCents={report.plannedTotalCents ?? 0}
+                                actualCents={report.actualTotalCents ?? 0}
+                                provisional={report.status !== 'closed'}
+                            />
+                        )}
                         <label>
                             Status
                             <select

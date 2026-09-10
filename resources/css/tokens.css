@@ -32,6 +32,53 @@
     --rd-space-6: 24px;
     --rd-space-8: 32px;
     --rd-space-12: 48px;
+
+    /* Escala tipográfica. Antes só existia o corpo em 14px e peso 650 nos
+       títulos; tamanho era decidido componente a componente. */
+    --rd-text-micro: 11px;
+    --rd-text-small: 12px;
+    --rd-text-body: 14px;
+    --rd-text-lead: 16px;
+    --rd-text-title: 20px;
+    --rd-text-display: 26px;
+    --rd-text-hero: 34px;
+    --rd-weight-regular: 460;
+    --rd-weight-medium: 560;
+    --rd-weight-bold: 650;
+    --rd-leading-tight: 1.25;
+    --rd-leading-normal: 1.5;
+    --rd-leading-loose: 1.65;
+
+    /* Movimento com propósito. Toda transição referencia estes valores para
+       que `prefers-reduced-motion` desligue tudo num lugar só. */
+    --rd-motion-instant: 90ms;
+    --rd-motion-quick: 160ms;
+    --rd-motion-calm: 260ms;
+    --rd-ease-out: cubic-bezier(.22, 1, .36, 1);
+    --rd-ease-in-out: cubic-bezier(.65, 0, .35, 1);
+
+    /* Cor semântica com par superfície + tinta. Contraste conferido em AA
+       sobre a superfície correspondente. */
+    --rd-success: #1f7a58;
+    --rd-success-surface: #dcf2e8;
+    --rd-warning: #8a5a0f;
+    --rd-warning-surface: #fbeed6;
+    --rd-danger: #a53745;
+    --rd-danger-surface: #fbe2e5;
+    --rd-info: #2a5fa8;
+    --rd-info-surface: #dfeaff;
+    --rd-neutral-surface: #e8edf4;
+
+    /* Paleta categórica dos gráficos. Ordem fixa: trocar a posição muda a cor
+       de séries já publicadas. Distinguível também em escala de cinza. */
+    --rd-series-1: #7657f5;
+    --rd-series-2: #2a8fb8;
+    --rd-series-3: #2b9a70;
+    --rd-series-4: #c38425;
+    --rd-series-5: #b0568e;
+    --rd-series-6: #5a6c8f;
+    --rd-series-muted: #c3cbd8;
+    --rd-grid-line: rgba(70, 86, 110, .14);
 }
 
 html { background: var(--rd-canvas); }

@@ -3,6 +3,8 @@ import { ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2, CircleAlert, Cloc
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { AppLayout, PrimaryButton } from '../layout';
 import { TodayQueue, type QueueTask } from '../components/TodayQueue';
+import { BarSeries } from '../components/charts/BarSeries';
+import { formatCurrencyFromCents } from '../components/charts/chart-utils';
 import { BentoGrid, BentoItem } from '../components/ui/BentoGrid';
 import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
@@ -61,10 +63,7 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
         .filter((column) => column.count > 0)
         .sort((a, b) => b.count - a.count)
         .slice(0, 5);
-    const totalInStages = Math.max(
-        1,
-        activeStages.reduce((sum, column) => sum + column.count, 0),
-    );
+    const stagesWithValue = columns.filter((column) => (column.estimatedValueCents ?? 0) > 0);
     useEffect(() => {
         if (new URLSearchParams(window.location.search).get('action') === 'new-opportunity') setShowForm(true);
     }, []);
@@ -181,24 +180,27 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                                 <ArrowUpRight size={15} />
                             </Link>
                         </div>
-                        <div className="stage-bars">
-                            {activeStages.length ? (
-                                activeStages.map((column) => (
-                                    <div key={column.id}>
-                                        <span>
-                                            <i className={`status-dot ${stageColors[column.id] ?? 'gray'}`} />
-                                            {column.label}
-                                        </span>
-                                        <strong>{column.count}</strong>
-                                        <b>
-                                            <i style={{ width: `${Math.max(8, (column.count / totalInStages) * 100)}%` }} />
-                                        </b>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="bento-empty">Sem oportunidades ativas.</p>
-                            )}
-                        </div>
+                        <BarSeries
+                            title="Casos por etapa comercial"
+                            categorical
+                            data={activeStages.map((column) => ({ label: column.label, value: column.count }))}
+                            emptyMessage="Sem oportunidades ativas."
+                        />
+                        {stagesWithValue.length > 0 && (
+                            <>
+                                <p className="stage-widget__divider">Valor estimado por etapa</p>
+                                <BarSeries
+                                    title="Valor estimado por etapa comercial"
+                                    categorical
+                                    data={stagesWithValue.map((column) => ({
+                                        label: column.label,
+                                        value: column.estimatedValueCents ?? 0,
+                                    }))}
+                                    format={formatCurrencyFromCents}
+                                    emptyMessage="Nenhuma oportunidade com valor estimado."
+                                />
+                            </>
+                        )}
                     </Surface>
                 </BentoItem>
 

@@ -9,6 +9,7 @@ import '../css/components.css';
 import '../css/modules.css';
 import '../css/responsive-workspace.css';
 import '../css/chat-and-dialogs.css';
+import '../css/charts.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';

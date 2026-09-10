@@ -74,8 +74,10 @@ class VisualSystemContractTest extends TestCase
         $this->assertStringContainsString('onDragStart', $page);
         $this->assertStringContainsString('onDragOver', $page);
         $this->assertStringContainsString('onDrop', $page);
-        $this->assertStringContainsString('router.post(`/opportunities/', $page);
-        $this->assertStringContainsString('/stage', $page);
+        // Intenção, não formatação: o card precisa gravar a mudança de etapa no
+        // servidor. Exigir a chamada numa linha só quebrava a cada reformatação.
+        $this->assertStringContainsString('router.post(', $page);
+        $this->assertStringContainsString('/commercial-stage`', $page);
         $this->assertStringContainsString('.pipeline-lane.is-drop-target', $css);
         $this->assertStringContainsString('.pipeline-card.is-card-dragging', $css);
     }

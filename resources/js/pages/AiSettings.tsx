@@ -1,4 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
+import { BudgetGauge } from '../components/charts/BudgetGauge';
 import { AppLayout } from '../layout';
 
 export const aiLabels: Record<string, string> = {
@@ -76,6 +77,15 @@ export default function AiSettings({
                         {settings.used_usd.toFixed(4)}
                     </p>
                 </div>
+            </section>
+            <section className="glass-surface assistance-panel" aria-label="Consumo contra o limite mensal">
+                <h2>Consumo do mês</h2>
+                <BudgetGauge
+                    title="Consumo de inteligência artificial no mês"
+                    usedUsd={settings.calculated_usd}
+                    reservedUsd={settings.reserved_usd}
+                    limitUsd={settings.monthly_usd}
+                />
             </section>
             <section className="ai-cost-grid" aria-label="Consumo da inteligência artificial">
                 <article>
