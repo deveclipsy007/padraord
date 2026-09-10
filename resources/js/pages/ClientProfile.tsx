@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowRight, BriefcaseBusiness, Building2, Mail, Pencil, Phone, Plus, UserRound, UsersRound } from 'lucide-react';
+import { ArrowRight, BriefcaseBusiness, Building2, CircleAlert, Mail, Pencil, Phone, Plus, UserRound, UsersRound } from 'lucide-react';
 import { useState } from 'react';
 import { Drawer, Field, FormErrors } from '../components/FormControls';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -8,13 +8,36 @@ import { Surface } from '../components/ui/Surface';
 import { AppLayout } from '../layout';
 
 type Contact = { id: number; name: string; email: string | null; phone: string | null; role: string | null };
+type BillingAddress = {
+    cep?: string;
+    logradouro?: string;
+    numero?: string;
+    complemento?: string;
+    bairro?: string;
+    cidade?: string;
+    uf?: string;
+};
 type Client = {
     id: number;
     name: string;
     industry: string | null;
     notes: string | null;
+    legal_name: string | null;
+    tax_id: string | null;
+    tax_id_type: string | null;
+    state_registration: string | null;
+    billing_email: string | null;
+    billing_address: BillingAddress | null;
+    default_payment_terms_days: number | null;
+    segment: string | null;
+    tier: string | null;
     contacts: Contact[];
     opportunities: { id: number; title: string; stage: string }[];
+};
+type Props = {
+    client: Client;
+    contractReadiness: { ready: boolean; missing: string[] };
+    duplicates?: { id: number; name: string; legal_name: string | null }[];
 };
 
 function ContactForm({ clientId, contact, onSaved }: { clientId: number; contact?: Contact; onSaved: () => void }) {
@@ -62,11 +85,33 @@ function ContactForm({ clientId, contact, onSaved }: { clientId: number; contact
     );
 }
 
-export default function ClientProfile({ client }: { client: Client }) {
+export default function ClientProfile({ client, contractReadiness, duplicates = [] }: Props) {
     const [editingClient, setEditingClient] = useState(false);
     const [editingContact, setEditingContact] = useState<Contact | null | undefined>(undefined);
     const [creatingOpportunity, setCreatingOpportunity] = useState(false);
-    const form = useForm({ name: client.name, industry: client.industry || '', notes: client.notes || '' });
+    const address = client.billing_address ?? {};
+    const form = useForm({
+        name: client.name,
+        industry: client.industry || '',
+        notes: client.notes || '',
+        legal_name: client.legal_name || '',
+        tax_id: client.tax_id || '',
+        tax_id_type: client.tax_id_type || 'cnpj',
+        state_registration: client.state_registration || '',
+        billing_email: client.billing_email || '',
+        default_payment_terms_days: client.default_payment_terms_days ?? 30,
+        segment: client.segment || 'corporativo',
+        tier: client.tier || 'prospect',
+        billing_address: {
+            cep: address.cep || '',
+            logradouro: address.logradouro || '',
+            numero: address.numero || '',
+            complemento: address.complemento || '',
+            bairro: address.bairro || '',
+            cidade: address.cidade || '',
+            uf: address.uf || '',
+        },
+    });
     const opportunity = useForm({ title: '', client_id: client.id, contact_id: '' });
 
     return (
@@ -88,6 +133,38 @@ export default function ClientProfile({ client }: { client: Client }) {
                     </button>
                 }
             />
+
+            {duplicates.length > 0 && (
+                <Surface className="client-alert client-alert--duplicate" role="status">
+                    <CircleAlert size={17} />
+                    <div>
+                        <strong>Outro cadastro usa o mesmo documento fiscal.</strong>
+                        <p>
+                            Confira antes de seguir para evitar histórico dividido em dois lugares:{' '}
+                            {duplicates.map((duplicate, index) => (
+                                <span key={duplicate.id}>
+                                    {index > 0 && ', '}
+                                    <Link href={`/clients/${duplicate.id}`}>{duplicate.legal_name || duplicate.name}</Link>
+                                </span>
+                            ))}
+                            .
+                        </p>
+                    </div>
+                </Surface>
+            )}
+
+            {!contractReadiness.ready && (
+                <Surface className="client-alert" role="status">
+                    <CircleAlert size={17} />
+                    <div>
+                        <strong>Cadastro incompleto para emitir contrato.</strong>
+                        <p>
+                            Falta {contractReadiness.missing.join(', ')}. O cliente segue utilizável em proposta e orçamento; a pendência só
+                            bloqueia o registro da assinatura.
+                        </p>
+                    </div>
+                </Surface>
+            )}
 
             <section className="client-profile-metrics">
                 <Surface>
@@ -199,6 +276,117 @@ export default function ClientProfile({ client }: { client: Client }) {
                     <Field label="Segmento" error={form.errors.industry}>
                         <input value={form.data.industry} onChange={(event) => form.setData('industry', event.target.value)} />
                     </Field>
+                    <Field label="Razão social" error={form.errors.legal_name}>
+                        <input
+                            value={form.data.legal_name}
+                            onChange={(event) => form.setData('legal_name', event.target.value)}
+                            placeholder="Como consta no contrato social"
+                        />
+                    </Field>
+                    <div className="two-fields">
+                        <Field label="Tipo de documento" error={form.errors.tax_id_type}>
+                            <select value={form.data.tax_id_type} onChange={(event) => form.setData('tax_id_type', event.target.value)}>
+                                <option value="cnpj">CNPJ</option>
+                                <option value="cpf">CPF</option>
+                                <option value="estrangeiro">Estrangeiro</option>
+                            </select>
+                        </Field>
+                        <Field label="Documento" error={form.errors.tax_id}>
+                            <input
+                                value={form.data.tax_id}
+                                onChange={(event) => form.setData('tax_id', event.target.value)}
+                                placeholder={form.data.tax_id_type === 'cpf' ? '000.000.000-00' : '00.000.000/0000-00'}
+                                inputMode="numeric"
+                            />
+                        </Field>
+                    </div>
+                    <div className="two-fields">
+                        <Field label="Inscrição estadual" error={form.errors.state_registration}>
+                            <input
+                                value={form.data.state_registration}
+                                onChange={(event) => form.setData('state_registration', event.target.value)}
+                                placeholder="ISENTO, se for o caso"
+                            />
+                        </Field>
+                        <Field label="E-mail de faturamento" error={form.errors.billing_email}>
+                            <input
+                                type="email"
+                                value={form.data.billing_email}
+                                onChange={(event) => form.setData('billing_email', event.target.value)}
+                            />
+                        </Field>
+                    </div>
+                    <div className="two-fields">
+                        <Field label="Segmento do cliente" error={form.errors.segment}>
+                            <select value={form.data.segment} onChange={(event) => form.setData('segment', event.target.value)}>
+                                <option value="corporativo">Corporativo</option>
+                                <option value="social">Social</option>
+                                <option value="institucional">Institucional</option>
+                                <option value="cultural">Cultural</option>
+                                <option value="esportivo">Esportivo</option>
+                                <option value="religioso">Religioso</option>
+                                <option value="governo">Governo</option>
+                                <option value="terceiro_setor">Terceiro setor</option>
+                            </select>
+                        </Field>
+                        <Field label="Relação" error={form.errors.tier}>
+                            <select value={form.data.tier} onChange={(event) => form.setData('tier', event.target.value)}>
+                                <option value="prospect">Prospect</option>
+                                <option value="ativo">Ativo</option>
+                                <option value="recorrente">Recorrente</option>
+                                <option value="inativo">Inativo</option>
+                            </select>
+                        </Field>
+                    </div>
+                    <fieldset className="rd-fieldset">
+                        <legend>Endereço de faturamento</legend>
+                        <div className="two-fields">
+                            <Field label="CEP">
+                                <input
+                                    value={form.data.billing_address.cep}
+                                    onChange={(event) =>
+                                        form.setData('billing_address', { ...form.data.billing_address, cep: event.target.value })
+                                    }
+                                    inputMode="numeric"
+                                />
+                            </Field>
+                            <Field label="Número">
+                                <input
+                                    value={form.data.billing_address.numero}
+                                    onChange={(event) =>
+                                        form.setData('billing_address', { ...form.data.billing_address, numero: event.target.value })
+                                    }
+                                />
+                            </Field>
+                        </div>
+                        <Field label="Logradouro">
+                            <input
+                                value={form.data.billing_address.logradouro}
+                                onChange={(event) =>
+                                    form.setData('billing_address', { ...form.data.billing_address, logradouro: event.target.value })
+                                }
+                            />
+                        </Field>
+                        <div className="two-fields">
+                            <Field label="Cidade">
+                                <input
+                                    value={form.data.billing_address.cidade}
+                                    onChange={(event) =>
+                                        form.setData('billing_address', { ...form.data.billing_address, cidade: event.target.value })
+                                    }
+                                />
+                            </Field>
+                            <Field label="Estado">
+                                <input
+                                    maxLength={2}
+                                    value={form.data.billing_address.uf}
+                                    onChange={(event) =>
+                                        form.setData('billing_address', { ...form.data.billing_address, uf: event.target.value })
+                                    }
+                                />
+                            </Field>
+                        </div>
+                    </fieldset>
                     <Field label="Contexto" error={form.errors.notes}>
                         <textarea rows={7} value={form.data.notes} onChange={(event) => form.setData('notes', event.target.value)} />
                     </Field>

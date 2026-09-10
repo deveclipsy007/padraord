@@ -25,7 +25,7 @@ class DocumentRevisions
             'signer_name' => 'required|string|max:160', 'signed_at' => 'required|date|before_or_equal:today',
             'method' => 'required|string|max:80', 'evidence' => 'required|string|min:3|max:5000',
         ])->validate();
-        DB::transaction(function () use ($document, $actor, $data): void {
+        DB::transaction(function () use ($case, $document, $actor, $data): void {
             $locked = Document::whereKey($document->id)->lockForUpdate()->firstOrFail();
             $previous = DB::table('external_signature_records')->where('document_id', $locked->id)->first();
             if ($previous) {
@@ -39,6 +39,12 @@ class DocumentRevisions
             }
             if ($locked->type !== 'contract' || $locked->status !== 'sent' || ! $locked->sent_at) {
                 $this->fail('Registre a assinatura somente de um contrato enviado.');
+            }
+            // Contrato assinado sem as partes identificadas não serve como
+            // instrumento. Conferido aqui, no registro, e não só na tela.
+            $client = $case->client;
+            if ($client && ! $client->readyForContract()) {
+                $this->fail('Complete o cadastro do cliente antes de registrar a assinatura: falta '.implode(', ', $client->missingContractData()).'.');
             }
             DB::table('external_signature_records')->insert($data + [
                 'document_id' => $locked->id, 'recorded_by' => $actor->id, 'created_at' => now(), 'updated_at' => now(),

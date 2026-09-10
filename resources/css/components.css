@@ -133,3 +133,12 @@
 .login-card-v2 .button-subtle { margin-top: 16px; justify-content: center; }
 .login-card-v2 .assistance-banner { margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
 .login-card-v2 .assistance-banner svg { flex-shrink: 0; margin-top: 2px; }
+
+/* Pendência de cadastro e duplicidade: aviso que orienta, sem bloquear o uso. */
+.client-alert { display: flex; gap: var(--rd-space-3); align-items: flex-start; margin-bottom: var(--rd-space-4); }
+.client-alert svg { flex-shrink: 0; margin-top: 2px; color: var(--rd-warning); }
+.client-alert strong { display: block; font-size: var(--rd-text-body); }
+.client-alert p { margin: var(--rd-space-1) 0 0; font-size: var(--rd-text-small); line-height: var(--rd-leading-normal); color: var(--rd-muted); }
+.client-alert--duplicate svg { color: var(--rd-danger); }
+.rd-fieldset { border: 1px solid var(--rd-line); border-radius: var(--rd-radius-item); padding: var(--rd-space-4); margin: 0; display: grid; gap: var(--rd-space-3); }
+.rd-fieldset legend { padding: 0 var(--rd-space-2); font-size: var(--rd-text-small); color: var(--rd-muted); }

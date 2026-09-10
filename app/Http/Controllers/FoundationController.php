@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use App\Models\Client;
 use App\Models\Contact;
 use App\Models\User;
+use App\Rules\TaxId;
 use App\Services\RecordArchiveService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -40,12 +41,60 @@ class FoundationController extends Controller
 
     private function clientData(Request $request): array
     {
-        return $request->validate(['name' => 'required|string|max:160', 'industry' => 'nullable|string|max:160', 'notes' => 'nullable|string|max:10000']);
+        $type = in_array($request->input('tax_id_type'), ['cnpj', 'cpf', 'estrangeiro'], true) ? $request->input('tax_id_type') : 'cnpj';
+        $data = $request->validate([
+            'name' => 'required|string|max:160',
+            'industry' => 'nullable|string|max:160',
+            'notes' => 'nullable|string|max:10000',
+            'legal_name' => 'nullable|string|max:200',
+            'tax_id' => ['nullable', 'string', 'max:20', new TaxId($type)],
+            'tax_id_type' => ['sometimes', Rule::in(['cnpj', 'cpf', 'estrangeiro'])],
+            'state_registration' => 'nullable|string|max:40',
+            'municipal_registration' => 'nullable|string|max:40',
+            'billing_email' => 'nullable|email|max:200',
+            'billing_address' => 'nullable|array',
+            'billing_address.cep' => 'nullable|string|max:12',
+            'billing_address.logradouro' => 'nullable|string|max:200',
+            'billing_address.numero' => 'nullable|string|max:20',
+            'billing_address.complemento' => 'nullable|string|max:120',
+            'billing_address.bairro' => 'nullable|string|max:120',
+            'billing_address.cidade' => 'nullable|string|max:120',
+            'billing_address.uf' => 'nullable|string|size:2',
+            'default_payment_terms_days' => 'sometimes|integer|min:0|max:365',
+            'segment' => ['sometimes', Rule::in(['corporativo', 'social', 'institucional', 'cultural', 'esportivo', 'religioso', 'governo', 'terceiro_setor'])],
+            'tier' => ['sometimes', Rule::in(['prospect', 'ativo', 'recorrente', 'inativo'])],
+            'website' => 'nullable|string|max:200',
+            'instagram' => 'nullable|string|max:120',
+        ]);
+
+        // Guardar só os dígitos: a máscara pertence à interface, e comparar
+        // documentos formatados de jeitos diferentes esconde duplicidade.
+        if (array_key_exists('tax_id', $data)) {
+            $data['tax_id'] = blank($data['tax_id']) ? null : TaxId::digits($data['tax_id']);
+        }
+        if (isset($data['billing_address']['uf'])) {
+            $data['billing_address']['uf'] = mb_strtoupper($data['billing_address']['uf']);
+        }
+
+        return $data;
     }
 
     public function clientShow(Client $client)
     {
-        return Inertia::render('ClientProfile', ['client' => $client->load(['contacts', 'opportunities'])]);
+        $duplicates = blank($client->tax_id) ? [] : Client::query()
+            ->where('tax_id', $client->tax_id)
+            ->whereKeyNot($client->id)
+            ->get(['id', 'name', 'legal_name'])
+            ->all();
+
+        return Inertia::render('ClientProfile', [
+            'client' => $client->load(['contacts', 'opportunities']),
+            'contractReadiness' => [
+                'ready' => $client->readyForContract(),
+                'missing' => $client->missingContractData(),
+            ],
+            'duplicates' => $duplicates,
+        ]);
     }
 
     public function clientArchive(Request $request, Client $client, RecordArchiveService $service)
