@@ -25,13 +25,32 @@ final class SystemHealth
                 'database' => $database,
                 'storage' => $storage,
                 'queue' => $this->queue(),
-                'mail' => filled(config('mail.default')) ? 'configured' : 'unconfigured',
+                'mail' => self::mailStatus(),
                 'ai' => $this->aiStatus(),
                 'odoo' => $this->odooStatus(),
             ],
         ];
 
         return $result;
+    }
+
+    /**
+     * Transportes que não entregam a ninguém. Chamá-los de "configurado"
+     * esconde que a redefinição de senha e o envio de proposta não chegam.
+     */
+    public const NON_DELIVERING_MAILERS = ['log', 'array'];
+
+    public static function mailStatus(): string
+    {
+        $default = (string) config('mail.default');
+        if ($default === '') {
+            return 'unconfigured';
+        }
+        if (in_array($default, self::NON_DELIVERING_MAILERS, true)) {
+            return 'not_delivering';
+        }
+
+        return blank(config('mail.from.address')) ? 'unconfigured' : 'configured';
     }
 
     private function database(): string
