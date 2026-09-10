@@ -36,3 +36,37 @@ O verificador confirma checksums, manifest Vite, `public_html/index.php`, ausên
 ## FTP manual
 
 Use SFTP na porta 22 quando disponível. FTP explícito na porta 21 é contingência. Envie `app_core` e `public_html` para a pasta do domínio, preserve `.env` e `storage`, e execute migrations pelo SSH. O script `deploy-hostinger-ftp.sh` exige `lftp` e não executa migrations automaticamente.
+
+## E-mail (SMTP da Hostinger)
+
+Sem transporte real, a redefinição de senha e o envio de proposta ficam gravados
+num arquivo e não chegam a ninguém. `MAIL_MAILER=log` é aceitável apenas em
+desenvolvimento, sabendo dessa limitação.
+
+No hPanel, criar a caixa de e-mail do sistema (por exemplo `sistema@padraord.com.br`)
+e usar o endereço completo como usuário:
+
+```dotenv
+MAIL_MAILER=smtp
+MAIL_SCHEME=smtps
+MAIL_HOST=smtp.hostinger.com
+MAIL_PORT=465
+MAIL_USERNAME=sistema@padraord.com.br
+MAIL_PASSWORD=<senha da caixa, nunca versionada>
+MAIL_FROM_ADDRESS=sistema@padraord.com.br
+MAIL_FROM_NAME="Padrão RD"
+```
+
+Porta 465 usa TLS implícito e exige `MAIL_SCHEME=smtps`. Para a porta 587, use
+`MAIL_SCHEME=smtp`, que negocia STARTTLS. Trocar a porta sem trocar o esquema
+é a causa mais comum de falha de conexão.
+
+Depois de configurar, confirmar com um envio real:
+
+```bash
+php artisan padraord:mail-test voce@seudominio.com.br
+```
+
+O provedor aceitar a mensagem não garante a entrega na caixa. Confira o
+recebimento, inclusive na pasta de spam, antes de considerar concluído.
+`php artisan padraord:doctor` passa a reportar E-mail como `ok`.
