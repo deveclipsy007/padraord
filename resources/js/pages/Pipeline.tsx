@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { GlassSurface } from '../components/GlassSurface';
 import { PageHeader } from '../components/ui/PageHeader';
+import { SegmentedControl } from '../components/ui/SegmentedControl';
 import { Surface } from '../components/ui/Surface';
 import { AppLayout } from '../layout';
 import type { CommercialStage, Opportunity, OpportunityOrigin, OpportunityPriority, PipelineFilters } from '../types';
@@ -213,22 +214,29 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
             </section>
             <Surface className="pipeline-controls" padding="sm">
                 <div className="pipeline-controls__row">
-                    <div className="segmented-control" role="tablist" aria-label="Visualização do pipeline">
-                        <button
-                            type="button"
-                            className={filters.view === 'kanban' ? 'is-active' : ''}
-                            onClick={() => navigate({ view: 'kanban' })}
-                        >
-                            <Workflow size={15} /> Kanban
-                        </button>
-                        <button
-                            type="button"
-                            className={filters.view === 'list' ? 'is-active' : ''}
-                            onClick={() => navigate({ view: 'list' })}
-                        >
-                            <List size={15} /> Lista
-                        </button>
-                    </div>
+                    <SegmentedControl
+                        label="Visualização do pipeline"
+                        value={filters.view === 'list' ? 'list' : 'kanban'}
+                        onChange={(view) => navigate({ view })}
+                        segments={[
+                            {
+                                value: 'kanban',
+                                label: (
+                                    <>
+                                        <Workflow size={15} /> Kanban
+                                    </>
+                                ),
+                            },
+                            {
+                                value: 'list',
+                                label: (
+                                    <>
+                                        <List size={15} /> Lista
+                                    </>
+                                ),
+                            },
+                        ]}
+                    />
                     <div className="pipeline-filter-summary">
                         <span>{filters.stage ? stageLabel[filters.stage] : 'Todos os estágios'}</span>
                         <span>{filters.priority ? priorityLabel[filters.priority] : 'Todas prioridades'}</span>

@@ -176,7 +176,7 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                                 <span className="eyebrow">COMERCIAL</span>
                                 <h2>Distribuição</h2>
                             </div>
-                            <Link href="/pipeline">
+                            <Link href="/pipeline" aria-label="Abrir o pipeline comercial completo">
                                 <ArrowUpRight size={15} />
                             </Link>
                         </div>

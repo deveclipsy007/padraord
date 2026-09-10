@@ -15,6 +15,7 @@
         "format:check": "prettier --check \"resources/js/**/*.{ts,tsx}\""
     },
     "devDependencies": {
+        "@axe-core/playwright": "^4.13.0",
         "@playwright/test": "^1.62.1",
         "@tailwindcss/vite": "^4.0.0",
         "@types/node": "^24.13.3",
