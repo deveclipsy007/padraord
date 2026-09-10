@@ -1,683 +1,637 @@
-# Padrão RD OS — Plano de Conclusão até 10/10
+# Padrão RD OS — Plano de Conclusão (v2)
 
-Data: 10/09/2026. Documento de trabalho da equipe. Complementa `docs/execucao/2026-09-10/` (dossiê de execução) e `docs/visao-produto-auditoria-roadmap-2026-09-01.md` (visão de produto).
+Data: 10/09/2026. Documento de trabalho da equipe. Substitui a v1 do mesmo arquivo, que descrevia um MVP.
+Complementa `docs/execucao/2026-09-10/` (dossiê de execução).
 
-## Contexto
+---
 
-O sistema (Laravel 13 + PHP 8.4, React 19 + TypeScript + Inertia 3, Vite 8, Tailwind 4) foi auditado com execução real das suítes: **PHPUnit 169/169** (1.219 asserções), **Vitest 12/12**, **TypeScript 0 erros**, **Playwright 27/27** em três breakpoints. Inventário: 127 rotas, 52 tabelas, 29 migrations, ~393 KB de PHP e ~314 KB de TS/TSX.
+## Por que existe a v2
 
-Durante a própria auditoria entrou o assistente de conversa (`app/AI/AssistantChat.php`, migration `assistant_chat_turns`), levando a suíte a **177/177** (1.257 asserções).
+A v1 listava o mínimo para operar. A direção mudou: o alvo é um sistema **excelente**, não um MVP entregável. Infraestrutura, publicação e servidor saem do caminho crítico e vão para o fim — o foco é desenvolvimento, funcionalidade e experiência.
 
-## Executado até agora (branch `ciclo-04-consolidacao`)
+## Estado real hoje
 
-| Commit | Entrega | Item |
-|---|---|---|
-| `f51fa01` | Ciclo 04 inteiro sob versionamento, verificado | I1 |
-| `fe62287` | Dossiê de execução e este plano | — |
-| `712be04` | Autorização da transcrição migrada de `.env` para a administração; quatro motores visíveis; `SESSION_DRIVER` do e2e corrigido | B1 (parte), H2 (parte) |
-| `4a3220d` | Recuperação de senha completa, com revogação de sessões e limites | **E1** |
-| `0c2def0` | `padraord:doctor` e correção do falso verde de e-mail | I7 (parte) |
+**Suítes:** 196 testes PHP (1.343 asserções), 12 Vitest, TypeScript sem erros, 48 Playwright em três breakpoints, Pint limpo. Tudo verde.
+**Inventário:** 131 rotas, 53 tabelas, 31 migrations, ~400 KB de PHP, ~330 KB de TS/TSX.
 
-**Estado das suítes: 196 testes PHP (1.343 asserções), 12 Vitest, TypeScript sem erros, 48 Playwright em três breakpoints, Pint limpo.**
+### Já entregue (branch `ciclo-04-consolidacao`)
 
-Descoberta que mudou a prioridade: a transcrição — requisito central — estava **inalcançável pela interface**. `ContextAudioReviewController`, `BriefingAudioController`, `ContextAudioUploadController` e `TranscribeBriefing` exigiam `AI_AUDIO_VALIDATED` e `AI_AUDIO_PRICE_MICROS_PER_MINUTE`, que só existiam no `.env` e vinham `false`/`0`. Corrigido.
-
-A engenharia de base é sólida — transações com lock, fingerprint de caso, versionamento por snapshot, idempotência, auditoria, salvaguardas de IA acima da média do mercado. **Nota de auditoria: 6,5/10, ≈35% pendente.**
-
-O que segura a nota não é qualidade de código. São três coisas:
-
-1. **O caminho crítico da IA nunca tocou a realidade.** Todos os testes usam provider falso; nenhuma chamada paga foi executada. A configuração em si está correta — `gpt-5.6-luna` (extração) e `gpt-4o-transcribe-diarize` com `response_format: diarized_json` + `chunking_strategy: auto` (transcrição) são modelos e parâmetros válidos, verificados em 10/09/2026. O bloqueio é de **validação**, não de configuração: ninguém sabe qual é a precisão, o custo real por reunião nem o comportamento em áudio longo.
-2. **A modelagem é genérica.** O briefing — que é o produto de uma produtora de eventos — são 8 strings soltas num JSON (`BriefingPayload::FIELDS`). Não há data de término (evento multi-dia é impossível), não há venue como entidade, não há requisito técnico por área, não há CNPJ para emitir contrato. É um CRM genérico com rótulos de evento.
-3. **Não há dinheiro, não há comunicação, não há recuperação de conta.** Zero `Mail::`/`Notification` em toda a aplicação. Proposta "enviada" é evidência digitada à mão. Sem rota de recuperação de senha. Sem contas a pagar/receber.
-
-### Decisões tomadas
-
-| Tema | Decisão |
+| Commit | Entrega |
 |---|---|
-| Infraestrutura | **Híbrido** — app na Hostinger compartilhada + worker externo com FFmpeg para mídia/IA |
-| Briefing | **Entidade real de evento** — tabelas tipadas, não JSON genérico |
-| Financeiro | **Financeiro operacional do evento** — parcelas, a receber, a pagar, previsto × realizado por categoria |
-| Comunicação | Envio real por e-mail **com autorização humana explícita**; assinatura eletrônica integrada; lembretes internos. **IA prepara e sugere, nunca envia nem negocia.** WhatsApp fica para etapa posterior |
+| `f51fa01` | Ciclo 04 inteiro versionado e verificado |
+| `fe62287` | Dossiê de execução e plano |
+| `712be04` | Transcrição destravada pela administração; quatro motores de IA visíveis; `SESSION_DRIVER` do e2e corrigido |
+| `4a3220d` | Recuperação de senha completa, com revogação de sessões e limites |
+| `0c2def0` | `padraord:doctor` e correção do falso verde de e-mail |
+| `e3dc16b` | Registro do executado |
 
-### Resultado esperado
+### O que trava hoje
 
-Sistema 100% funcional, responsivo, com IA operante em produção, pronto para lançamento oficial — nota 10/10, 0% pendente.
+`php artisan padraord:doctor` aponta **um bloqueio**: `MAIL_MAILER=log`. Nada de e-mail chega a ninguém.
+
+---
+
+## Decisões
+
+| Tema | Decisão | Quem decidiu |
+|---|---|---|
+| E-mail | **SMTP da Hostinger** | Yohann |
+| Infraestrutura de IA | Híbrido: app na Hostinger + worker externo com FFmpeg | Yohann |
+| Briefing | Entidade real de evento, tipada | Yohann |
+| Financeiro | Financeiro operacional do evento | Yohann |
+| Comunicação | Envio real com autorização humana; assinatura eletrônica; lembretes. IA prepara, nunca envia | Yohann |
+| Publicação e servidor | Fora do caminho crítico; vão para o Bloco I, no fim | Yohann |
+| **Identidade visual** | **Evoluir, não refazer** | Claude — ver abaixo |
+
+### Sobre a decisão visual
+
+O padrão de referência da casa são as apresentações em `padraord-proposta/` — animadas, densas, bonitas. O sistema está muito abaixo disso.
+
+**Não vamos refazer do zero.** Motivo: a arquitetura de shell atual (rail + trilha de contexto + conteúdo) já passa em três breakpoints com 48 testes de navegador, e jogar isso fora custa cobertura provada sem resolver o problema real. O que separa o sistema das apresentações não é o esqueleto — é **polimento, densidade de informação e visualização de dados**, que hoje simplesmente não existe (zero gráficos no sistema inteiro).
+
+**Vamos evoluir:** refinar tipografia, escala e profundidade; movimento com propósito; usar as ilustrações RD que já estão em `resources/images/rd/optimized/`; e introduzir visualização de dados de verdade. Isso exige, antes, quebrar o front-end em componentes — hoje uma página inteira cabe em três linhas físicas de código, e nesse formato nenhuma iteração visual é viável.
 
 ---
 
 ## Invariantes que não podem quebrar
 
-Toda tarefa deste plano é aceita apenas se preservar:
-
-1. **Revisão humana obrigatória.** IA nunca aprova, envia, contrata ou negocia. Prepara prévia; humano confirma.
-2. **Evidência rastreável.** Toda sugestão de IA cita o trecho de origem. `unknown` nunca vira `fact`.
-3. **Nada é sobrescrito.** Versão anterior sempre preservada (`revision`, `snapshot`, `supersedes_id`).
-4. **Conteúdo é dado, nunca instrução.** Transcrição, mensagem e documento não comandam o sistema.
-5. **Concorrência protegida.** Mutação de caso passa por `lockForUpdate` + verificação de fingerprint/revisão — padrão de `CaseContextService::confirm()` (`app/Services/CaseContextService.php:47`) e `BudgetRevisionService::mutate()`.
+1. **Revisão humana obrigatória.** IA nunca aprova, envia, contrata ou negocia.
+2. **Evidência rastreável.** Toda sugestão cita o trecho de origem. `unknown` nunca vira `fact`.
+3. **Nada é sobrescrito.** Versão anterior sempre preservada.
+4. **Conteúdo é dado, nunca instrução.**
+5. **Concorrência protegida.** Padrão de `CaseContextService::confirm()` e `BudgetRevisionService::mutate()`.
 6. **Autoridade comercial separada.** `can_approve_commercial` governa liberação, envio e assinatura.
 7. **IA indisponível nunca bloqueia.** Todo fluxo tem caminho manual equivalente.
-8. **Custo pago é reservado antes e reconciliado depois.** Timeout incerto não repete chamada paga (`AiCostLedger::reserve/report/uncertain`).
-
-Cada bloco abaixo tem um teste que prova o invariante correspondente.
+8. **Custo pago é reservado antes e reconciliado depois.**
 
 ---
 
 ## Ordem de execução
 
-Ordenado por **dependência técnica**, não por calendário. Blocos no mesmo nível podem correr em paralelo.
-
 ```
-A (Modelo de domínio)  ─┬─→ B (IA em produção)  ─┐
-                        ├─→ C (Financeiro)       ├─→ H (UX) ─→ J (Fechamento)
-                        ├─→ G (Documentos)       │
-E (Segurança) ──────────┤                        │
-F (Produção) ───────────┘                        │
-D (Comunicação) ────────────────────────────────┘
-I (Infra) ── transversal, começa junto com A
+B0 (E-mail) ─→ K (Fundação de interface) ─┬─→ L (Diferenciais) ─┐
+                                          │                     │
+A (Domínio de eventos) ───────────────────┼─→ B (IA real) ──────┼─→ H (Acabamento) ─→ J
+                                          ├─→ G (Documentos)    │
+                                          ├─→ C (Financeiro)    │
+                                          └─→ F (Produção)      │
+D (Comunicação) ──────────────────────────────────────────────┘
+E (Segurança) · quase pronto        I (Infra e publicação) · por último
 ```
 
-**A é pré-requisito de quase tudo.** Não comece B, C ou G antes de A fechar — senão a IA vai preencher campos que serão migrados, e o financeiro vai pendurar em colunas que vão sumir.
+**K e A são as duas fundações.** K destrava toda melhoria visual; A destrava briefing, proposta, produção e financeiro. Podem correr em paralelo — K é front, A é back.
 
 ---
 
-# BLOCO A — Modelo de domínio de eventos
+# B0 — E-mail funcionando
 
-**Objetivo:** parar de ser um CRM genérico. O sistema passa a conhecer evento, local, requisito técnico e programação como entidades reais.
+Único bloqueio atual. Pequeno.
 
-**Arquivos-chave:** `database/migrations/`, `app/Models/Opportunity.php`, `app/AI/BriefingContext.php`, `app/AI/BriefingPayload.php`, `app/Services/CaseContextService.php`
+- [ ] `MAIL_MAILER=smtp` com host, porta e credenciais da Hostinger; `MAIL_FROM_ADDRESS` e `MAIL_FROM_NAME` da Padrão RD
+- [ ] Documentar em `docs/hostinger-deploy.md` os valores exatos (host, porta 465/587, criptografia) sem credencial versionada
+- [ ] Layout de e-mail com identidade RD em `resources/views/vendor/mail/` — hoje usa o tema padrão do Laravel
+- [ ] Comando `php artisan padraord:mail-test {destinatário}` que envia uma mensagem real e registra o resultado
+- [ ] `padraord:doctor` passa a reportar E-mail como `ok`
+- [ ] **Teste:** transporte que não entrega continua sendo reportado como bloqueio; layout renderiza em texto e HTML
 
 ---
+
+# K — Fundação de interface
+
+**Objetivo:** tornar o front-end iterável e elevar o padrão visual. Sem isso, todo item de design custa dez vezes mais.
+
+**Arquivos-chave:** `resources/js/`, `resources/css/tokens.css`, `resources/js/components/ui/`
+
+## K1 — Quebrar o código em componentes
+
+O front está escrito em linhas de milhares de caracteres. `Feasibility.tsx` tem 452 linhas para o que seriam ~2.000 formatadas; `Production.tsx` cabe em 49 linhas físicas.
+
+- [ ] Prettier + ESLint com largura de linha definida, aplicados a `resources/js/`
+- [ ] Reformatação em **commit separado**, sem mudança de comportamento — os 48 e2e e 12 Vitest são a rede
+- [ ] Quebrar por seção as páginas grandes: `Feasibility`, `Production`, `DocumentWorkspace`, `Suppliers`, `History`, `PostEvent`, `Budget`
+- [ ] Extrair para `components/ui/` o que se repete: painel, cabeçalho de seção, linha de registro, barra de filtro, formulário em grade
+- [ ] **Teste:** suíte completa idêntica antes e depois
+
+## K2 — Sistema de design de verdade
+
+- [ ] `tokens.css` vira a fonte única: escala tipográfica, espaçamento, raio, profundidade, cor semântica (sucesso/atenção/risco/neutro), duração e curva de animação
+- [ ] Nenhum valor solto em componente — regra verificada por teste de contrato (o `VisualSystemContractTest` já existe, estender)
+- [ ] **Modo escuro** completo, respeitando `prefers-color-scheme` e com escolha manual persistida
+- [ ] `prefers-reduced-motion` respeitado em todo movimento
+- [ ] Ilustrações RD (`context-core`, `briefing-folder`, `budget-ledger`, `production-path`, `event-memory`) aplicadas em estados vazios e cabeçalhos de módulo
+
+## K3 — Visualização de dados
+
+Hoje o sistema não tem **um único gráfico**. Para uma ferramenta de gestão isso é uma lacuna grave.
+
+- [ ] Biblioteca de gráficos leve, sem dependência pesada, coerente com os tokens
+- [ ] Componentes: barra, linha, área, rosca, marcador de meta, faixa comparativa, minigráfico embutido
+- [ ] Legibilidade em claro e escuro; rótulo acessível e tabela alternativa para leitor de tela
+- [ ] Aplicações reais: funil comercial por etapa, margem prevista × realizada, custo por categoria, carga por pessoa, evolução de consumo de IA, previsto × realizado do evento
+- [ ] **Teste:** gráfico sem dados mostra estado vazio, não eixo vazio; valores conferem com o serviço que os calcula
+
+## K4 — Interação de produto
+
+- [ ] **Edição no lugar** — alterar campo sem abrir tela nova, com estado salvando/salvo/erro honesto
+- [ ] **Ações em lote** em listas: arquivar, atribuir, mudar etapa
+- [ ] **Filtros salvos** por usuário, com URL compartilhável
+- [ ] Estados padronizados: carregando, vazio, erro, sem permissão, offline, processando — componentes únicos
+- [ ] Toda mensagem em português dizendo o que aconteceu **e** qual é a próxima ação possível
+- [ ] Atalhos de teclado além do ⌘K: navegação entre módulos do caso, salvar, confirmar prévia
+
+## K5 — Mobile de operação, não de consulta
+
+Os testes atuais cobrem navegação e transbordo, não operação.
+
+- [ ] Tabelas viram cartões comparáveis abaixo de 620px (cotações, orçamento, histórico)
+- [ ] Revisão de transcrição repensada para toque: player, segmento, falante, aceite parcial
+- [ ] Aprovação de orçamento e autorização de envio operáveis no celular
+- [ ] Gravar reunião pelo próprio celular com envio retomável (base já existe em `upload.ts`)
+
+## K6 — Acessibilidade
+
+- [ ] `axe-core` no Playwright, nas telas principais, nos três breakpoints
+- [ ] Contraste AA em todos os tokens, claro e escuro
+- [ ] Foco visível consistente; navegação completa por teclado no painel de revisão de IA e no editor de documento
+- [ ] `aria-live` para processamento de áudio; rótulos e erros associados aos campos
+- [ ] **Teste:** zero violação crítica ou séria
+
+---
+
+# A — Modelo de domínio de eventos
+
+**Objetivo:** o sistema passa a conhecer evento, local, requisito técnico e programação como entidades reais, em vez de texto solto.
 
 ## A1 — `clients`: empresa de verdade
 
-Hoje: `name`, `industry`, `notes`, `archived_*`. Não dá para emitir contrato nem nota com isso.
+Hoje: `name`, `industry`, `notes`. Não dá para emitir contrato.
 
-**Migration `add_client_business_identity`:**
+- [ ] `legal_name`, `tax_id` (único, só dígitos), `tax_id_type`, `state_registration`, `municipal_registration`
+- [ ] `billing_email`, `billing_address` (json), `default_payment_terms_days`
+- [ ] `segment` (`corporativo|social|institucional|cultural|esportivo|religioso|governo|terceiro_setor`), `tier` (`prospect|ativo|recorrente|inativo`)
+- [ ] Regra `app/Rules/TaxId.php` com dígito verificador, sem pacote externo
+- [ ] Duplicidade por `tax_id` reusando o padrão de `SupplierController::duplicates`
+- [ ] **Teste:** contrato não é liberado sem `tax_id`; duplicado é recusado apontando o registro existente
 
-| Campo | Tipo | Observação |
-|---|---|---|
-| `legal_name` | varchar | Razão social |
-| `tax_id` | varchar, índice único | CNPJ ou CPF, guardado só com dígitos |
-| `tax_id_type` | enum `cnpj\|cpf\|estrangeiro` | |
-| `state_registration` | varchar nullable | IE, aceita "ISENTO" |
-| `municipal_registration` | varchar nullable | |
-| `billing_email` | varchar nullable | Separado do contato comercial |
-| `billing_address` | json | `{cep, logradouro, numero, complemento, bairro, cidade, uf}` |
-| `default_payment_terms_days` | int, default 30 | |
-| `segment` | enum | `corporativo\|social\|institucional\|cultural\|esportivo\|religioso\|governo\|terceiro_setor` |
-| `tier` | enum | `prospect\|ativo\|recorrente\|inativo` |
-| `website`, `instagram` | varchar nullable | |
+## A2 — `contacts`: papel na decisão
 
-- [ ] Validação de CNPJ/CPF (dígito verificador) em `app/Rules/TaxId.php` — nova regra, sem pacote externo
-- [ ] Consulta de duplicidade por `tax_id` reusando o padrão de `SupplierController::duplicates`
-- [ ] UI: `ClientProfile.tsx` ganha aba "Dados cadastrais" com máscara e validação inline
-- [ ] **Teste:** cliente sem `tax_id` não pode ter contrato liberado; `tax_id` duplicado é recusado apontando o registro existente
+- [ ] `is_primary`, `is_decision_maker`, `department`, `whatsapp`, `preferred_channel`
+- [ ] No máximo um `is_primary` por cliente
+- [ ] `opportunity_qualifications.decision_maker_contact_id` exige contato marcado como decisor
+- [ ] **Teste:** qualificar apontando não-decisor é recusado com explicação
 
-## A2 — `contacts`: papel real na decisão
+## A3 — `venues`: local reutilizável
 
-- [ ] `is_primary` (bool), `is_decision_maker` (bool), `department` (varchar), `whatsapp` (varchar), `preferred_channel` (enum `email|whatsapp|telefone`)
-- [ ] Regra: no máximo um `is_primary` por cliente (índice parcial / validação no serviço)
-- [ ] `opportunity_qualifications.decision_maker_contact_id` passa a exigir contato com `is_decision_maker = true`
-- [ ] **Teste:** qualificar caso apontando contato que não é decisor é recusado com mensagem explicativa
+- [ ] Identidade: `name`, `venue_type`, `tax_id`, `address` (json), `city`, `state`
+- [ ] Capacidade: `capacity_seated`, `capacity_standing`, `capacity_cocktail`, `capacity_auditorium`
+- [ ] Físico: `floor_area_m2`, `ceiling_height_m`, `column_notes`, `floor_load_kg_m2`
+- [ ] **Acesso de carga:** `door_width_m`, `door_height_m`, `has_loading_dock`, `has_freight_elevator`, `elevator_capacity_kg`, `load_in_notes`
+- [ ] Energia: `power_available_kva`, `power_phases`, `has_generator_area`
+- [ ] Operação: `noise_curfew_time`, `load_in_window`, `load_out_window`, `parking_spots`, `catering_policy`
+- [ ] Governança: `restrictions`, `rules_document_path`, contato, `status`, `revision`
+- [ ] `opportunities.location` migra para `venue_id` + `location_note`
+- [ ] `technical_validations` ganha `venue_id`
+- [ ] Páginas `Venues.tsx` e `VenueProfile.tsx` com histórico de eventos no local
+- [ ] **Teste:** medida declarada maior que a porta do local gera alerta bloqueante
 
-## A3 — `venues`: local como entidade reutilizável
+## A4 — `event_briefs`: o coração
 
-Produtora reutiliza local. Hoje o local é string em `opportunities.location` e `technical_validations.reference`.
+Substitui `opportunities.briefing_data` (JSON) e os 8 campos de `BriefingPayload::FIELDS`.
 
-**Nova tabela `venues`:**
+**Identidade:** `opportunity_id`, `revision`, `status`, `schema_version`, `event_name`, `event_type` (enum com 20 tipos reais), `event_format` (`presencial|hibrido|online`), `edition`, `is_recurring`, `previous_opportunity_id`
 
-| Grupo | Campos |
-|---|---|
-| Identidade | `name`, `venue_type` (enum `hotel\|centro_convencoes\|casa_eventos\|teatro\|galpao\|area_externa\|espaco_cliente\|clube\|restaurante\|outro`), `tax_id` nullable |
-| Endereço | `address` (json), `city`, `state`, `latitude`, `longitude` nullable |
-| Capacidade | `capacity_seated`, `capacity_standing`, `capacity_cocktail`, `capacity_auditorium` |
-| Físico | `floor_area_m2`, `ceiling_height_m`, `column_notes`, `floor_load_kg_m2` |
-| **Acesso de carga** | `door_width_m`, `door_height_m`, `has_loading_dock`, `has_freight_elevator`, `elevator_capacity_kg`, `load_in_notes` |
-| Energia | `power_available_kva`, `power_phases`, `has_generator_area`, `power_notes` |
-| Operação | `noise_curfew_time`, `load_in_window`, `load_out_window`, `parking_spots`, `has_kitchen`, `catering_policy` (enum `livre\|exclusivo\|lista_aprovada`) |
-| Governança | `restrictions` (text), `rules_document_path`, `contact_name`, `contact_phone`, `contact_email`, `notes`, `status` (enum `ativo\|inativo`), `revision` |
+**Tempo** — hoje só existe `event_date`, e evento de dois dias é impossível de registrar:
+`starts_at`, `ends_at`, `setup_starts_at`, `teardown_ends_at`, `timezone`, `date_confidence`, `alternative_dates`
 
-- [ ] `opportunities.location` (string) migra para `venue_id` + `location_note`; string antiga vira `venues` quando reconhecível, senão fica em `location_note`
-- [ ] `technical_validations` ganha `venue_id` FK
-- [ ] Página `Venues.tsx` + `VenueProfile.tsx` com histórico de eventos realizados no local
-- [ ] **Teste:** validação técnica em venue com `door_width_m` menor que a maior medida declarada gera alerta bloqueante, não silencioso
+**Local:** `venue_id`, `venue_status`, `city`, `state`, `venue_requirements`
 
-## A4 — `event_briefs`: o coração do sistema
+**Público:** `audience_expected_min/max`, `audience_confidence`, `audience_profile`, `audience_segments`, `has_vip`, `vip_notes`, `accessibility_requirements`
 
-**Substitui `opportunities.briefing_data` (JSON) e `BriefingPayload::FIELDS` (8 strings).**
+**Mensagem:** `objective`, `success_criteria` (mensuráveis), `key_message`, `tone`, `brand_notes`, `brand_assets`
 
-**Nova tabela `event_briefs`:**
+**Investimento:** `budget_declared_cents`, `budget_range_min/max_cents`, `budget_confidence`, `budget_includes_taxes`, `payment_expectation`
 
-**Identidade do evento**
-- `opportunity_id` FK, `revision` int, `status` enum `draft|awaiting_review|approved|superseded`, `schema_version`
-- `event_name`
-- `event_type` enum: `congresso|convencao|seminario|workshop|lancamento|convencao_vendas|confraternizacao|premiacao|feira|ativacao_marca|show|festival|casamento|formatura|aniversario|coquetel|jantar|coletiva_imprensa|treinamento|outro`
-- `event_format` enum: `presencial|hibrido|online`
-- `edition` varchar nullable (ex.: "3ª edição")
-- `is_recurring` bool, `previous_opportunity_id` FK nullable — **evento que se repete puxa o histórico do anterior**
+**Governança:** `constraints`/`risks`/`deadlines` tipados, `references`, `completeness_score`, `missing_critical`, `approved_by/at`
 
-**Tempo** — resolve a impossibilidade atual de evento multi-dia
-- `starts_at`, `ends_at` (datetime, não date)
-- `setup_starts_at`, `teardown_ends_at` (datetime) — montagem e desmontagem são operação, não detalhe
-- `timezone` default `America/Sao_Paulo`
-- `date_confidence` enum `confirmada|provavel|janela|indefinida`
-- `alternative_dates` json
-
-**Local**
-- `venue_id` FK nullable, `venue_status` enum `definido|em_prospeccao|cliente_define|indefinido`
-- `city`, `state` (usados quando venue ainda não existe)
-- `venue_requirements` text (o que o local precisa ter, quando ainda vai ser buscado)
-
-**Público**
-- `audience_expected_min`, `audience_expected_max`, `audience_confidence` enum
-- `audience_profile` text, `audience_segments` json (`["clientes","imprensa","colaboradores","autoridades"]`)
-- `has_vip` bool, `vip_notes` text
-- `accessibility_requirements` json (`["rampa","libras","audiodescricao","banheiro_pcd"]`)
-
-**Objetivo e mensagem**
-- `objective` text
-- `success_criteria` json — itens mensuráveis, não texto solto
-- `key_message` text, `tone` enum `sobrio|celebrativo|tecnico|premium|jovem|institucional|intimista`
-- `brand_notes` text, `brand_assets` json
-
-**Investimento**
-- `budget_declared_cents`, `budget_range_min_cents`, `budget_range_max_cents`
-- `budget_confidence` enum `confirmado|estimado|sem_teto|nao_informado`
-- `budget_includes_taxes` bool, `payment_expectation` text
-
-**Restrições, riscos e prazos**
-- `constraints` json — itens tipados `{type, description, severity}`, não string
-- `risks` json — `{description, likelihood, impact, mitigation}`
-- `deadlines` json — `{label, date, is_hard}`
-
-**Referências**
-- `references` json — `{kind: imagem|video|link|documento, url_or_path, note}`
-
-**Governança**
-- `completeness_score` int (0-100, calculado), `missing_critical` json
-- `approved_by`, `approved_at`
-- `source_context_entry_ids` json
-
-**Checklist:**
-- [ ] Migration `create_event_briefs` com todos os campos e índices (`opportunity_id`, `revision`)
-- [ ] Model `EventBrief` com casts e enums PHP nativos em `app/Enums/`
-- [ ] Migration de dados: `opportunities.briefing_data` → `event_briefs` (mapeando os 8 campos antigos), preservando `briefing_revision`
-- [ ] `opportunities.briefing_data` marcada como legado read-only por um ciclo, com teste que garante que nada novo escreve nela
-- [ ] `EventBriefService` com `mutate()` seguindo o padrão de `BudgetRevisionService::mutate()` — lock, revisão esperada, snapshot
-- [ ] `completeness_score` calculado por serviço, com peso por criticidade (data, local, público, objetivo, investimento pesam mais)
-- [ ] **Teste:** aprovar brief com `missing_critical` não vazio é recusado; brief aprovado rejeita alteração silenciosa; revisão concorrente recupera com mensagem
+- [ ] Migration + model + enums nativos
+- [ ] Migração de dados dos 8 campos antigos, preservando `briefing_revision`
+- [ ] `briefing_data` vira legado somente-leitura, com teste garantindo que nada novo escreve nela
+- [ ] `EventBriefService::mutate()` no padrão de `BudgetRevisionService`
+- [ ] `completeness_score` com peso por criticidade
+- [ ] **Teste:** aprovar com `missing_critical` é recusado; aprovado rejeita alteração silenciosa; revisão concorrente recupera
 
 ## A5 — `brief_requirements`: escopo técnico por área
 
 O diferencial de produtora. Hoje escopo é uma string.
 
-**Nova tabela `brief_requirements`:**
-- `event_brief_id` FK, `sequence`
-- `area` enum: `palco|som|iluminacao|video_led|projecao|cenografia|mobiliario|climatizacao|energia|estrutura|tenda|piso|catering|bar|staff|seguranca|brigada|limpeza|transporte|hospedagem|brindes|sinalizacao|credenciamento|fotografia|filmagem|live_streaming|traducao_simultanea|entretenimento|decoracao|flores|licencas|outro`
-- `requirement` text, `quantity` decimal, `unit` varchar
-- `priority` enum `obrigatorio|desejavel|opcional`
-- `status` enum `identificado|confirmado|descartado|substituido`
-- `source` enum `cliente|reuniao_ia|equipe|historico|venue`
-- `classification` enum `fact|hypothesis|conflict|unknown` — mesma taxonomia da IA
-- `evidence_segment_ids` json — **aponta para o trecho da gravação**
-- `case_context_entry_id` FK nullable
-- `confirmed_by`, `confirmed_at`, `revision`
+- [ ] `area` (enum com 30 áreas: palco, som, iluminação, LED, cenografia, climatização, energia, catering, staff, segurança, credenciamento, streaming, tradução…)
+- [ ] `requirement`, `quantity`, `unit`, `priority` (`obrigatorio|desejavel|opcional`), `status`, `source`
+- [ ] `classification` (`fact|hypothesis|conflict|unknown`) e `evidence_segment_ids` — aponta para o trecho da gravação
+- [ ] Gera `supplier_needs` por prévia confirmável
+- [ ] Alimenta a prévia de escopo de produção, complementando `ProductionOperations::prepareFromApprovedScope()`
+- [ ] **Teste:** requisito `hypothesis` não vira necessidade sem confirmação humana
 
-- [ ] Migration + model + enum `RequirementArea` com `label()` em português
-- [ ] `brief_requirements` alimenta `supplier_needs` (hoje criada à mão) — ação "gerar necessidades a partir dos requisitos", com prévia confirmável
-- [ ] `brief_requirements` alimenta a prévia de escopo de produção, complementando `ProductionOperations::prepareFromApprovedScope()`
-- [ ] UI: agrupamento por área com badge de classificação e link "ouvir trecho"
-- [ ] **Teste:** requisito com `classification = hypothesis` não vira `supplier_need` sem confirmação humana explícita
+## A6 — `brief_program_blocks`: programação
 
-## A6 — `brief_program_blocks`: programação do evento
-
-- [ ] Nova tabela: `event_brief_id`, `sequence`, `starts_at`, `ends_at`, `title`, `description`, `location_note`, `responsible_area`, `attendees_estimate`, `source`, `evidence_segment_ids`
-- [ ] Validação: bloco fora da janela `starts_at`/`ends_at` do brief é recusado; sobreposição gera alerta, não bloqueio
-- [ ] UI: timeline vertical editável, com arrastar para reordenar no desktop e ordenação por botão no mobile
-- [ ] **Teste:** programação sobreposta é sinalizada; bloco fora da data do evento é recusado
+- [ ] `sequence`, `starts_at`, `ends_at`, `title`, `description`, `location_note`, `responsible_area`, `attendees_estimate`, `source`, `evidence_segment_ids`
+- [ ] Bloco fora da janela do evento é recusado; sobreposição alerta sem bloquear
+- [ ] Timeline editável, arrastar no desktop e reordenar por botão no mobile
+- [ ] **Teste:** sobreposição sinalizada; bloco fora da data recusado
 
 ## A7 — Vínculo permanente brief ↔ gravação
 
-Hoje o purge apaga o áudio após `retention_days` (padrão 30) e preserva só a transcrição — `routes/console.php:68`. O requisito de vincular brief à gravação original vale 30 dias.
+Hoje o purge apaga o áudio em 30 dias e o vínculo morre.
 
-- [ ] `case_context_entries` ganha: `title` (nome da reunião), `meeting_date`, `meeting_kind` (enum `kickoff|alinhamento|visita_tecnica|negociacao|apresentacao|pos_evento`), `retain_forever` bool, `participants` json
-- [ ] **Nova tabela `brief_field_sources`**: `event_brief_id`, `field_path` (ex.: `audience_expected_max`, `requirements.12`), `case_context_entry_id`, `segment_ids` json, `extracted_at`, `confirmed_by`, `confirmed_at`
-  → cada campo do brief aponta para o trecho exato da reunião que o originou
-- [ ] `context:purge-expired-audio` passa a **nunca** apagar áudio de entry com `retain_forever = true` ou vinculado a brief aprovado; registra o motivo da preservação em `AuditLog`
-- [ ] UI: no brief, cada campo preenchido por IA mostra ícone de origem → abre player no timestamp exato
-- [ ] **Teste:** purge com brief aprovado vinculado não remove o áudio e registra auditoria; campo confirmado mantém `brief_field_sources` mesmo após nova revisão do brief
+- [ ] `case_context_entries` ganha `title`, `meeting_date`, `meeting_kind`, `retain_forever`, `participants`
+- [ ] **`brief_field_sources`**: `event_brief_id`, `field_path`, `case_context_entry_id`, `segment_ids`, `extracted_at`, `confirmed_by/at`
+- [ ] `context:purge-expired-audio` nunca remove áudio vinculado a brief aprovado; registra o motivo
+- [ ] **Player sincronizado:** cada campo do brief tem ícone de origem que abre o áudio no instante exato
+- [ ] **Teste:** purge preserva áudio de brief aprovado; campo confirmado mantém origem após nova revisão
 
-## A8 — Resolver duplicidades e dívidas do schema
+## A8 — Dívidas do schema
 
-- [ ] **`opportunities.stage` × `commercial_stage`**: dois enums paralelos (13 e 8 estados). Consolidar em `stage` usando `OpportunityStage`; `CommercialStage` vira subconjunto derivado ou é removido. Migration de dados + remoção da coluna redundante
-- [ ] **`opportunities.client_name`, `contact_name`, `contact_email`**: denormalização em conflito com `client_id`/`contact_id`. Passar a derivar por relação; manter as colunas apenas como snapshot histórico imutável, com teste que garante que ninguém mais escreve nelas
-- [ ] **`opportunities.location`** → `venue_id` + `location_note` (A3)
-- [ ] **`opportunities.briefing_data`** → `event_briefs` (A4)
-- [ ] **`attachments`**: tabela órfã, nenhum código a usa. Ativar no bloco G4 ou remover — não deixar meio-termo
-- [ ] **`briefing_audio`** (fluxo legado) × `context_audio_assets` (fluxo atual): decidir migração ou aposentadoria explícita, com rota de leitura preservada para histórico
-- [ ] **Teste:** `DatabasePortabilityTest` estendido cobre as novas tabelas em SQLite e MariaDB
+- [ ] `stage` × `commercial_stage`: dois enums paralelos (13 e 8 estados). Consolidar em um
+- [ ] `client_name`/`contact_name`/`contact_email` denormalizados contra `client_id`/`contact_id`: derivar por relação, colunas viram snapshot histórico
+- [ ] `attachments`: tabela órfã — ativar no G4 ou remover
+- [ ] `briefing_audio` (legado) × `context_audio_assets` (atual): migrar ou aposentar explicitamente
+- [ ] **Teste:** `DatabasePortabilityTest` cobre as novas tabelas em SQLite e MariaDB
 
 ---
 
-# BLOCO B — IA em produção real
+# B — IA em produção real
 
-**Objetivo:** sair de "arquitetura pronta, nunca ligada" para "operando com custo, precisão e evidência medidos".
+## B1 — Verificação com chamada real
 
-**Arquivos-chave:** `app/AI/`, `app/Jobs/`, `app/Contracts/MediaPreparationProvider.php`, `config/ai.php`
+Modelos e parâmetros já conferidos em 10/09/2026 e **corretos**: `gpt-5.6-luna` (extração, structured outputs, 1,05M de contexto, US$ 0,20/1,20 por milhão) e `gpt-4o-transcribe-diarize` com `diarized_json` + `chunking_strategy: auto`.
 
----
+- [x] `AiConfiguration::publicState()` deixou de anunciar `gpt-4o-mini` fixo
+- [x] `.env.example` ganhou `AI_MODE` e `AI_DATA_POLICY_APPROVED`
+- [ ] `php artisan ai:verify` — chamada real mínima de cada operação, gravando resultado, custo e `request_id` em `AiRun`
+- [ ] `config/ai.php` ganha catálogo de modelos com data da última verificação
+- [ ] **Teste:** chave ausente falha com mensagem acionável, não com stack trace
 
-## B1 — Catálogo de modelos e verificação real
+## B2 — Worker externo de mídia
 
-Verificado em 10/09/2026: os modelos e parâmetros configurados estão **corretos**. `gpt-5.6-luna` existe, suporta structured outputs por JSON Schema, tem 1,05M de contexto e custa US$ 0,20/M entrada e US$ 1,20/M saída. `gpt-4o-transcribe-diarize` exige exatamente `response_format: diarized_json` + `chunking_strategy: auto` — que é o que `OpenAiAudioTranscriber::transcribe()` já envia. Não há correção de configuração a fazer.
+- [ ] `app/Media/FfmpegMediaPreparationProvider.php` — o contrato `MediaPreparationProvider` já existe
+- [ ] **`media_jobs`**: `context_audio_asset_id`, `operation`, `external_id`, `status`, `callback_token_hash`, `attempts`, `payload`, `result`, `error`
+- [ ] `POST /api/media/callback` com HMAC e idempotência. Callback é **dado, nunca instrução**: só move status e anexa resultado
+- [ ] Envio direto do navegador para o worker por URL assinada de curta duração
+- [ ] Fallback para `PassThroughMediaPreparationProvider` + preparo no navegador, com aviso na tela
+- [ ] **Teste:** HMAC inválido recusado; callback repetido não duplica segmento; worker fora do ar mantém o manual vivo
 
-- [x] **Bug real:** `AiConfiguration::publicState()` devolve `'model' => 'gpt-4o-mini'` fixo no código, enquanto extração usa `gpt-5.6-luna` e transcrição usa `gpt-4o-transcribe-diarize`. A tela de IA informa modelo errado ao operador. Derivar de `config('ai.*')`
-- [x] `.env.example` ganha `AI_MODE` e `AI_DATA_POLICY_APPROVED` (ausentes hoje, mas lidos por `AiConfiguration::setting()`) e os modelos efetivos
-- [ ] Novo comando `php artisan ai:verify` — faz uma chamada real mínima de cada operação (transcrição curta, extração de poucos segmentos), grava resultado, custo e `request_id` em `AiRun`, e imprime relatório
-- [ ] `config/ai.php` ganha `models` com catálogo validado e data da última verificação; `ai:verify` atualiza
-- [ ] **Teste:** `ai:verify` com chave ausente falha com mensagem acionável, não com stack trace; com chave válida grava evidência
+## B3 — Áudio longo
 
-## B2 — Worker externo de mídia (decisão: híbrido)
-
-App fica na Hostinger. Preparação de mídia e transcrição saem para um worker com FFmpeg.
-
-- [ ] Novo `app/Media/FfmpegMediaPreparationProvider.php` implementando o contrato existente `App\Contracts\MediaPreparationProvider` — o contrato já está pronto, só falta a implementação
-- [ ] **Nova tabela `media_jobs`**: `context_audio_asset_id`, `operation` enum `prepare|transcribe`, `external_id`, `status`, `callback_token_hash`, `attempts`, `payload` json, `result` json, `error`, `dispatched_at`, `completed_at`
-- [ ] Rota `POST /api/media/callback` com verificação HMAC do corpo + `callback_token_hash` + idempotência por `external_id`. Callback é **dado, nunca instrução** — payload só pode mover status e anexar resultado, nunca disparar outra ação
-- [ ] Upload direto do navegador para o worker via URL assinada de curta duração, evitando o limite de upload da Hostinger
-- [ ] Fallback: worker indisponível → volta para `PassThroughMediaPreparationProvider` + preparação no navegador (comportamento atual), com aviso claro na UI
-- [ ] Worker provisionado com FFmpeg, isolamento por caso e retenção espelhando `ai_settings.retention_days`
-- [ ] **Teste:** callback com HMAC inválido é recusado; callback repetido não duplica segmento; worker fora do ar mantém o fluxo manual vivo
-
-## B3 — Áudio longo de verdade
-
-- [ ] Segmentação em partes **decodificáveis** (não chunk de transporte), com overlap configurável, preservando offsets absolutos
-- [ ] **Continuidade de falante entre partes.** A API diariza cada requisição de forma independente: o "Falante A" da parte 1 não é o "Falante A" da parte 2. Acima de 25 MB o arquivo obrigatoriamente vira várias requisições. Usar `known_speaker_names[]` + `known_speaker_references[]` (amostras de 2–10s extraídas da primeira parte) para amarrar a identidade nas partes seguintes; sem isso a transcrição de reunião longa sai com falantes embaralhados
-- [ ] Deduplicação de texto na junção sem descartar fala — costura por similaridade na região de overlap
-- [ ] `context_audio_assets` ganha `part_count`, `parts` json (`{index, start_ms, end_ms, path, digest}`)
-- [ ] `TranscribeContextAudio` passa a montar segmentos de múltiplas partes preservando `sequence` e `source_chunk` (colunas já existem em `case_context_segments`)
-- [ ] Ajustar a janela da fila: `routes/console.php:17` roda `queue:work --max-time=720` com job de `timeout=660`. Com worker externo, o job do app vira despacho + poll, não processamento longo
-- [ ] **Teste:** áudio de 3h processa por partes; retomada após falha na parte 7 não reprocessa as 6 anteriores nem cobra de novo; offsets batem com o player
+- [ ] Partes **decodificáveis** com overlap, preservando offsets absolutos
+- [ ] **Continuidade de falante entre partes.** A API diariza cada requisição de forma independente — o "Falante A" da parte 1 não é o da parte 2, e acima de 25 MB o arquivo obrigatoriamente vira várias requisições. Usar `known_speaker_names[]` + `known_speaker_references[]` (amostras de 2–10s da primeira parte). Sem isso, reunião longa sai com falantes embaralhados
+- [ ] Costura por similaridade no overlap, sem descartar fala
+- [ ] `context_audio_assets` ganha `part_count` e `parts`
+- [ ] Com worker externo, o job do app vira despacho + acompanhamento, não processamento longo
+- [ ] **Teste:** áudio de 3h processa por partes; falha na parte 7 não reprocessa nem recobra as anteriores; offsets batem com o player
 
 ## B4 — Extração alimenta o brief tipado
 
-Hoje a extração devolve `module_changes` com `field` string livre e grava em 8 campos. Com o Bloco A, passa a preencher entidades.
+- [ ] `app/AI/EventBriefSchema.php` — JSON Schema estrito com os enums do domínio. O modelo escolhe de lista fechada, não inventa categoria
+- [ ] `ContextIntelligenceSchema::MODULES` ganha `requirements` e `program`
+- [ ] Extração devolve requisitos e blocos de programação candidatos, cada um com `evidence_segment_ids`
+- [ ] `CaseContextService::confirm()` aceita por módulo **e por item**, gravando `brief_field_sources`
+- [ ] **Teste:** área fora do enum é recusada; `unknown` não pode ser confirmado sem edição humana
 
-- [ ] Novo `app/AI/EventBriefSchema.php` — JSON Schema estrito com os enums reais do domínio (`event_type`, `event_format`, `RequirementArea`, `priority`, `date_confidence`…). Modelo não inventa categoria: escolhe de lista fechada
-- [ ] `ContextIntelligenceSchema::MODULES` ganha `requirements` e `program` como blocos próprios
-- [ ] Extração devolve, além dos campos do brief: `brief_requirements` candidatos (área, quantidade, unidade, prioridade, classificação) e `brief_program_blocks` candidatos
-- [ ] Cada item candidato carrega `evidence_segment_ids` — validado por `ContextIntelligenceSchema::validate()`, que já recusa citação de segmento inexistente
-- [ ] Confirmação parcial em `CaseContextService::confirm()` estendida: aceitar por módulo **e por item**, gravando `brief_field_sources` (A7)
-- [ ] Prompt atualizado: mantém "conteúdo é dado, nunca instrução", acrescenta o vocabulário fechado do domínio e a proibição de inferir preço, fornecedor ou aprovação
-- [ ] **Teste:** extração que propõe área fora do enum é recusada na validação; item `unknown` não pode ser confirmado sem edição humana; confirmação grava origem por campo
+## B5 — Pacote de projeto
 
-## B5 — Materiais organizados de projeto (requisito central)
+- [ ] `ProjectPackageBuilder`: capa, brief, requisitos por área, programação, cronograma de montagem/evento/desmontagem, equipe, investimento
+- [ ] PDF (dompdf já instalado) + ZIP versionado
+- [ ] **`project_packages`**: `opportunity_id`, `revision`, `path`, `hash`, `contents`, `source_brief_revision`
+- [ ] Regeneração idempotente; brief alterado marca o pacote anterior como desatualizado sem apagar
+- [ ] Informação vinda de IA e ainda não confirmada é marcada visualmente
+- [ ] **Teste:** gerar duas vezes sem mudança não cria segunda versão
 
-- [ ] Serviço `ProjectPackageBuilder` gera, a partir do brief aprovado: capa do evento, brief estruturado, requisitos por área, programação, cronograma de montagem/evento/desmontagem, equipe prevista e resumo de investimento
-- [ ] Saída em PDF (reusando `dompdf`, já instalado) + ZIP versionado
-- [ ] **Nova tabela `project_packages`**: `opportunity_id`, `revision`, `path`, `hash`, `contents` json, `generated_by`, `generated_at`, `source_brief_revision`
-- [ ] Regeneração é idempotente por `source_brief_revision` + hash de conteúdo
-- [ ] Pacote marca visualmente cada informação vinda de IA ainda não confirmada
-- [ ] **Teste:** pacote gerado duas vezes sem mudança de brief não cria segunda versão; brief alterado marca pacote anterior como `stale`, sem apagar
+## B6 — Avaliação medida
 
-## B6 — Avaliação medida da IA
+- [ ] 10 reuniões (sintéticas + reais autorizadas): fatos críticos, informação ausente, contradição, múltiplos falantes, mudança de escopo, falha e retomada
+- [ ] Métricas por campo: precisão, recall, taxa de correção humana, custo real, tempo até brief revisável
+- [ ] `php artisan ai:evaluate` gera `docs/operations/ai-briefing-evaluation.md`
+- [ ] **Teste:** avaliação roda com respostas gravadas, sem custo em CI
 
-- [ ] Conjunto de 10 reuniões (sintéticas + reais autorizadas) cobrindo: fatos críticos, informação ausente, contradição entre participantes, múltiplos falantes, mudança de escopo no meio, falha e retomada
-- [ ] Métricas por campo: precisão, recall, taxa de correção humana, custo real por reunião, tempo até brief revisável
-- [ ] Comando `php artisan ai:evaluate` gera relatório em `docs/operations/ai-briefing-evaluation.md` (arquivo já existe, hoje sem dados reais)
-- [ ] Critério de aceite: nenhuma sugestão aplicada sem origem rastreável; nenhum `unknown` promovido a `fact`; custo por reunião dentro do limite configurado
-- [ ] **Teste:** a suíte de avaliação roda com provider gravado (fixtures de resposta real), sem custo em CI
+## B7 — Degradação
 
-## B7 — Degradação e limites
-
-- [ ] Estados de erro com texto acionável em português: chave ausente, política pendente, tarifa não configurada, limite mensal atingido, worker fora do ar, áudio corrompido, áudio longo demais
-- [ ] Limite mensal atingido → fluxo manual completo, com aviso e link para configuração
-- [ ] `MeteredAiProvider` e `AiCostLedger` expostos numa tela de consumo: gasto do mês, por operação, por caso
-- [ ] **Teste:** com IA em `manual`, todo o fluxo de brief funciona pelo teclado, ponta a ponta
+- [ ] Erros acionáveis em português para cada causa: chave, política, tarifa, limite, worker, áudio corrompido, áudio longo demais
+- [ ] Tela de consumo: gasto do mês por operação e por caso
+- [ ] **Teste:** com IA em `manual`, todo o fluxo de brief funciona pelo teclado
 
 ---
 
-# BLOCO C — Financeiro operacional do evento
+# L — Diferenciais competitivos
 
-**Objetivo:** o dinheiro do evento dentro do sistema, ligado ao orçamento aprovado. Não é ERP contábil.
+**Objetivo:** o que separa "sistema bom" de "sistema que a concorrência não tem". Depende de A e K.
 
-**Arquivos-chave:** `app/Services/Money.php`, `app/Services/BudgetRevisionService.php`, `app/Models/Budget.php`, `app/Models/PostEventReport.php`
+## L1 — Link de briefing para o cliente preencher
 
----
+Não existe hoje. O briefing é só interno.
 
-## C1 — Condições de pagamento na proposta
+- [ ] **`briefing_templates`**: perguntas e condições versionadas por tipo de evento; versão liberada não muda
+- [ ] **`briefing_links`**: token só em hash, validade, revogação, modo de múltiplas respostas, **modo de teste identificado**
+- [ ] **`briefing_submissions`**: respostas de um respondente, rascunho/revisão/final, identidade própria
+- [ ] Página pública com a identidade RD, não cara de formulário genérico: salva e retoma, volta, revisa, erro acessível, funciona no celular
+- [ ] Nunca perguntar de novo o que já está confirmado — apresentar para correção
+- [ ] Respostas entram como contexto do caso, na mesma esteira de prévia e confirmação
+- [ ] Submissão de teste não dispara análise paga nem vira fato de proposta
+- [ ] **Teste:** token revogado recusa; respostas parciais sobrevivem a queda de conexão; página não expõe custo, margem ou nota interna
 
-- [ ] **Nova tabela `payment_plans`**: `opportunity_id`, `document_id` nullable, `revision`, `total_cents`, `currency` default BRL, `installments_count`, `notes`, `status` enum `draft|proposed|accepted|superseded`
-- [ ] **Nova tabela `payment_plan_installments`**: `payment_plan_id`, `sequence`, `amount_cents`, `percentage_bps`, `trigger` enum `assinatura|dias_antes_evento|dias_apos_evento|entrega|data_fixa|marco`, `trigger_offset_days`, `due_date` (calculada ou fixa), `description`
-- [ ] Soma das parcelas obrigatoriamente igual ao total — validação com `Money::ratio` para não perder centavo no rateio percentual
-- [ ] Plano vira seção da proposta (Bloco G1), não texto solto
-- [ ] **Teste:** parcelas em percentual somando 100% batem o total ao centavo; plano aceito rejeita alteração; alteração exige nova revisão
+## L2 — Memória de eventos anteriores
 
-## C2 — Contas a receber
+O recurso mais forte disponível para uma produtora com histórico.
 
-- [ ] **Nova tabela `receivables`**: `opportunity_id`, `payment_plan_installment_id` nullable, `due_date`, `amount_cents`, `status` enum `previsto|faturado|recebido|parcial|atrasado|cancelado`, `received_at`, `received_amount_cents`, `method` enum `pix|transferencia|boleto|cartao|dinheiro|outro`, `evidence`, `invoice_number`, `notes`
-- [ ] Geração a partir do plano aceito, com prévia confirmável (nunca cria sozinho)
-- [ ] Baixa parcial suportada; status `atrasado` derivado por data, não gravado manualmente
-- [ ] **Teste:** baixa maior que o saldo é recusada; baixa parcial mantém saldo correto; cancelar recebível com baixa exige justificativa e auditoria
+- [ ] Similaridade entre eventos por tipo, porte, público, local e áreas de requisito
+- [ ] "Esse evento se parece com X" traz: escopo usado, fornecedores que atenderam, **custo realizado** (não o orçado) e ocorrências do pós-evento
+- [ ] Reaproveitar como prévia confirmável — nunca copiar direto
+- [ ] Evento recorrente puxa a edição anterior pelo `previous_opportunity_id`
+- [ ] Painel de referência: quanto costuma custar cada área por porte de evento, com faixa e amostra
+- [ ] **Teste:** sugestão sempre cita o evento de origem; caso arquivado ou de outro cliente não vaza custo sem permissão
 
-## C3 — Contas a pagar por fornecedor
+## L3 — Catálogo de entregáveis e cenários de escopo
 
-- [ ] **Nova tabela `payables`**: `opportunity_id`, `supplier_id`, `supplier_quote_id` nullable, `budget_item_id` nullable, `description`, `due_date`, `amount_cents`, `status` enum `previsto|aprovado|pago|parcial|atrasado|cancelado`, `paid_at`, `paid_amount_cents`, `method`, `evidence`, `invoice_number`, `invoice_path`, `approved_by`, `approved_at`
-- [ ] Origem rastreável: pagável nasce do item de orçamento aprovado ou da cotação selecionada (`supplier_quote_selections` já existe)
-- [ ] Aprovação de pagamento exige autoridade — reusar `can_approve_commercial` ou nova ability `approve-payment`
-- [ ] **Teste:** pagável sem origem em orçamento aprovado ou cotação selecionada é recusado; pagar sem aprovação é bloqueado
+- [ ] **`deliverables`**: escopo incluso, exclusões, critério de aceite, insumos do cliente, papéis, horas, recorrência, dependências
+- [ ] **`scope_scenarios`**: mínimo, recomendado e completo, compostos a partir do catálogo e dos requisitos do brief
+- [ ] Comparação lado a lado dos três cenários, com o que entra e o que sai
+- [ ] O orçamento continua sendo a **única** autoridade de preço; cenário não precifica
+- [ ] Custo desconhecido permanece bloqueador — nunca preenchido com estimativa inventada
+- [ ] **Teste:** cenário sem custo de item obrigatório não vira proposta; alterar catálogo não altera proposta já emitida
 
-## C4 — Previsto × realizado por categoria
+## L4 — Comparação honesta de cotações
 
-Hoje `post_event_reports` tem `planned_total_cents` e `actual_total_cents` — dois números para um evento inteiro.
+- [ ] Normalizar unitário × pacote antes de comparar (o campo `price_basis` já existe)
+- [ ] Sinalizar escopo não equivalente, validade vencida e revisão substituída
+- [ ] Nunca presumir que o menor preço é a melhor opção — a tela diz isso explicitamente
+- [ ] Comparação exportável para a decisão com o cliente
+- [ ] **Teste:** comparar pacote com unitário sem normalizar é impedido
 
-- [ ] **Nova tabela `event_cost_results`**: `opportunity_id`, `category` (mesmo vocabulário de `budget_items.category`), `planned_cents`, `actual_cents`, `variance_cents` (derivado), `variance_reason`, `recorded_by`
-- [ ] Populada a partir de `budget_items` (previsto) e `payables` pagos (realizado), com ajuste manual justificado
-- [ ] `PostEventReport` passa a exibir desvio por categoria, não só total
-- [ ] **Teste:** desvio acima de limite configurável exige `variance_reason` para fechar o pós-evento
+## L5 — Busca que entende produção
 
-## C5 — Margem real do evento
+- [ ] Buscar "palco 8x4" encontra em brief, requisito, cotação, validação técnica e evento anterior
+- [ ] Filtros por área, período, cliente, local e faixa de valor
+- [ ] Resultado mostra o contexto do achado, não só o título
+- [ ] **Teste:** resultado respeita permissão e não atravessa caso arquivado sem intenção
 
-- [ ] Serviço `EventProfitability` reusando `Money::breakdown()` (`app/Services/Money.php`) — não reimplementar cálculo
-- [ ] Expõe: receita contratada, custo previsto, custo realizado, margem prevista, margem realizada, taxa de gestão e administração efetivas
-- [ ] Bloqueio explícito: margem realizada só é final com pós-evento encerrado
-- [ ] **Teste:** margem calculada bate com a soma de `Money::breakdown` de cada item; evento sem pós-evento fechado marca margem como provisória
+## L6 — Painel de decisão
 
-## C6 — Visão financeira
-
-- [ ] Painel por caso: plano de pagamento, a receber, a pagar, previsto × realizado, margem
-- [ ] Painel consolidado: fluxo previsto por mês, atrasados, eventos com margem abaixo do alvo
-- [ ] Reusar `OperationalMetrics` (`app/Services/OperationalMetrics.php`) como padrão de cálculo derivado, não gravado
-- [ ] **Teste:** indicadores derivam de dados reais; caso arquivado não entra no consolidado
-
----
-
-# BLOCO D — Comunicação e assinatura, com autorização humana
-
-**Objetivo:** o sistema executa e registra; a equipe autoriza. IA prepara, nunca envia.
-
-**Arquivos-chave:** `app/Services/DocumentRevisions.php`, `app/Http/Controllers/DocumentController.php`, `config/mail.php`
+- [ ] Substituir lista de pendências por **o que trava o quê**: "orçamento parado porque falta cotação de som"
+- [ ] Cadeia de bloqueio visível: brief → viabilidade → orçamento → proposta → contrato → produção
+- [ ] Reusar `NextActionService` e `OperationalQueueService::items()` como fonte única
+- [ ] **Teste:** o painel deriva de dados reais e não duplica lógica de pendência
 
 ---
 
-## D1 — Envio real de e-mail
-
-Hoje: zero `Mail::` ou `Notification` na aplicação. `MAIL_MAILER=log`. Envio é evidência digitada em `DocumentRevisions::sent()`.
-
-- [ ] Configurar transporte real (SMTP autenticado ou Resend/Postmark) com credenciais fora do repositório
-- [ ] **Nova tabela `mail_logs`**: `opportunity_id`, `document_id` nullable, `to` json, `cc` json, `subject`, `body_hash`, `provider_message_id`, `status` enum `queued|sent|delivered|bounced|failed`, `authorized_by`, `authorized_at`, `sent_at`, `delivered_at`, `opened_at`, `error`, `attempt`
-- [ ] Fluxo obrigatório: rascunho → revisão → **tela de autorização de envio** mostrando destinatário, assunto, anexo e link → confirmação por quem tem autoridade → sistema envia → registra
-- [ ] `DocumentRevisions::sent()` passa a aceitar registro automático do envio real, mantendo o caminho de evidência manual como fallback quando o e-mail falha
-- [ ] Falha de envio preserva o documento e a tentativa — nunca perde estado (jornada já prevista no checklist do dossiê)
-- [ ] Templates em `resources/views/mail/` com identidade RD, versão texto e HTML
-- [ ] **Teste:** envio sem autorização explícita é recusado; usuário sem `can_approve_commercial` não autoriza; falha de provedor mantém documento em `reviewed` e registra tentativa; reenvio não duplica `mail_log`
-
-## D2 — Assinatura eletrônica integrada
-
-- [ ] Novo contrato `app/Contracts/SignatureProvider.php` (espelhando o padrão de `AudioTranscriber`/`MediaPreparationProvider`)
-- [ ] Implementação para provedor brasileiro (Clicksign, D4Sign, ZapSign ou Autentique) + `NullSignatureProvider` para desenvolvimento
-- [ ] **Nova tabela `signature_requests`**: `document_id`, `provider`, `external_id`, `status` enum `draft|sent|viewed|signed|refused|expired|cancelled`, `signers` json, `sent_at`, `signed_at`, `signed_document_path`, `signed_document_hash`, `webhook_events` json
-- [ ] Webhook com verificação de assinatura do provedor + idempotência; atualiza `documents.signed_at` e cria `external_signature_records` (tabela já existe)
-- [ ] Registro manual de assinatura externa **permanece** válido — `DocumentRevisions::externalSignature()` continua funcionando
-- [ ] Envio para assinatura exige autoridade comercial, igual ao envio de proposta
-- [ ] **Teste:** webhook forjado é recusado; webhook repetido não duplica registro; contrato assinado rejeita nova versão sem reabertura explícita
-
-## D3 — Lembretes e notificações internas
-
-- [ ] `notifications` (tabela padrão Laravel) + canais `database` e `mail`
-- [ ] Gatilhos: tarefa vencendo/atrasada, cotação perto de `valid_until`, proposta enviada sem resposta há N dias, validação técnica pendente antes da montagem, parcela a receber/pagar vencendo, brief aprovado sem orçamento, caso sem próxima ação
-- [ ] Reusar `NextActionService` e `OperationalQueueService::items()` como fonte da verdade do que está pendente — não criar segunda lógica
-- [ ] Preferências por usuário: canal e frequência (imediato, resumo diário, desligado)
-- [ ] Central de notificações no shell (`resources/js/layout.tsx`), com contador e marcação de lida
-- [ ] Agendamento pelo `Schedule` já existente em `routes/console.php`
-- [ ] **Teste:** lembrete não dispara duas vezes para o mesmo fato; usuário com canal desligado não recebe; resumo diário agrupa sem repetir
-
-## D4 — Fronteira da IA, escrita e testada
-
-- [ ] Regra explícita no código e no prompt: IA pode preparar documento, sugerir próxima ação e redigir rascunho de e-mail. **Não pode** enviar comunicação externa, aceitar proposta, contratar fornecedor, aprovar pagamento ou assumir compromisso
-- [ ] `AssistantActions` auditado contra essa lista; qualquer ação de efeito externo passa por prévia + confirmação humana
-- [ ] **Teste dedicado:** nenhuma rota de efeito externo é alcançável a partir de um job de IA sem `AssistantPreview` confirmada por usuário com autoridade
-
-## D5 — WhatsApp: preparado, não implementado
-
-- [ ] Definir o contrato `ChannelProvider` de forma que WhatsApp entre depois sem refatorar envio, registro e autorização
-- [ ] Não implementar nesta fase — decisão registrada
-
----
-
-# BLOCO E — Segurança e contas
-
-**Objetivo:** conta de usuário utilizável e defensável em produção.
-
----
-
-- [x] **E1 — Recuperação de senha.** Tabela `password_reset_tokens` existe; rota não. Implementar solicitação, e-mail, token single-use com expiração, rate limit por e-mail e por IP, e invalidação de sessões após troca
-- [ ] **E2 — Verificação de e-mail** para usuário criado pela equipe, com primeiro acesso guiado (`users.email_verified_at` já existe)
-- [ ] **E3 — Política de senha**: comprimento mínimo, checagem contra lista de senhas comuns, troca obrigatória no primeiro acesso, bloqueio após tentativas (o throttle de login já existe em `routes/web.php:37`)
-- [ ] **E4 — 2FA (TOTP)** opcional, **obrigatório** para quem tem `can_approve_commercial` — quem autoriza envio, assinatura e pagamento
-- [ ] **E5 — Papéis reais.** `users.role` é string livre com dois valores efetivos; `Ability` tem 6 casos sem matriz. Criar mapa explícito papel → abilities (`admin`, `diretor`, `produtor`, `comercial`, `financeiro`, `operacao`, `leitura`) e cobrir com `AuthorizationMatrixTest` estendido
-- [ ] **E6 — Sessão e acesso**: expiração configurável, "sair de todos os dispositivos", registro de acesso (IP, user agent, data) e revisão de sessões ativas
-- [ ] **E7 — Dados sensíveis**: revisar `ai_settings.api_key` (hoje texto na tabela) para armazenamento cifrado; conferir que nenhum caminho privado, chave ou nota interna vaza em resposta Inertia
-- [ ] **Teste:** token de recuperação usado duas vezes é recusado; usuário sem 2FA configurado não consegue autorizar envio; matriz de permissão cobre todas as rotas de efeito
-
----
-
-# BLOCO F — Produção e equipe
-
-**Objetivo:** produção de evento com equipe, local e execução física — não uma lista de tarefas.
-
-**Arquivos-chave:** `app/Services/ProductionOperations.php`, `resources/js/pages/Production.tsx`
-
----
-
-- [ ] **F1 — Múltiplos responsáveis.** `production_tasks.assigned_to` é um único usuário. Nova `task_assignments` (`production_task_id`, `user_id`, `role`, `assigned_by`, `assigned_at`), preservando `assigned_to` como responsável principal
-- [ ] **F2 — Escala de equipe.** Nova `crew_assignments`: `opportunity_id`, `user_id` nullable, `supplier_id` nullable, `person_name` (freelancer sem cadastro), `role` enum (`coordenador|produtor|assistente|tecnico_som|tecnico_luz|tecnico_video|cenotecnico|montador|staff|recepcao|seguranca|brigadista|limpeza|motorista|outro`), `call_time`, `end_time`, `rate_cents`, `meal_included`, `transport_included`, `status` enum `previsto|confirmado|presente|ausente|cancelado`, `confirmed_at`, `notes`
-- [ ] **F3 — Tarefa com contexto físico.** `production_tasks` ganha `venue_area` (onde no local), `checklist` json, `evidence_photos` json, `estimated_duration_minutes`
-- [ ] **F4 — Checklist de montagem e desmontagem** com registro fotográfico e responsável por item; desmontagem exige conferência de devolução de material
-- [ ] **F5 — Visualizações reais.** `Production.tsx` já tem os três modos (`list|timeline|calendar`) mas todos renderizam a mesma lista. Implementar linha do tempo com dependências visíveis (`dependency_id` já existe) e calendário por fase
-- [ ] **F6 — Validação técnica ligada ao venue** (`venue_id` de A3), comparando medidas declaradas com as do local e alertando divergência
-- [ ] **F7 — Ordem de serviço** por fornecedor, gerada da necessidade + cotação selecionada, com confirmação de recebimento
-- [ ] **Teste:** escala com pessoa alocada em dois eventos no mesmo horário gera conflito explícito; item de desmontagem sem conferência bloqueia encerramento; tarefa com dependência não concluída não avança (regra já coberta por `ProductionOperationsTest`, estender)
-
----
-
-# BLOCO G — Documentos e materiais de projeto
-
-**Objetivo:** proposta de produtora de eventos, não documento genérico de três seções.
-
-**Arquivos-chave:** `app/Services/DocumentRevisions.php`, `resources/views/documents/proposal.blade.php`, `resources/js/pages/DocumentWorkspace.tsx`
-
----
+# G — Documentos e proposta
 
 ## G1 — Estrutura real de proposta
 
-Hoje `documents.content.sections` tem três chaves: `objective`, `scope`, `conditions`.
+Hoje `documents.content.sections` tem três chaves: objetivo, escopo, condições.
 
-- [ ] **Nova tabela `document_sections`**: `document_id`, `sequence`, `key`, `title`, `body`, `is_visible_to_client` bool, `source` json (de onde veio: brief, orçamento, viabilidade)
-- [ ] Seções padrão de proposta: `apresentacao`, `entendimento_da_necessidade`, `conceito`, `escopo_detalhado_por_area`, `programacao`, `cronograma`, `equipe`, `investimento`, `condicoes_de_pagamento`, `validade_da_proposta`, `o_que_nao_esta_incluso`, `proximos_passos`
-- [ ] **`o_que_nao_esta_incluso` é obrigatória** — é o que evita conflito de escopo depois
-- [ ] Seções alimentadas por brief aprovado, orçamento aprovado e plano de pagamento, com marcação de origem e alerta de fonte alterada (padrão `stale` já implementado em `DocumentRevisions::current()`)
-- [ ] Migration de dados: as três seções antigas viram `entendimento_da_necessidade`, `escopo_detalhado_por_area` e `condicoes_de_pagamento`
-- [ ] **Teste:** proposta sem `o_que_nao_esta_incluso` preenchida não é liberada; seção com fonte alterada marca documento como `stale` sem apagar a versão anterior
+- [ ] **`document_sections`**: `document_id`, `sequence`, `key`, `title`, `body`, `is_visible_to_client`, `source`
+- [ ] Seções: apresentação, entendimento, conceito, escopo por área, programação, cronograma, equipe, investimento, condições de pagamento, validade, **o que não está incluso**, próximos passos
+- [ ] **`o_que_nao_esta_incluso` é obrigatória** — é o que evita briga de escopo depois
+- [ ] Alimentadas por brief, orçamento e plano de pagamento, com marcação de origem e alerta de fonte alterada
+- [ ] **Teste:** proposta sem exclusões não é liberada; fonte alterada marca desatualizado sem apagar versão
 
-## G2 — Templates
+## G2 — Proposta bonita
 
-- [ ] **Nova tabela `document_templates`**: `name`, `type`, `purpose`, `sections` json, `is_active`, `created_by`, `revision`
-- [ ] Templates por tipo de evento (congresso, confraternização, ativação…) e por finalidade (viabilidade, gestão)
+O padrão a alcançar são as apresentações em `padraord-proposta/`.
+
+- [ ] Biblioteca controlada de composições visuais e cenas de demonstração
+- [ ] Imagens reais ou autorizadas primeiro; imagem gerada é pedida explicitamente, salva, revisada e marcada como conceitual
+- [ ] Logotipo do cliente como camada separada
+- [ ] **Dois clientes do mesmo setor não podem virar a mesma proposta trocando o nome** — narrativa, hierarquia e exemplos variam com o contexto revisado
+- [ ] Prévia e publicado usam o **mesmo** documento estruturado
+- [ ] Ao liberar, congela JSON público, corpo renderizado, estilos, fontes, logos e imagens. Atualização da biblioteca afeta só versões novas
+- [ ] **Teste:** link antigo continua renderizando o conteúdo congelado após a biblioteca mudar
+
+## G3 — Templates
+
+- [ ] **`document_templates`**: por tipo de evento e por finalidade (viabilidade, gestão)
 - [ ] **Teste:** alterar template não altera documento já gerado
 
-## G3 — Contrato liberável
+## G4 — Contrato liberável
 
-Hoje a liberação contratual está declarada fora de escopo no próprio código (`resources/js/pages/DocumentWorkspace.tsx:22`).
+Hoje está declarado fora de escopo no próprio código.
 
-- [ ] Modelo de contrato com cláusulas versionadas, campos preenchidos do cliente (`tax_id`, `legal_name`, endereço — vindos de A1), do evento (datas, local, público) e do plano de pagamento
-- [ ] Liberação exige: cliente com dados cadastrais completos, orçamento aprovado, plano de pagamento aceito e autoridade comercial
-- [ ] Integra com assinatura eletrônica (D2)
-- [ ] **Teste:** contrato com cliente sem `tax_id` não é liberado; contrato assinado rejeita edição sem reabertura auditada
+- [ ] Cláusulas versionadas, preenchidas com dados do cliente (A1), do evento (A4) e do plano de pagamento (C1)
+- [ ] Liberação exige cadastro completo, orçamento aprovado, plano aceito e autoridade comercial
+- [ ] **Teste:** contrato sem `tax_id` não é liberado; assinado rejeita edição sem reabertura auditada
 
-## G4 — Anexos e materiais
+## G5 — Anexos
 
-- [ ] Ativar a tabela órfã `attachments`: upload real, escopo por caso e módulo, allowlist de mime, limite de tamanho, quota por caso, storage privado
-- [ ] Vínculo com `brief_requirements` (foto de referência), `technical_validations` (planta, desenho), `venues` (regulamento), `payables` (nota fiscal)
-- [ ] Nunca servir arquivo por caminho direto — sempre por rota autorizada, como já é feito em `ContextAudioReviewController::audio`
-- [ ] **Teste:** anexo de outro caso não é acessível; mime fora da allowlist é recusado; caminho privado nunca aparece na resposta
+- [ ] Ativar a tabela órfã `attachments`: escopo por caso e módulo, allowlist de mime, limite, quota, armazenamento privado
+- [ ] Vínculo com requisito (foto de referência), validação técnica (planta), local (regulamento), pagável (nota fiscal)
+- [ ] Nunca servir por caminho direto — sempre por rota autorizada
+- [ ] **Teste:** anexo de outro caso não é acessível; caminho privado nunca aparece na resposta
 
-## G5 — Pacote de projeto
+## G6 — Aceite atômico
 
-- [ ] Ver B5 — `ProjectPackageBuilder` e `project_packages`
-
----
-
-# BLOCO H — UX, responsividade e acessibilidade
-
-**Objetivo:** visualmente atraente, eficiente, de fácil utilização — nos três breakpoints, com identidade própria.
-
-**Arquivos-chave:** `resources/js/`, `resources/css/`, `tests/e2e/`
+- [ ] Aceite registra signatário declarado, versão exata, hash do conteúdo, data e confirmação explícita
+- [ ] **Na mesma transação:** fecha versões concorrentes, marca a oportunidade como contratada, cria o projeto e abre o onboarding
+- [ ] Notificação sai depois, por outbox — falha de envio não desfaz o aceite
+- [ ] Aceite repetido devolve o mesmo recibo e nunca cria segundo projeto
+- [ ] **Teste:** repetição idempotente; falha de notificação não reverte estado comercial
 
 ---
 
-## H1 — Legibilidade do código de interface
+# C — Financeiro operacional
 
-O front está escrito com linhas de milhares de caracteres — página inteira em 3 a 5 linhas físicas. Funciona, mas trava revisão e manutenção.
+## C1 — Condições de pagamento
 
-- [ ] Prettier + ESLint com largura de linha definida, aplicados a `resources/js/`
-- [ ] Reformatação em commit separado, sem mudança de comportamento — os 27 testes e2e e os 12 de Vitest são a rede de segurança
-- [ ] Quebrar as páginas maiores (`Feasibility.tsx`, `Production.tsx`, `DocumentWorkspace.tsx`) em componentes por seção
-- [ ] **Teste:** suíte completa passa idêntica antes e depois da reformatação
+- [ ] **`payment_plans`** e **`payment_plan_installments`** com gatilho (`assinatura|dias_antes_evento|dias_apos_evento|entrega|data_fixa|marco`)
+- [ ] Soma das parcelas igual ao total ao centavo, via `Money::ratio`
+- [ ] Plano vira seção da proposta
+- [ ] **Teste:** rateio percentual fecha ao centavo; plano aceito rejeita alteração
 
-## H2 — Cobertura de interface
+## C2 — Contas a receber
 
-- [ ] Hoje: 2 arquivos de teste de UI para 46 páginas/componentes. Cobrir os componentes de decisão: `ContextComposer`, `ContextUploadComposer`, `SpeakerReview`, `BudgetIntakePanel`, painel de autorização de envio, revisão de brief, plano de pagamento
-- [ ] Testes de estado, não de renderização: seleção parcial, erro de validação, fonte alterada, permissão ausente
+- [ ] **`receivables`** com baixa parcial; `atrasado` derivado por data, nunca gravado
+- [ ] Gerado do plano aceito por prévia confirmável
+- [ ] **Teste:** baixa maior que o saldo recusada; cancelar com baixa exige justificativa
 
-## H3 — Jornadas completas nos três breakpoints
+## C3 — Contas a pagar
 
-As 11 jornadas do dossiê (`docs/execucao/2026-09-10/08-execucao-e-testes.md:44`) estão todas desmarcadas. Fechar cada uma em desktop 1440×900, tablet 1024×768 e mobile 390×844:
+- [ ] **`payables`** com origem rastreável em item de orçamento aprovado ou cotação selecionada
+- [ ] Aprovação de pagamento exige autoridade
+- [ ] **Teste:** pagável sem origem recusado; pagar sem aprovação bloqueado
 
-- [ ] Lead → Viabilidade entregue → encerramento sem Gestão
-- [ ] Lead → orçamento → proposta aceita → Gestão → produção → pós-evento
-- [ ] Mudança técnica → reconfirmação
-- [ ] Escopo mudou → orçamento e documento em revisão
-- [ ] IA indisponível → operação manual completa
-- [ ] Envio falhou → arquivo e tentativa preservados
-- [ ] Upload retomado sem duplicação
-- [ ] Edição concorrente → recuperação com mensagem
-- [ ] Aprovação sem autoridade bloqueada
-- [ ] Refresh e novo login preservam registros
-- [ ] Reunião gravada → brief revisado → pacote de projeto gerado *(nova, cobre o requisito central)*
+## C4 — Previsto × realizado por categoria
 
-## H4 — Acessibilidade
+- [ ] **`event_cost_results`** por categoria, com `variance_reason`
+- [ ] Desvio acima do limite exige justificativa para fechar o pós-evento
+- [ ] **Teste:** fechamento bloqueado sem justificar desvio relevante
 
-- [ ] `axe-core` integrado ao Playwright, rodando nas telas principais nos três breakpoints
-- [ ] Contraste AA em todos os tokens de `resources/css/tokens.css`
-- [ ] Foco visível consistente; navegação completa por teclado no painel de revisão de IA e no editor de documento
-- [ ] `prefers-reduced-motion` respeitado (hoje há apenas 6 ocorrências de media query de preferência em todo o CSS)
-- [ ] Rótulos e mensagens de erro associados aos campos; `aria-live` para status de processamento de áudio
-- [ ] **Teste:** zero violação crítica ou séria do axe nas telas principais
+## C5 — Margem viva
 
-## H5 — Estados padronizados
-
-- [ ] Carregando, vazio, erro, sem permissão, offline, processando — componentes únicos reusando `EmptyState`, `Skeleton`, `StatusBadge` já existentes em `resources/js/components/ui/`
-- [ ] Toda mensagem em português, explicando o que aconteceu e qual é a próxima ação possível
-
-## H6 — Mobile de verdade
-
-Os testes atuais cobrem navegação e overflow, não operação.
-
-- [ ] Revisão de transcrição no celular: player, segmento, edição de falante e confirmação parcial repensados para toque
-- [ ] Comparação de cotações: tabela vira cartões comparáveis abaixo de 620px
-- [ ] Aprovação de orçamento e autorização de envio operáveis no celular
-- [ ] Gravação de reunião pelo próprio celular, com upload retomável (a base de `upload.ts` já existe)
-
-## H7 — Identidade Padrão RD
-
-- [ ] Aplicar as ilustrações já presentes em `resources/images/rd/optimized/` (`context-core`, `briefing-folder`, `budget-ledger`, `production-path`, `event-memory`) nos estados vazios e cabeçalhos de módulo
-- [ ] Tipografia, espaçamento e cor consolidados em `tokens.css`, sem valor solto no componente
-- [ ] Substituir o cenário de demonstração "Conferência Horizonte 2026" por seed realista da operação real
+- [ ] `EventProfitability` reusando `Money::breakdown()`
+- [ ] Receita contratada, custo previsto, custo realizado, margem prevista e realizada
+- [ ] Margem realizada só é final com pós-evento encerrado
+- [ ] **Teste:** bate com a soma dos itens; evento aberto marca margem como provisória
 
 ---
 
-# BLOCO I — Infraestrutura, dados e operação
+# F — Produção e equipe
 
-**Objetivo:** publicar, observar e recuperar. Transversal — começa junto com o Bloco A.
-
----
-
-- [x] **I1 — Commitar o Ciclo 04.** 33 arquivos modificados e 7 novos fora do git: compartilhamento de documentos, sourcing de fornecedores, validação técnica, métricas operacionais. Commits separados por domínio, não um commit único
-- [ ] **I2 — CI verde de verdade.** O workflow em `.github/workflows/` existe e nunca rodou. Fazer passar: `composer quality`, MariaDB 11.4, `npm run quality`, `npm run test:e2e`, build e verificação do release Hostinger
-- [ ] **I3 — MariaDB validado.** `scripts/ci/test-mariadb.sh` nunca executou (conexão recusada). Rodar contra banco dedicado, cobrindo as novas tabelas dos blocos A e C
-- [ ] **I4 — Publicação.** Primeiro deploy real na Hostinger com `scripts/deploy/build-hostinger-release.sh` + `verify-hostinger-release.sh` (ambos já testados localmente), `.env` remoto, banco MariaDB, backup prévio no hPanel e smoke test roteirizado
-- [ ] **I5 — Worker externo** provisionado, com healthcheck, limite de recurso, retenção alinhada e monitoramento
-- [ ] **I6 — Backup automatizado** de banco e storage privado, com **restore testado** — backup não verificado não conta
-- [ ] **I7 — Observabilidade.** Log estruturado (`LOG_CHANNEL=daily_json` já previsto no `.env.example`), health check estendido (fila parada, job falho, worker fora do ar, limite de IA), alerta acionável
-- [ ] **I8 — Staging** espelhando produção, com dados anonimizados, para validar migration antes de subir
-- [ ] **I9 — Runbook** de incidente: fila travada, transcrição presa, e-mail não sai, worker morto, rollback de release
+- [ ] **F1** `task_assignments` — hoje tarefa tem um responsável só
+- [ ] **F2 `crew_assignments`**: pessoa ou fornecedor, papel (16 funções), `call_time`, `end_time`, `rate_cents`, alimentação, transporte, status, confirmação
+- [ ] **F3** `production_tasks` ganha `venue_area`, `checklist`, `evidence_photos`, `estimated_duration_minutes`
+- [ ] **F4** Checklist de montagem e desmontagem com foto; desmontagem exige conferência de devolução
+- [ ] **F5 Linha do tempo de verdade.** `Production.tsx` tem três modos — Lista, Linha do tempo, Agenda — e **os três renderizam a mesma lista**. Implementar Gantt com dependências visíveis (`dependency_id` já existe), caminho crítico e calendário por fase
+- [ ] **F6** Validação técnica ligada ao local, comparando medidas e alertando divergência
+- [ ] **F7** Ordem de serviço por fornecedor, gerada da necessidade + cotação, com confirmação de recebimento
+- [ ] **Teste:** pessoa escalada em dois eventos no mesmo horário gera conflito explícito; desmontagem sem conferência bloqueia encerramento
 
 ---
 
-# BLOCO J — Fechamento e lançamento
+# D — Comunicação e assinatura
 
-- [ ] **J1** — As 11 jornadas de H3 verdes nos três breakpoints
-- [ ] **J2** — Todas as metas do dossiê movidas de "em verificação" para "concluída", com evidência registrada em `docs/execucao/2026-09-10/10-evidencias.md`
-- [ ] **J3** — Manual de operação em português: primeiro acesso, cadastro, gravação de reunião, revisão de brief, orçamento, proposta, contrato, produção, pós-evento, financeiro
-- [ ] **J4** — Piloto com um evento real de ponta a ponta, do lead ao fechamento financeiro
-- [ ] **J5** — Revisão de segurança sobre o diff acumulado
-- [ ] **J6** — Nova auditoria completa, repetindo o método desta análise, para confirmar 10/10
+## D1 — Envio real com autorização humana
+
+- [ ] **`mail_logs`**: destinatários, assunto, hash do corpo, id do provedor, status, `authorized_by/at`, entrega, abertura, erro, tentativa
+- [ ] Fluxo: rascunho → revisão → **tela de autorização** mostrando destinatário, assunto, anexo e link → confirmação por quem tem autoridade → sistema envia e registra
+- [ ] `DocumentRevisions::sent()` aceita registro automático, mantendo a evidência manual como fallback
+- [ ] Falha de envio preserva documento e tentativa
+- [ ] **Teste:** envio sem autorização recusado; sem `can_approve_commercial` não autoriza; reenvio não duplica registro
+
+## D2 — Assinatura eletrônica
+
+- [ ] Contrato `app/Contracts/SignatureProvider.php` + implementação brasileira + `NullSignatureProvider`
+- [ ] **`signature_requests`** com status, signatários, documento assinado e hash
+- [ ] Webhook verificado e idempotente atualiza `documents.signed_at` e cria `external_signature_records`
+- [ ] Registro manual **permanece** válido
+- [ ] **Teste:** webhook forjado recusado; repetido não duplica
+
+## D3 — Lembretes internos
+
+- [ ] Gatilhos: tarefa vencendo, cotação perto da validade, proposta sem resposta, validação técnica pendente antes da montagem, parcela vencendo, brief aprovado sem orçamento, caso sem próxima ação
+- [ ] Fonte única: `NextActionService` e `OperationalQueueService::items()`
+- [ ] Preferência por usuário: canal e frequência
+- [ ] Central de notificações no shell, com contador e marcação de lida
+- [ ] **Teste:** não dispara duas vezes para o mesmo fato; canal desligado não recebe
+
+## D4 — Fronteira da IA
+
+- [ ] IA pode preparar documento, sugerir ação e redigir rascunho. **Não pode** enviar, aceitar, contratar, aprovar pagamento ou assumir compromisso
+- [ ] **Teste dedicado:** nenhuma rota de efeito externo é alcançável a partir de um job de IA sem prévia confirmada por quem tem autoridade
+
+## D5 — WhatsApp
+
+- [ ] Definir `ChannelProvider` para que entre depois sem refatorar envio, registro e autorização. Não implementar agora
 
 ---
 
-## Matriz de saída — de 6,5 para 10
+# E — Segurança e contas
 
-| Categoria | Peso | Hoje | Alvo | Blocos que movem |
+- [x] **E1** Recuperação de senha, com revogação de sessões, limites e resposta que não revela contas
+- [ ] **E2** Verificação de e-mail e primeiro acesso guiado
+- [ ] **E3** Política de senha e troca obrigatória no primeiro acesso
+- [ ] **E4** 2FA opcional, **obrigatório** para quem tem `can_approve_commercial`
+- [ ] **E5** Papéis reais: mapa explícito papel → habilidade (`admin`, `diretor`, `produtor`, `comercial`, `financeiro`, `operacao`, `leitura`), coberto por `AuthorizationMatrixTest`
+- [ ] **E6** Expiração de sessão, "sair de todos os dispositivos", registro de acesso
+- [ ] **E7** Nenhum caminho privado, chave ou nota interna em resposta ao navegador
+- [ ] **Teste:** sem 2FA não autoriza envio; matriz cobre todas as rotas de efeito
+
+---
+
+# H — Acabamento
+
+- [ ] Cobertura de UI para os componentes de decisão: revisão de contexto, envio de áudio, falantes, entrada de orçamento, autorização de envio, revisão de brief, plano de pagamento
+- [ ] **Jornadas completas nos três breakpoints:**
+  - [ ] Lead → viabilidade entregue → encerramento sem gestão
+  - [ ] Lead → orçamento → proposta aceita → gestão → produção → pós-evento
+  - [ ] Mudança técnica → reconfirmação
+  - [ ] Escopo mudou → orçamento e documento em revisão
+  - [ ] IA indisponível → operação manual completa
+  - [ ] Envio falhou → arquivo e tentativa preservados
+  - [ ] Envio retomado sem duplicação
+  - [ ] Edição concorrente → recuperação
+  - [ ] Aprovação sem autoridade bloqueada
+  - [ ] Recarga e novo login preservam registros
+  - [ ] **Reunião gravada → brief revisado → pacote de projeto gerado**
+  - [ ] **Cliente preenche briefing por link → vira contexto do caso**
+- [ ] Substituir o cenário "Conferência Horizonte 2026" por dados realistas da operação
+
+---
+
+# I — Infraestrutura e publicação
+
+Por último, por decisão do Yohann.
+
+- [ ] **I1** ~~Commitar o Ciclo 04~~ — feito em `f51fa01`
+- [ ] **I2** CI verde de verdade: `composer quality`, MariaDB 11.4, `npm run quality`, e2e, build e verificação do release
+- [ ] **I3** MariaDB validado cobrindo as tabelas novas
+- [ ] **I4** Publicação na Hostinger com backup prévio e smoke test
+- [ ] **I5** Worker externo provisionado e monitorado
+- [ ] **I6** Backup automatizado com **restore testado**
+- [ ] **I7** Log estruturado, health check estendido, alerta de fila parada
+- [ ] **I8** Ambiente de homologação com dados anonimizados
+- [ ] **I9** Runbook de incidente
+
+---
+
+# J — Fechamento
+
+- [ ] Todas as jornadas de H verdes nos três breakpoints
+- [ ] Metas do dossiê movidas para concluída, com evidência em `10-evidencias.md`
+- [ ] Manual de operação em português
+- [ ] Piloto com um evento real, do lead ao fechamento financeiro
+- [ ] Revisão de segurança sobre o diff acumulado
+- [ ] Auditoria completa repetindo o método da inicial, para confirmar 10/10
+
+---
+
+## Matriz de saída
+
+| Categoria | Peso | Auditoria inicial | Alvo | Blocos |
 |---|---:|---:|---:|---|
-| Back-end e domínio | 15% | 8,5 | 10 | A, C, F |
-| Front-end | 12% | 7,5 | 10 | H1, H2, H5, H7 |
-| Responsividade | 6% | 8,0 | 10 | H3, H6 |
-| UX e acessibilidade | 8% | 6,5 | 10 | H4, H5, H6 |
-| IA — arquitetura | 10% | 8,5 | 10 | B4, B5 |
-| **IA — operação real** | 15% | **3,0** | **10** | **B1, B2, B3, B6, B7** |
-| Infraestrutura | 10% | 6,0 | 10 | I |
-| Segurança e contas | 8% | 5,5 | 10 | E |
-| Qualidade e testes | 8% | 8,0 | 10 | H2, H3, I2 |
-| Integrações | 5% | 2,5 | 10 | D |
-| Observabilidade | 3% | 6,5 | 10 | I7, C6 |
+| Back-end e domínio | 14% | 8,5 | 10 | A, C, F |
+| **Interface e design** | 14% | 7,5 | 10 | **K, G2** |
+| Responsividade | 5% | 8,0 | 10 | K5, H |
+| UX e acessibilidade | 8% | 6,5 | 10 | K4, K6 |
+| IA — arquitetura | 8% | 8,5 | 10 | B4, B5 |
+| IA — operação real | 13% | 3,0 | 10 | B1, B2, B3, B6 |
+| **Diferenciais** | 10% | 0,0 | 10 | **L** |
+| Segurança e contas | 7% | 5,5 | 10 | E (E1 feito) |
+| Qualidade e testes | 7% | 8,0 | 10 | H, I2 |
+| Integrações | 6% | 2,5 | 10 | B0, D |
+| Infraestrutura | 5% | 6,0 | 10 | I |
+| Observabilidade | 3% | 6,5 | 10 | I7, C5 |
 
-O maior salto disponível está no Bloco B: 15% de peso saindo de 3,0. Nenhum outro bloco entrega tanto.
+O Bloco L entra em 0,0 porque **não existe nada** dessas funcionalidades hoje. É o maior espaço disponível e o que a concorrência não tem.
 
 ---
 
 ## Verificação
 
-**Por bloco** — nenhuma tarefa é aceita sem o teste de comportamento correspondente. Regra do dossiê, mantida: escrever o teste quando há regra ou risco real, implementar, verificar, registrar evidência. Nunca marcar concluído por existir tela ou rota.
+Nenhuma tarefa é aceita sem o teste de comportamento correspondente. Nunca marcar concluído por existir tela ou rota.
 
-**Comandos de gate:**
+```bash
+php artisan padraord:doctor
+```
 
 ```bash
 composer quality && npm run quality && npm run test:e2e
 ```
 
 ```bash
-bash scripts/ci/test-mariadb.sh
-```
-
-```bash
 php artisan ai:verify && php artisan ai:evaluate
 ```
 
-```bash
-./scripts/deploy/build-hostinger-release.sh && ./scripts/deploy/verify-hostinger-release.sh dist/hostinger
-```
+### A jornada que prova o produto
 
-**Verificação de ponta a ponta do requisito central** — a jornada que prova o produto:
+1. Cliente recebe o link de briefing e responde pelo celular
+2. Reunião de 60+ minutos gravada e enviada, com queda de conexão no meio para forçar a retomada
+3. Worker externo prepara e transcreve com falantes preservados entre as partes
+4. Extração devolve brief tipado, requisitos por área e programação, cada item citando o trecho de origem
+5. Revisar: aceitar parte, recusar parte, editar um item classificado como suposição
+6. Abrir qualquer campo e ouvir o instante exato da gravação que o originou
+7. O sistema aponta um evento anterior parecido e traz escopo, fornecedores e custo realizado
+8. Montar três cenários de escopo e gerar a proposta, com o que não está incluso
+9. Autorizar o envio; o sistema envia e registra; o cliente aceita pelo link
+10. O aceite cria o projeto e abre a produção numa transação só
+11. Produção com escala de equipe, dependências e validação técnica
+12. Pós-evento com previsto × realizado por categoria e margem real
+13. Repetir os passos 5 a 12 em 390×844
 
-1. Gravar uma reunião real de 60+ minutos e subir pelo celular, interrompendo a conexão no meio para forçar a retomada
-2. Worker externo prepara e transcreve com diarização
-3. Extração devolve brief tipado + requisitos por área + programação, cada item citando o trecho de origem
-4. Revisar no navegador, aceitar parte, recusar parte, editar um item classificado como `hypothesis`
-5. Confirmar → `event_briefs` preenchido, `brief_field_sources` gravado por campo
-6. Abrir qualquer campo e ouvir o trecho exato da gravação que o originou
-7. Gerar pacote de projeto (PDF + ZIP versionado)
-8. Seguir para necessidades de fornecedor, orçamento, proposta com plano de pagamento, autorização de envio, contrato assinado, produção com escala e pós-evento com previsto × realizado
-9. Repetir os passos 4 a 8 em 390×844
-
-Se essa jornada fecha inteira, nos três breakpoints, com evidência rastreável em cada campo e sem nenhuma ação externa disparada sem autorização humana — o sistema está pronto para lançamento.
+Se essa jornada fecha inteira, nos três breakpoints, com evidência rastreável em cada campo e sem nenhuma ação externa disparada sem autorização humana — o sistema está pronto.
