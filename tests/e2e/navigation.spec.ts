@@ -32,3 +32,19 @@ test('an opportunity keeps every contextual module addressable', async ({ page }
         expect((await page.title()).length).toBeGreaterThan(0);
     }
 });
+
+test('production and post-event keep their manual operational controls available', async ({ page }) => {
+    await loginAs(page);
+
+    await page.goto('/opportunities/1/production');
+    await expect(page.getByRole('heading', { name: 'Do plano à execução' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Adicionar tarefa' })).toBeVisible();
+    await expect(page.getByLabel('Referência')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Salvar validação' })).toBeVisible();
+
+    await page.goto('/opportunities/1/post-event');
+    await expect(page.getByRole('heading', { name: 'Preservar o aprendizado' })).toBeVisible();
+    await expect(page.getByLabel('Resumo do evento')).toBeVisible();
+    await expect(page.getByLabel('Aprendizados reutilizáveis')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Salvar memória' })).toBeVisible();
+});

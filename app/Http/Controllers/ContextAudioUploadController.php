@@ -13,6 +13,13 @@ use Illuminate\Validation\Rule;
 
 class ContextAudioUploadController extends Controller
 {
+    public function show(Request $request, Opportunity $opportunity, AudioUploadSession $session, ResumableAudioUpload $uploads)
+    {
+        abort_unless($session->opportunity_id === $opportunity->id, 404);
+
+        return response()->json(['upload' => $uploads->progress($session, $request->user())])->header('Cache-Control', 'private, no-store');
+    }
+
     public function start(Request $request, Opportunity $opportunity, ResumableAudioUpload $uploads)
     {
         $data = $request->validate([
@@ -21,6 +28,7 @@ class ContextAudioUploadController extends Controller
             'bytes' => ['required', 'integer', 'min:44', 'max:'.config('ai.audio_upload_max_bytes')],
             'chunks' => ['required', 'integer', 'min:1', 'max:1000'],
             'sha256' => ['nullable', 'string', 'regex:/^[a-f0-9]{64}$/'],
+            'prepared_for' => ['nullable', 'integer'],
         ]);
         $session = $uploads->start($opportunity, $request->user(), $data);
 
@@ -41,7 +49,8 @@ class ContextAudioUploadController extends Controller
         abort_unless($session->opportunity_id === $opportunity->id, 404);
         $alreadyCompleted = (bool) $session->case_context_entry_id;
         $entry = $uploads->complete($session, $request->user(), $inspector, $configuration);
-        $canProcess = config('ai.audio_validated') && config('ai.audio_price_micros_per_minute') > 0 && $configuration->publicState()['status'] === 'ready';
+        $fitsProvider = $entry->audioAsset && ($entry->audioAsset->prepared_path || $entry->audioAsset->original_bytes <= config('ai.audio_direct_max_bytes'));
+        $canProcess = $fitsProvider && config('ai.audio_validated') && config('ai.audio_price_micros_per_minute') > 0 && $configuration->publicState()['status'] === 'ready';
         if (! $alreadyCompleted && $entry->audioAsset && $canProcess) {
             PrepareContextAudio::dispatch($entry->audioAsset->id);
         } elseif (! $alreadyCompleted && $entry->audioAsset) {

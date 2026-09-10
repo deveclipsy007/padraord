@@ -13,6 +13,7 @@ use App\Http\Controllers\ContextAudioReviewController;
 use App\Http\Controllers\ContextAudioUploadController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DocumentShareController;
 use App\Http\Controllers\DocumentsHubController;
 use App\Http\Controllers\FeasibilityController;
 use App\Http\Controllers\FeedbackController;
@@ -25,6 +26,7 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\PrototypeController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierSourcingController;
 use App\Models\Opportunity;
 use App\Services\BudgetIntake;
 use Illuminate\Http\Request;
@@ -35,10 +37,19 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login.store');
 });
 
+Route::get('/shared/proposal/{token}', [DocumentShareController::class, 'show'])->name('documents.shared.show');
+Route::post('/shared/proposal/{token}/decision', [DocumentShareController::class, 'decide'])->name('documents.shared.decision');
+
 Route::middleware('auth')->group(function (): void {
+    Route::get('/assistant/chat', [AssistantController::class, 'chatHistory']);
+    Route::post('/assistant/chat', [AssistantController::class, 'chat'])->middleware('throttle:10,1');
+    Route::post('/assistant/chat/{turn}/preview', [AssistantController::class, 'editChatPreview'])->whereNumber('turn');
     Route::post('/assistant/interpret', [AssistantController::class, 'interpret'])->middleware('throttle:10,1');
     Route::post('/opportunities/{opportunity}/documents/{document}/review', [DocumentController::class, 'review']);
     Route::post('/opportunities/{opportunity}/documents/{document}/sent', [DocumentController::class, 'sent']);
+    Route::post('/opportunities/{opportunity}/documents/{document}/external-signature', [DocumentController::class, 'externalSignature']);
+    Route::post('/opportunities/{opportunity}/documents/{document}/share', [DocumentController::class, 'share']);
+    Route::post('/opportunities/{opportunity}/documents/{document}/share/{share}/revoke', [DocumentController::class, 'revokeShare'])->whereNumber('share');
     Route::get('/opportunities/{opportunity}/documents/{document}/pdf', [DocumentController::class, 'pdf']);
     Route::get('/assistant/context', [AssistantController::class, 'context']);
     Route::post('/assistant/messages', [AssistantController::class, 'store'])->middleware('throttle:20,1');
@@ -49,6 +60,8 @@ Route::middleware('auth')->group(function (): void {
 
         return back()->with('success', 'Item incluído no rascunho. Revise antes de aprovar.');
     });
+    Route::post('/opportunities/{opportunity}/supplier-needs', [SupplierSourcingController::class, 'storeNeed']);
+    Route::post('/opportunities/{opportunity}/supplier-needs/{need}/quotes/{quote}/select', [SupplierSourcingController::class, 'selectQuote']);
     Route::get('/settings/ai', [AiSettingsController::class, 'show'])->middleware('can:manage-ai');
     Route::post('/settings/ai', [AiSettingsController::class, 'store'])->middleware('can:manage-ai');
     Route::post('/settings/ai/test', [AiSettingsController::class, 'test'])->middleware(['can:manage-ai', 'throttle:5,1']);
@@ -98,6 +111,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/opportunities/{opportunity}/documents', DocumentsHubController::class)->name('opportunities.documents');
     Route::post('/opportunities/{opportunity}/context', [CaseContextController::class, 'store']);
     Route::post('/opportunities/{opportunity}/context/audio/uploads', [ContextAudioUploadController::class, 'start'])->middleware('throttle:20,1');
+    Route::get('/opportunities/{opportunity}/context/audio/uploads/{session}', [ContextAudioUploadController::class, 'show']);
     Route::put('/opportunities/{opportunity}/context/audio/uploads/{session}/chunks/{index}', [ContextAudioUploadController::class, 'chunk'])->whereNumber('index')->middleware('throttle:120,1')->withoutScopedBindings();
     Route::post('/opportunities/{opportunity}/context/audio/uploads/{session}/complete', [ContextAudioUploadController::class, 'complete'])->middleware('throttle:20,1')->withoutScopedBindings();
     Route::get('/opportunities/{opportunity}/context/audio/latest', [ContextAudioReviewController::class, 'latest']);
@@ -135,12 +149,18 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/opportunities/{opportunity}/budget/items/{item}', [BudgetController::class, 'updateItem']);
     Route::delete('/opportunities/{opportunity}/budget/items/{item}', [BudgetController::class, 'removeItem']);
     Route::post('/opportunities/{opportunity}/budget/versions', [BudgetController::class, 'duplicate']);
+    Route::post('/opportunities/{opportunity}/quotes/{quote}/select', [BudgetController::class, 'selectQuote']);
     Route::post('/opportunities/{opportunity}/budget/approve', [BudgetController::class, 'approve'])->name('opportunities.budget.approve');
     Route::get('/opportunities/{opportunity}/budget', [BudgetController::class, 'show'])->name('opportunities.budget');
     Route::get('/opportunities/{opportunity}/production', [ProductionController::class, 'show'])->name('opportunities.production');
     Route::get('/opportunities/{opportunity}/post-event', [PostEventController::class, 'show'])->name('opportunities.post-event');
     Route::post('/opportunities/{opportunity}/post-event', [PostEventController::class, 'store'])->name('opportunities.post-event.store');
+    Route::post('/opportunities/{opportunity}/post-event/reopen', [PostEventController::class, 'reopen'])->name('opportunities.post-event.reopen');
     Route::post('/opportunities/{opportunity}/production/tasks', [ProductionController::class, 'storeTask'])->name('opportunities.production.tasks.store');
+    Route::post('/opportunities/{opportunity}/production/technical-validations', [ProductionController::class, 'saveTechnicalValidation'])->name('opportunities.production.technical-validations.store');
+    Route::post('/opportunities/{opportunity}/production/technical-validations/{validation}/confirm', [ProductionController::class, 'confirmTechnicalValidation'])->name('opportunities.production.technical-validations.confirm');
+    Route::post('/opportunities/{opportunity}/production/prepare', [ProductionController::class, 'prepareScope'])->name('opportunities.production.prepare');
+    Route::post('/opportunities/{opportunity}/production/previews/{preview}/confirm', [ProductionController::class, 'confirmScope'])->name('opportunities.production.previews.confirm');
     Route::patch('/production/tasks/{task}', [ProductionController::class, 'updateTask'])->name('production.tasks.update');
     Route::get('/opportunities/{opportunity}/{type}', [DocumentController::class, 'show'])->whereIn('type', ['proposal', 'contract'])->name('opportunities.document');
     Route::post('/opportunities/{opportunity}/{type}', [DocumentController::class, 'update'])->whereIn('type', ['proposal', 'contract'])->name('opportunities.document.update');

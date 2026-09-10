@@ -1,6 +1,6 @@
-import { Link, router, useForm, usePage } from '@inertiajs/react';
-import { Bot, Building2, CalendarDays, CircleHelp, FolderKanban, History, LayoutDashboard, LogOut, Menu, MessageSquareText, Plus, Search, Settings2, Sparkles, Users, Workflow, X } from 'lucide-react';
-import { FormEvent, PropsWithChildren, useEffect, useState } from 'react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { Bot, Building2, CalendarDays, CircleHelp, FolderKanban, History, LayoutDashboard, LogOut, Menu, Plus, Search, Settings2, Sparkles, Users, Workflow, X } from 'lucide-react';
+import { PropsWithChildren, useEffect, useState } from 'react';
 import { CommandPalette } from './components/CommandPalette';
 import { AssistantPanel } from './components/AssistantPanel';
 import { ContextRail, type ContextRailItem } from './components/ui/ContextRail';
@@ -60,11 +60,9 @@ export function AppLayout({ children }: PropsWithChildren) {
     const pageProps = usePage<SharedPage>().props;
     const { auth, flash, ai } = pageProps;
     const user = auth?.user;
-    const [feedbackOpen, setFeedbackOpen] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [toast, setToast] = useState<string | null>(null);
     const [commandOpen, setCommandOpen] = useState(false);
-    const feedback = useForm({ rating: 5, category: 'usability', comment: '', context: pathname });
     const context = createContext(pathname, pageProps);
 
     useEffect(() => {
@@ -83,16 +81,12 @@ export function AppLayout({ children }: PropsWithChildren) {
         return () => { window.removeEventListener('rd:command', open); window.removeEventListener('keydown', keyboard); };
     }, []);
 
-    function sendFeedback(event: FormEvent) {
-        event.preventDefault();
-        feedback.post('/feedback', { preserveScroll: true, onSuccess: () => { feedback.reset('comment'); setFeedbackOpen(false); } });
-    }
 
     return (
         <div className="rd-os-shell">
             <aside className="sidebar app-rail">
                 <Link className="brand-lockup" href="/">
-                    <div className="brand-mark" aria-hidden="true">PR</div>
+                    <div className="brand-mark" aria-hidden="true">✦</div>
                     <span className="sr-only">Padrão RD</span>
                 </Link>
                 <nav className="primary-nav" aria-label="Navegação principal">
@@ -108,18 +102,16 @@ export function AppLayout({ children }: PropsWithChildren) {
             </aside>
             {context && <ContextRail {...context} />}
             <main className={`main-content${context ? ' has-context-rail' : ''}`}>{children}</main>
-            {(pathname.startsWith('/suppliers') || pathname.startsWith('/opportunities/') || pathname === '/agenda') && <AssistantPanel key={pathname} path={pathname} mode={ai?.mode || 'manual'} />}
+            <AssistantPanel key={pathname} path={pathname} mode={ai?.mode || 'manual'} />
             <nav className="mobile-nav" aria-label="Navegação móvel">
                 <Link className={isActive(pathname, '/') ? 'active' : ''} href="/" viewTransition><LayoutDashboard size={18} /><span>Hoje</span></Link>
                 <Link className={isActive(pathname, '/pipeline') ? 'active' : ''} href="/pipeline" viewTransition><Workflow size={18} /><span>Pipeline</span></Link>
                 <Link className={isActive(pathname, '/agenda') ? 'active' : ''} href="/agenda" viewTransition><CalendarDays size={18} /><span>Agenda</span></Link>
                 <button className={menuOpen ? 'active' : ''} type="button" onClick={() => setMenuOpen((value) => !value)}><Menu size={18} /><span>Menu</span></button>
             </nav>
-            <button className="feedback-fab" type="button" onClick={() => setFeedbackOpen(true)}><MessageSquareText size={15} /> Feedback</button>
             {menuOpen && <div className="mobile-menu" role="dialog" aria-label="Menu"><Link href="/projects">Projetos e laboratório</Link><Link href="/clients">Clientes</Link><Link href="/suppliers">Fornecedores</Link><Link href="/history">Histórico</Link><Link href="/help">Ajuda e tour</Link>{user?.isAdmin && <><Link href="/team">Equipe</Link><Link href="/settings/ai">Inteligência artificial</Link></>}<button type="button" onClick={() => router.post('/logout')}>Sair</button></div>}
             {toast && <div className="toast" role="status"><Sparkles size={15} />{toast}<button type="button" aria-label="Fechar aviso" onClick={() => setToast(null)}><X size={14} /></button></div>}
             <CommandPalette open={commandOpen} onClose={() => setCommandOpen(false)} />
-            {feedbackOpen && <div className="modal-backdrop" role="presentation"><div className="modal feedback-modal" role="dialog" aria-modal="true" aria-labelledby="feedback-title"><div className="modal-heading"><div><span className="eyebrow">MODO PILOTO</span><h2 id="feedback-title">Como foi essa etapa?</h2></div><button className="icon-button" onClick={() => setFeedbackOpen(false)} aria-label="Fechar"><X size={17} /></button></div><form onSubmit={sendFeedback} className="form-grid"><label>Nota <select value={feedback.data.rating} onChange={(event) => feedback.setData('rating', Number(event.target.value))}>{[5, 4, 3, 2, 1].map((value) => <option value={value} key={value}>{value} · {value === 5 ? 'muito claro' : value === 1 ? 'travou bastante' : 'poderia melhorar'}</option>)}</select></label><label>Categoria <select value={feedback.data.category} onChange={(event) => feedback.setData('category', event.target.value)}><option value="usability">Usabilidade</option><option value="bug">Problema</option><option value="idea">Ideia</option><option value="other">Outro</option></select></label><label>Comentário <textarea value={feedback.data.comment} onChange={(event) => feedback.setData('comment', event.target.value)} rows={4} placeholder="O que ajudaria na próxima tentativa?" /></label><div className="form-actions"><button type="button" className="button button-subtle" onClick={() => setFeedbackOpen(false)}>Cancelar</button><button type="submit" className="button button-primary" disabled={feedback.processing}><Sparkles size={15} /> Enviar feedback</button></div></form></div></div>}
         </div>
     );
 }

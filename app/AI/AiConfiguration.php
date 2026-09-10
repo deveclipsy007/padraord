@@ -42,6 +42,11 @@ class AiConfiguration
             'monthly_usd' => $s->monthly_micros / 1_000_000, 'processing_usd' => $s->processing_micros / 1_000_000,
             'input_price' => $s->input_price / 1_000_000, 'output_price' => $s->output_price / 1_000_000,
             'retention_days' => $s->retention_days, 'used_usd' => $used / 1_000_000, 'model' => 'gpt-4o-mini',
+            'chat_model' => AssistantChat::MODEL,
+            'chat_input_price' => AssistantChat::INPUT_PRICE / 1_000_000,
+            'chat_output_price' => AssistantChat::OUTPUT_PRICE / 1_000_000,
+            'calculated_usd' => Schema::hasTable('ai_consumptions') ? DB::table('ai_consumptions')->where('month', now()->format('Y-m'))->sum('charged_micros') / 1_000_000 : 0,
+            'reserved_usd' => Schema::hasTable('ai_consumptions') ? DB::table('ai_consumptions')->where('month', now()->format('Y-m'))->whereNull('charged_micros')->sum('reserved_micros') / 1_000_000 : 0,
         ];
     }
 }

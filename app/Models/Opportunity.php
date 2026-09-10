@@ -106,6 +106,11 @@ class Opportunity extends Model
         return $this->hasMany(Budget::class);
     }
 
+    public function supplierNeeds(): HasMany
+    {
+        return $this->hasMany(SupplierNeed::class);
+    }
+
     public function activities(): HasMany
     {
         return $this->hasMany(Activity::class);

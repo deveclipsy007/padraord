@@ -17,11 +17,54 @@ class ContextAudioUploadTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_resume_reports_only_received_parts_and_is_private_to_the_owner(): void
+    {
+        Storage::fake('local');
+        $owner = User::factory()->create();
+        $case = Opportunity::create(['title' => 'Retomada', 'client_name' => 'Cliente', 'stage' => 'briefing']);
+        $uuid = $this->actingAs($owner)->postJson("/opportunities/{$case->id}/context/audio/uploads", [
+            'name' => 'reuniao.wav', 'mime' => 'audio/wav', 'bytes' => 16044, 'chunks' => 2,
+        ])->assertCreated()->json('upload.uuid');
+        $path = "/opportunities/{$case->id}/context/audio/uploads/{$uuid}";
+        $this->call('PUT', "$path/chunks/0", [], [], ['chunk' => UploadedFile::fake()->createWithContent('part', str_repeat('a', 8000))])->assertOk();
+        $this->getJson($path)->assertOk()->assertJsonPath('upload.received_indices', [0])->assertJsonMissingPath('upload.temporary_path');
+        $this->actingAs(User::factory()->create())->getJson($path)->assertNotFound();
+    }
+
     private function wav(): string
     {
         $pcm = str_repeat("\0", 16000);
 
         return 'RIFF'.pack('V', 36 + strlen($pcm)).'WAVEfmt '.pack('VvvVVvv', 16, 1, 1, 8000, 16000, 2, 16).'data'.pack('V', strlen($pcm)).$pcm;
+    }
+
+    public function test_prepared_audio_attaches_to_the_original_context_without_replacing_its_source(): void
+    {
+        Storage::fake('local');
+        Queue::fake();
+        $actor = User::factory()->create();
+        $case = Opportunity::create(['title' => 'Preparação', 'client_name' => 'Cliente', 'stage' => 'briefing']);
+        $this->actingAs($actor);
+        $wav = $this->wav();
+        $upload = function (array $extra = []) use ($case, $wav) {
+            $uuid = $this->postJson("/opportunities/{$case->id}/context/audio/uploads", $extra + [
+                'name' => 'reuniao.wav', 'mime' => 'audio/wav', 'bytes' => strlen($wav), 'chunks' => 1,
+            ])->assertCreated()->json('upload.uuid');
+            $this->call('PUT', "/opportunities/{$case->id}/context/audio/uploads/{$uuid}/chunks/0", [], [], [
+                'chunk' => UploadedFile::fake()->createWithContent('part', $wav),
+            ])->assertOk();
+
+            return $this->postJson("/opportunities/{$case->id}/context/audio/uploads/{$uuid}/complete")->assertCreated()->json('entry.id');
+        };
+        $entryId = $upload();
+        $original = ContextAudioAsset::firstOrFail()->original_path;
+        $this->assertSame($entryId, $upload(['prepared_for' => $entryId]));
+        $asset = ContextAudioAsset::firstOrFail();
+        $this->assertNotNull($asset->prepared_path);
+        $this->assertSame($original, $asset->original_path);
+        $this->assertDatabaseCount('case_context_entries', 1);
+        Storage::disk('local')->assertExists($original);
+        Storage::disk('local')->assertExists($asset->prepared_path);
     }
 
     public function test_authenticated_user_can_resume_and_complete_a_private_audio_upload_once(): void

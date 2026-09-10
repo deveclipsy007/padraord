@@ -1,0 +1,51 @@
+/* Content boundaries belong to each component, not to body overflow masking. */
+.main-content > *, .ui-surface > *, .glass-surface > * { min-width: 0; }
+.client-directory__identity small { overflow-wrap: anywhere; }
+.client-directory__identity small svg { flex-shrink: 0; }
+.client-directory__actions :is(.icon-button, .client-directory__open) { width: 44px; height: 44px; min-height: 44px; }
+.directory-search { min-width: 0; max-width: 100%; }
+.directory-search input { flex: 1; min-width: 0; width: 0; }
+.directory-search .button { flex-shrink: 0; min-height: 44px; }
+.client-directory__filters { flex-wrap: wrap; padding-bottom: 12px; }
+.pipeline-full .pipeline-lane { flex: 0 0 280px; min-width: 0; width: 280px; }
+.pipeline-full .pipeline-card { min-width: 0; width: 100%; overflow: hidden; grid-template-columns: minmax(0, 1fr); }
+.pipeline-card__open { width: 100%; min-width: 0; }
+.pipeline-card + .pipeline-card { margin-top: 12px; }
+.rd-os-shell .main-content .pipeline-filters .pipeline-check { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.pipeline-card .card-top { gap: 8px; }
+.pipeline-card .card-client { min-width: 0; overflow-wrap: anywhere; }
+.pipeline-card .card-top svg { flex-shrink: 0; }
+.pipeline-card .card-meta { flex-wrap: wrap; gap: 8px; }
+.pipeline-card__next { white-space: normal; overflow-wrap: anywhere; line-height: 1.5; font-size: 12px; }
+.pipeline-card__stage select { min-height: 44px !important; font-size: 12px !important; }
+.pipeline-card__stage svg { top: 15px; }
+.pipeline-board-shell__heading { align-items: flex-start; flex-wrap: wrap; }
+.history-metric .history-metric__icon { display: grid; flex: 0 0 36px; place-items: center; padding: 0; }
+.history-metric > div { min-width: 0; }
+.history-metric span { line-height: 1.5; }
+.event-date-row { padding: 14px 0; gap: 14px; align-items: start; }
+.event-date-row > span { padding: 8px 4px; text-align: center; font-size: 12px; line-height: 1.5; }
+.event-date-row > div { min-width: 0; }
+.event-date-row strong { overflow-wrap: anywhere; line-height: 1.5; }
+.event-date-row small { font-size: 12px; line-height: 1.5; }
+.rd-drawer { max-width: 100vw; overscroll-behavior: contain; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+.rd-drawer > header { position: sticky; top: -28px; z-index: 2; padding: 16px 0; background: #fbfafc; }
+.rd-drawer > header .button { flex-shrink: 0; }
+.modal-backdrop { padding: 16px; overflow-y: auto; }
+.modal { width: min(100%, 640px); max-width: 100%; max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; }
+.context-audio-composer { min-width: 0; }
+.context-audio-drop span { min-width: 0; overflow-wrap: anywhere; }
+.context-audio-steps { display: flex; gap: 8px; flex-wrap: wrap; list-style: none; padding: 0; margin: 16px 0; }
+.context-audio-steps li { padding: 8px 12px; border-radius: 12px; background: var(--rd-violet-soft); color: var(--rd-violet-deep); font-size: 12px; }
+.context-audio-next { padding: 14px; border-radius: 14px; background: var(--rd-violet-soft); line-height: 1.6; }
+.assistant-trigger { bottom: 24px; right: 24px; min-height: 44px; }
+@media (max-width: 620px) {
+  .client-directory__row { gap: 8px; padding: 12px 4px; }
+  .client-directory__actions { gap: 0; }
+  .client-directory__identity strong { white-space: normal; overflow-wrap: anywhere; }
+  .pipeline-full .pipeline-lane { flex-basis: min(280px, 78vw); width: min(280px, 78vw); }
+  .rd-drawer { padding: 20px 16px max(24px, env(safe-area-inset-bottom)); }
+  .rd-drawer > header { top: -20px; }
+  .assistant-trigger { right: 16px; bottom: calc(88px + env(safe-area-inset-bottom)); }
+  .inline-form input { min-width: 0; max-width: 100%; }
+}

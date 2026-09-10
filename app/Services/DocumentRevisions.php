@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\Ability;
 use App\Models\AuditLog;
 use App\Models\Document;
 use App\Models\Opportunity;
 use App\Models\User;
 use Dompdf\Dompdf;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -15,6 +17,37 @@ use Illuminate\Validation\ValidationException;
 
 class DocumentRevisions
 {
+    public function externalSignature(Opportunity $case, Document $document, User $actor, array $input): void
+    {
+        $this->belongs($case, $document);
+        Gate::forUser($actor)->authorize(Ability::ApproveCommercial->value);
+        $data = Validator::make($input, [
+            'signer_name' => 'required|string|max:160', 'signed_at' => 'required|date|before_or_equal:today',
+            'method' => 'required|string|max:80', 'evidence' => 'required|string|min:3|max:5000',
+        ])->validate();
+        DB::transaction(function () use ($document, $actor, $data): void {
+            $locked = Document::whereKey($document->id)->lockForUpdate()->firstOrFail();
+            $previous = DB::table('external_signature_records')->where('document_id', $locked->id)->first();
+            if ($previous) {
+                foreach ($data as $key => $value) {
+                    if ((string) $previous->$key !== (string) $value) {
+                        $this->fail('Esta assinatura já foi registrada com outros dados. Consulte o histórico.');
+                    }
+                }
+
+                return;
+            }
+            if ($locked->type !== 'contract' || $locked->status !== 'sent' || ! $locked->sent_at) {
+                $this->fail('Registre a assinatura somente de um contrato enviado.');
+            }
+            DB::table('external_signature_records')->insert($data + [
+                'document_id' => $locked->id, 'recorded_by' => $actor->id, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+            $locked->update(['status' => 'signed_external', 'signed_at' => $data['signed_at']]);
+            $this->audit($actor, $locked, 'document.external_signature_recorded');
+        });
+    }
+
     public function draft(Opportunity $case, User $user, string $type, array $input): Document
     {
         $v = Validator::make($input, ['title' => 'required|string|max:180', 'purpose' => 'required|in:viability,management', 'expected_version' => 'required|integer|min:0', 'status' => 'sometimes|in:draft', 'notes' => 'nullable|string|max:5000', 'sections' => 'required|array:objective,scope,conditions', 'sections.objective' => 'required|string|max:10000', 'sections.scope' => 'required|string|max:15000', 'sections.conditions' => 'required|string|max:10000'])->validate();

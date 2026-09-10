@@ -36,6 +36,9 @@ class AssistantActions
             if ($p->status === 'confirmed') {
                 return $p->result;
             }
+            if ($p->status !== 'preview') {
+                throw ValidationException::withMessages(['preview' => 'Esta prévia foi substituída. Use a versão atual da conversa.']);
+            }
             if ($p->created_at->lt(now()->subDay())) {
                 throw ValidationException::withMessages(['preview' => 'Prévia expirada. Gere novamente para conferir dados atuais.']);
             }

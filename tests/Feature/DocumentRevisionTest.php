@@ -64,4 +64,35 @@ class DocumentRevisionTest extends TestCase
         $this->postJson("/opportunities/$o->id/proposal", $data)->assertUnprocessable();
         $this->assertDatabaseCount('documents', 1);
     }
+
+    public function test_sent_document_can_record_external_signature_with_private_evidence(): void
+    {
+        $actor = User::factory()->create(['can_approve_commercial' => true]);
+        $opportunity = Opportunity::create(['title' => 'Horizonte', 'client_name' => 'Cliente', 'stage' => 'contract']);
+        $document = Document::create([
+            'opportunity_id' => $opportunity->id,
+            'type' => 'contract',
+            'version' => 1,
+            'status' => 'sent',
+            'title' => 'Contrato Horizonte',
+            'content' => ['sections' => ['objective' => 'Evento', 'scope' => 'Escopo', 'conditions' => 'Condições']],
+            'sent_at' => now(),
+        ]);
+
+        $this->actingAs($actor)
+            ->post("/opportunities/{$opportunity->id}/documents/{$document->id}/external-signature", [
+                'signer_name' => 'Ana Horizonte',
+                'signed_at' => now()->toDateString(),
+                'method' => 'plataforma_externa',
+                'evidence' => 'Comprovante externo #884',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('external_signature_records', [
+            'document_id' => $document->id,
+            'signer_name' => 'Ana Horizonte',
+            'method' => 'plataforma_externa',
+        ]);
+        $this->assertSame('signed_external', $document->fresh()->status);
+    }
 }

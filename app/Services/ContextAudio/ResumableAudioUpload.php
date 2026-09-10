@@ -17,9 +17,31 @@ use Illuminate\Validation\ValidationException;
 
 class ResumableAudioUpload
 {
+    public function progress(AudioUploadSession $session, User $user): array
+    {
+        $this->authorize($session, $user);
+        abort_if($session->expires_at->isPast() && ! $session->case_context_entry_id, 410, 'A sessão expirou. Inicie um novo envio.');
+        $received = $this->received($session);
+
+        return [
+            'uuid' => $session->uuid, 'status' => $session->status,
+            'received_indices' => $received['indices'], 'received_bytes' => $received['bytes'],
+            'entry_id' => $session->case_context_entry_id,
+            'expected_bytes' => $session->expected_bytes, 'expected_chunks' => $session->expected_chunks,
+            'sha256' => $session->expected_digest,
+        ];
+    }
+
     public function start(Opportunity $opportunity, User $user, array $data): AudioUploadSession
     {
+        if (! empty($data['prepared_for'])) {
+            $entry = CaseContextEntry::where('opportunity_id', $opportunity->id)->where('user_id', $user->id)->where('kind', 'audio')->findOrFail($data['prepared_for']);
+            abort_if($entry->expires_at?->isPast(), 410);
+            abort_if($data['bytes'] > config('ai.audio_direct_max_bytes'), 422, 'A cópia preparada ainda excede o limite.');
+        }
+
         return AudioUploadSession::create([
+            'prepared_for' => $data['prepared_for'] ?? null,
             'uuid' => (string) Str::uuid(),
             'opportunity_id' => $opportunity->id,
             'user_id' => $user->id,
@@ -104,6 +126,28 @@ class ResumableAudioUpload
             if ($locked->case_context_entry_id) {
                 return CaseContextEntry::with('audioAsset')->findOrFail($locked->case_context_entry_id);
             }
+            if ($locked->prepared_for) {
+                $entry = CaseContextEntry::where('user_id', $user->id)->where('opportunity_id', $locked->opportunity_id)->findOrFail($locked->prepared_for);
+                abort_if($entry->expires_at?->isPast(), 410);
+                $asset = $entry->audioAsset()->lockForUpdate()->firstOrFail();
+                if (! in_array($asset->status, ['waiting', 'queued', 'failed'], true) || $asset->prepared_path) {
+                    throw ValidationException::withMessages(['audio' => 'Este áudio já possui preparação ou processamento. Atualize o caso.']);
+                }
+                if (abs($info['seconds'] * 1000 - $asset->duration_ms) > 2000) {
+                    throw ValidationException::withMessages(['audio' => 'A duração da cópia não corresponde à reunião original.']);
+                }
+                $preparedPath = 'context-audio/prepared/'.Str::uuid().'.'.$info['extension'];
+                abort_unless($disk->move($assembled, $preparedPath), 500);
+                $asset->update([
+                    'prepared_path' => $preparedPath, 'prepared_mime' => $info['mime'], 'prepared_bytes' => $locked->expected_bytes,
+                    'status' => 'queued', 'error_code' => null, 'error_message' => null,
+                    'metadata' => array_merge($asset->metadata ?? [], ['preparation' => 'browser', 'prepared_digest' => $digest]),
+                ]);
+                $entry->update(['status' => 'queued']);
+                $locked->update(['case_context_entry_id' => $entry->id, 'calculated_digest' => $digest, 'status' => 'completed']);
+
+                return $entry->load('audioAsset');
+            }
             $existing = CaseContextEntry::where('opportunity_id', $locked->opportunity_id)->where('digest', $digest)->first();
             if ($existing) {
                 $locked->update(['case_context_entry_id' => $existing->id, 'calculated_digest' => $digest, 'status' => 'completed']);
@@ -156,14 +200,16 @@ class ResumableAudioUpload
         $disk = Storage::disk('local');
         $chunks = 0;
         $bytes = 0;
+        $indices = [];
         for ($index = 0; $index < $session->expected_chunks; $index++) {
             $path = $this->chunkPath($session, $index);
             if ($disk->exists($path)) {
                 $chunks++;
+                $indices[] = $index;
                 $bytes += $disk->size($path);
             }
         }
 
-        return compact('chunks', 'bytes');
+        return compact('chunks', 'bytes', 'indices');
     }
 }

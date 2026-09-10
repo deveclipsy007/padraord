@@ -11,6 +11,7 @@ use App\Models\Opportunity;
 use App\Models\ProductionTask;
 use App\Models\PrototypeFeedback;
 use App\Models\User;
+use App\Services\OperationalMetrics;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
@@ -159,9 +160,13 @@ class OperationalPagesController extends Controller
 
     public function history(?Opportunity $opportunity = null): Response
     {
-        $query = AuditLog::query()->latest();
+        $query = AuditLog::query()->latest('created_at')->latest('id');
         if ($opportunity?->exists) {
-            $query->where('subject_type', Opportunity::class)->where('subject_id', $opportunity->id);
+            $query->where(function ($builder) use ($opportunity): void {
+                $builder
+                    ->where(fn ($direct) => $direct->where('subject_type', Opportunity::class)->where('subject_id', $opportunity->id))
+                    ->orWhereJsonContains('metadata->opportunity_id', $opportunity->id);
+            });
         }
         if (! Gate::allows(Ability::ViewPilotFeedback->value)) {
             $query->where('subject_type', '!=', User::class);
@@ -190,24 +195,77 @@ class OperationalPagesController extends Controller
         $logs = $query->limit(50)->get();
         $users = User::whereIn('id', $logs->pluck('user_id')->filter()->unique())->pluck('name', 'id');
         $labels = [
+            'opportunity.created' => 'Oportunidade criada',
+            'opportunity.updated' => 'Oportunidade atualizada',
+            'opportunity.stage_changed' => 'Etapa do caso atualizada',
             'opportunity.commercial_stage_changed' => 'Etapa comercial atualizada',
             'opportunity.next_action_set' => 'Próxima ação definida',
             'opportunity.archived' => 'Oportunidade arquivada',
             'opportunity.restored' => 'Oportunidade restaurada',
             'client.archived' => 'Cliente arquivado',
             'client.restored' => 'Cliente restaurado',
+            'client.created' => 'Cliente cadastrado',
+            'client.updated' => 'Cliente atualizado',
             'contact.archived' => 'Contato arquivado',
             'contact.restored' => 'Contato restaurado',
+            'contact.created' => 'Contato cadastrado',
+            'contact.updated' => 'Contato atualizado',
             'activity.completed' => 'Atividade concluída',
             'activity.reopened' => 'Atividade reaberta',
             'activity.rescheduled' => 'Atividade reagendada',
             'activity.assigned' => 'Atividade atribuída',
+            'production.task_created' => 'Tarefa de produção criada',
+            'production.task_updated' => 'Tarefa de produção atualizada',
+            'production.task_transitioned' => 'Status da tarefa atualizado',
+            'production.task_reopened' => 'Tarefa reaberta',
+            'production.technical_validation_saved' => 'Validação técnica registrada',
+            'production.technical_validation_confirmed' => 'Validação técnica reconfirmada',
+            'production.scope_preview_confirmed' => 'Escopo aprovado convertido em tarefas',
+            'post_event.saved' => 'Memória pós-evento atualizada',
+            'post_event.closed' => 'Evento encerrado',
+            'post_event.reopened' => 'Pós-evento reaberto',
+            'supplier.quote_created' => 'Cotação de fornecedor registrada',
+            'supplier.inquiry_created' => 'Consulta a fornecedor criada',
+            'document.external_signature_recorded' => 'Assinatura externa registrada',
+            'assistant.confirmed' => 'Sugestões do assistente aplicadas como rascunho',
+        ];
+        $moduleLabels = [
+            'opportunity' => 'Comercial',
+            'activity' => 'Tarefas',
+            'briefing' => 'Briefing',
+            'context' => 'IA e contexto',
+            'viability' => 'Viabilidade',
+            'budget' => 'Orçamento',
+            'document' => 'Documentos',
+            'production' => 'Produção',
+            'post_event' => 'Pós-evento',
+            'supplier' => 'Fornecedores',
+            'assistant' => 'Assistente',
+            'assistance' => 'Assistência',
+            'ai' => 'Inteligência artificial',
+            'journey' => 'Jornada',
+            'client' => 'Clientes',
+            'contact' => 'Contatos',
         ];
 
         return Inertia::render('History', [
-            'records' => $logs->map(fn ($log) => ['id' => $log->id, 'action' => $log->action, 'label' => $labels[$log->action] ?? ucwords(str_replace(['.', '_'], [' · ', ' '], $log->action)), 'module' => str($log->action)->before('.')->toString(), 'user' => $users[$log->user_id] ?? 'Sistema', 'caseId' => $log->subject_type === Opportunity::class ? $log->subject_id : null, 'metadata' => $log->metadata, 'createdAt' => $log->created_at->format('d/m/Y H:i')]),
+            'records' => $logs->map(function ($log) use ($labels, $moduleLabels): array {
+                $module = str($log->action)->before('.')->toString();
+
+                return [
+                    'id' => $log->id,
+                    'action' => $log->action,
+                    'label' => $labels[$log->action] ?? ucwords(str_replace(['.', '_'], [' · ', ' '], $log->action)),
+                    'module' => $moduleLabels[$module] ?? $module,
+                    'user' => $users[$log->user_id] ?? 'Sistema',
+                    'caseId' => $log->subject_type === Opportunity::class ? $log->subject_id : ($log->metadata['opportunity_id'] ?? null),
+                    'metadata' => $log->metadata,
+                    'createdAt' => $log->created_at->format('d/m/Y H:i'),
+                ];
+            }),
             'search' => $search, 'filters' => ['module' => $module, 'person' => $person ?: '', 'from' => $from ?: '', 'to' => $to ?: ''], 'case' => $opportunity?->only(['id', 'title']),
             'users' => User::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'metrics' => app(OperationalMetrics::class)->for($opportunity),
             'feedback' => Gate::allows(Ability::ViewPilotFeedback->value) ? PrototypeFeedback::latest()->limit(20)->get()->map(fn ($item) => ['rating' => $item->rating, 'category' => $item->category, 'comment' => $item->comment, 'createdAt' => $item->created_at->format('d/m/Y H:i')])->values() : [],
         ]);
     }

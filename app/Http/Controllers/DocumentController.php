@@ -5,14 +5,38 @@ namespace App\Http\Controllers;
 use App\Models\Document;
 use App\Models\Opportunity;
 use App\Services\DocumentRevisions;
+use App\Services\DocumentSharing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DocumentController extends Controller
 {
+    public function externalSignature(Request $request, Opportunity $opportunity, Document $document, DocumentRevisions $service)
+    {
+        $service->externalSignature($opportunity, $document, $request->user(), $request->all());
+
+        return back()->with('success', 'Assinatura externa registrada com evidência.');
+    }
+
+    public function share(Request $request, Opportunity $opportunity, Document $document, DocumentSharing $sharing): RedirectResponse
+    {
+        $expiresAt = $request->input('expires_at');
+        $share = $sharing->create($opportunity, $document, $request->user(), $expiresAt);
+
+        return back()->with('success', 'Link privado criado para a versão enviada.')->with('share_url', $share['url']);
+    }
+
+    public function revokeShare(Request $request, Opportunity $opportunity, Document $document, int $share, DocumentSharing $sharing): RedirectResponse
+    {
+        $sharing->revoke($opportunity, $document, $request->user(), $share);
+
+        return back()->with('success', 'Link revogado. O documento e o histórico foram preservados.');
+    }
+
     public function show(Request $request, Opportunity $opportunity, string $type): Response
     {
         abort_unless(in_array($type, ['proposal', 'contract'], true), 404);
@@ -33,6 +57,7 @@ class DocumentController extends Controller
         return Inertia::render('DocumentWorkspace', [
             'latestVersion' => $latest?->version ?? 0, 'stale' => $stale,
             'versions' => $versions->map(fn ($v) => ['version' => $v->version, 'status' => $v->status, 'purpose' => $v->purpose, 'sections' => $v->content['sections'] ?? []]),
+            'shareLinks' => $document ? DB::table('document_share_links')->where('document_id', $document->id)->latest('id')->get(['id', 'expires_at', 'revoked_at', 'views_count', 'first_viewed_at'])->map(fn ($link) => ['id' => $link->id, 'expiresAt' => $link->expires_at, 'revokedAt' => $link->revoked_at, 'views' => $link->views_count, 'firstViewedAt' => $link->first_viewed_at])->values() : [],
             'canReview' => (bool) ($request->user()->can_approve_commercial && config('commercial.rules_approved') && filled(config('commercial.rules_evidence'))),
             'opportunity' => ['id' => $opportunity->id, 'title' => $opportunity->title, 'clientName' => $opportunity->client_name, 'stage' => $opportunity->stage->value],
             'document' => [

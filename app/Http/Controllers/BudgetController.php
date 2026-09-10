@@ -6,6 +6,7 @@ use App\Models\BudgetItem;
 use App\Models\Opportunity;
 use App\Models\SupplierQuote;
 use App\Services\AssistancePreparation;
+use App\Services\BudgetIntake;
 use App\Services\BudgetRevisionService;
 use App\Services\Money;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ class BudgetController extends Controller
             'budget' => ['id' => $budget?->id, 'version' => $budget?->version ?? 1, 'revision' => $budget?->revision ?? 0, 'status' => $budget?->status ?? 'draft', 'purpose' => $budget?->purpose ?? 'preliminary', 'items' => $items, 'totalCents' => $budget?->status === 'approved' ? data_get($budget->snapshot, 'totalCents', $items->sum('sellTotalCents')) : $items->sum('sellTotalCents')],
             'versions' => $opportunity->budgets()->orderByDesc('version')->get(['id', 'version', 'status', 'snapshot']),
             'quotes' => SupplierQuote::with('supplier')->where('opportunity_id', $opportunity->id)->get()->map(fn ($q) => ['id' => $q->id, 'label' => $q->supplier->name.' · '.$q->service, 'unitCostCents' => $q->unit_cost_cents, 'validUntil' => $q->valid_until->format('Y-m-d'), 'priceBasis' => $q->price_basis, 'quantity' => $q->quantity, 'unit' => $q->unit]),
+            'supplierNeeds' => $opportunity->supplierNeeds()->latest()->get()->map(fn ($need) => ['id' => $need->id, 'category' => $need->category, 'scope' => $need->scope, 'quantity' => $need->quantity, 'unit' => $need->unit, 'requiredDate' => $need->required_date?->format('Y-m-d'), 'status' => $need->status]),
             'approvalEnabled' => (bool) (auth()->user()->can_approve_commercial && config('commercial.rules_approved') && filled(config('commercial.rules_evidence'))),
         ]);
     }
@@ -84,6 +86,28 @@ class BudgetController extends Controller
         $service->duplicate($opportunity, $request->user(), (int) $request->revision);
 
         return back()->with('success', 'Nova versão criada com os itens anteriores.');
+    }
+
+    public function selectQuote(Request $request, Opportunity $opportunity, SupplierQuote $quote, BudgetIntake $intake)
+    {
+        abort_unless($quote->opportunity_id === $opportunity->id, 404);
+        $request->validate([
+            'revision' => ['nullable', 'integer', 'min:0'],
+            'request_key' => ['required', 'string', 'max:100'],
+        ]);
+
+        $revision = $request->filled('revision')
+            ? $request->integer('revision')
+            : ($opportunity->budgets()->latest('version')->value('revision') ?? 0);
+
+        $intake->import($opportunity, $request->user(), [
+            'revision' => $revision,
+            'request_key' => $request->string('request_key')->toString(),
+            'quote_id' => $quote->id,
+        ]);
+
+        return redirect("/opportunities/{$opportunity->id}/budget?quote_id={$quote->id}")
+            ->with('success', 'Cotação selecionada e adicionada ao rascunho. Selecionar não significa contratar.');
     }
 
     private function itemData(Request $request, Opportunity $case): array

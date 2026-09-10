@@ -12,6 +12,9 @@ class PassThroughMediaPreparationProvider implements MediaPreparationProvider
 {
     public function prepare(ContextAudioAsset $asset): PreparedMedia
     {
+        if ($asset->prepared_path && $asset->prepared_bytes <= config('ai.audio_direct_max_bytes') && Storage::disk('local')->exists($asset->prepared_path)) {
+            return new PreparedMedia($asset->prepared_path, $asset->prepared_mime, $asset->prepared_bytes, ['strategy' => 'browser_prepared']);
+        }
         if ($asset->original_bytes > config('ai.audio_direct_max_bytes')) {
             throw new MediaPreparationRequired('Este áudio ultrapassa o limite direto e precisa ser compactado antes da transcrição.');
         }
