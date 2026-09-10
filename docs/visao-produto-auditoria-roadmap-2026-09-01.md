@@ -81,14 +81,14 @@ Os estados abaixo substituem percentuais subjetivos de progresso:
 - 96 rotas Laravel após as rotas protegidas de health e autoridade comercial.
 - 26 controllers, 31 models e 20 migrations após as adições deste ciclo.
 - 25 páginas React.
-- 120 testes PHP e 918 assertions passando no SQLite.
+- 169 testes PHP e 1.219 assertions passando no SQLite.
 - 12 testes de interface passando.
 - TypeScript e build Vite passando.
 - Pint passou sem arquivos pendentes após a correção dos 19 arquivos do baseline.
 - Testes PHP locais usam SQLite; MariaDB agora está coberto por configuração e script para CI.
-- Suíte Playwright versionada criada com 21 testes e três breakpoints.
+- Suíte Playwright versionada com 24 testes passando em três breakpoints, incluindo os controles manuais de Produção e Pós-evento.
 - Workflow GitHub Actions criado, aguardando repositório privado e execução remota.
-- Pacote Hostinger atual foi reconstruído e auditado pelo verificador de release.
+- Pacote Hostinger atual foi reconstruído e auditado pelo verificador de release após as mudanças de produção, pós-evento e métricas.
 - O PHP local observado é 8.5.4; a produção deverá ser fixada e verificada em 8.4.
 - Telas principais foram observadas em desktop, tablet e celular sem rolagem horizontal global, mas o briefing móvel tem tabs contextuais com affordance fraca e os botões flutuantes de Assistente/Feedback disputam espaço com o dock inferior.
 - Há dois fluxos de áudio que precisam convergir: o legado do Briefing e o motor transversal de contexto.
@@ -460,6 +460,18 @@ Implementado localmente em 01/09/2026, sem deploy ou alteração de produção:
 
 ## 9. Registro de evidências — Ciclo 03 em andamento
 
+## 10. Dossiê de execução — três metas locais
+
+Em 10/09/2026 foi criado o [dossiê de execução em três metas](execucao/2026-09-10/00-indice-e-controle.md), com tarefas identificadas, dependências, critérios de aceite e evidências. A execução atual adicionou:
+
+- seleção de cotação idempotente e necessidade de fornecedor vinculada ao caso;
+- assinatura externa de contrato com evidência e autoridade comercial;
+- links privados de proposta por token hash, validade, revogação, visualização e decisão do cliente;
+- upload de áudio retomável e preparação local de gravações acima do limite direto, preservando o original;
+- backup SQLite antes das alterações e registro de contagens críticas.
+
+As verificações incrementais desta sessão estão em [10-evidencias.md](execucao/2026-09-10/10-evidencias.md). O estado não é declarado como conclusão das três metas: Produção, Pós-evento, MariaDB e integrações externas continuam pendentes.
+
 Implementado localmente em 02/09/2026, sem ativar OpenAI real, SMTP, Odoo ou produção:
 
 | Entrega | Evidência |
@@ -479,3 +491,18 @@ Implementado localmente em 02/09/2026, sem ativar OpenAI real, SMTP, Odoo ou pro
 - MariaDB, OpenAI real e Hostinger permanecem gates externos; não houve chamada com dados de cliente nem deploy.
 
 **Estado do Ciclo 03:** fundação de contexto e Viabilidade em progresso; não declarar concluído até validar o caminho de áudio longo e a matriz de avaliação.
+
+## 11. Verificação incremental — produção, pós-evento e memória
+
+Em 10/09/2026, as primeiras regras persistentes do ciclo operacional foram exercitadas localmente:
+
+| Entrega | Estado verificável | Evidência |
+|---|---|---|
+| Escopo aprovado → tarefas | Funcional incompleto | Prévia idempotente baseada na versão do orçamento; confirmação não duplica tarefas |
+| Validação técnica | Funcional incompleto | Medidas, evidência, reconfirmação e invalidação por alteração; tarefa técnica bloqueada até confirmação |
+| Produção | Funcional incompleto | Dependências, fases, responsáveis, prioridades, edição concorrente e reabertura auditada |
+| Pós-evento | Funcional incompleto | Ocorrências, extras, previsto versus realizado, avaliações, checklist de encerramento e reabertura explícita |
+| Histórico | Funcional incompleto | Rótulos humanos, métricas reais e inclusão de auditorias de módulos relacionados ao caso |
+| Release local | Validado localmente | Build Vite, Playwright 24/24 e verificador Hostinger passaram após as alterações |
+
+O estado não é declarado como conclusão do sistema: a jornada completa ainda precisa ser exercitada de ponta a ponta, e MariaDB, Hostinger, OpenAI, SMTP e Odoo dependem de acessos e ambientes externos.
