@@ -13,7 +13,9 @@ const e2eEnv = {
     DB_DATABASE: e2eDatabase,
     DEMO_DATA: 'true',
     CACHE_STORE: 'array',
-    SESSION_DRIVER: 'array',
+    // 'array' descarta a sessão entre requisições, o que apaga os erros de
+    // validação em flash e impede o navegador de cobrir esse caminho.
+    SESSION_DRIVER: 'file',
     QUEUE_CONNECTION: 'sync',
     MAIL_MAILER: 'array',
     HEALTH_CHECK_TOKEN: 'cycle01-health-token',

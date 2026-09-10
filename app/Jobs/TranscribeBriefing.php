@@ -35,10 +35,10 @@ class TranscribeBriefing implements ShouldQueue
         $audio = BriefingAudio::findOrFail($this->audioId);
         $reservation = DB::transaction(function () use ($config, $audio) {
             DB::table('ai_settings')->where('id', 1)->update(['updated_at' => now()]);
-            if (! config('ai.audio_validated') || $config->publicState()['status'] !== 'ready' || $audio->expires_at->isPast()) {
+            if (! $config->audioReady() || $audio->expires_at->isPast()) {
                 return null;
             }
-            $price = (int) config('ai.audio_price_micros_per_minute', 0);
+            $price = $config->audioPriceMicrosPerMinute();
             $s = $config->setting();
             // Round up complete minutes with a safety minute. Do not pretend this is a provider invoice.
             $estimate = ((int) ceil($audio->seconds / 60) + 1) * $price;

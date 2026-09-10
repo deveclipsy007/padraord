@@ -73,7 +73,7 @@ class BriefingAudioTest extends TestCase
     {
         Storage::fake('local');
         config(['ai.audio_validated' => true, 'ai.audio_price_micros_per_minute' => 6000]);
-        AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'test-key', 'policy_approved' => true, 'monthly_micros' => 1000000, 'processing_micros' => 100000, 'input_price' => 150000, 'output_price' => 600000]);
+        AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'test-key', 'policy_approved' => true, 'monthly_micros' => 1000000, 'processing_micros' => 100000, 'input_price' => 150000, 'output_price' => 600000, 'audio_enabled' => true, 'audio_price_micros_per_minute' => 6000]);
         Http::fake(['api.openai.com/*' => Http::response(['segments' => [['speaker' => 'A', 'start' => 0, 'end' => 1, 'text' => 'Objetivo: reunir a equipe.']]])]);
         $o = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);
         $this->actingAs(User::factory()->create())->post("/opportunities/$o->id/briefing/audio", ['audio' => $this->audio()])->assertRedirect();

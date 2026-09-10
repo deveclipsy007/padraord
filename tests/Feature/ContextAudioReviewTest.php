@@ -62,7 +62,7 @@ class ContextAudioReviewTest extends TestCase
         Storage::fake('local');
         Queue::fake();
         config(['ai.audio_validated' => true, 'ai.audio_price_micros_per_minute' => 6000]);
-        AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret', 'policy_approved' => true, 'monthly_micros' => 1_000_000, 'processing_micros' => 100_000, 'input_price' => 200_000, 'output_price' => 1_200_000]);
+        AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret', 'policy_approved' => true, 'monthly_micros' => 1_000_000, 'processing_micros' => 100_000, 'input_price' => 200_000, 'output_price' => 1_200_000, 'audio_enabled' => true, 'audio_price_micros_per_minute' => 6000]);
         $opportunity = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);
         $entry = CaseContextEntry::create(['opportunity_id' => $opportunity->id, 'user_id' => User::factory()->create()->id, 'kind' => 'audio', 'phase' => 'briefing', 'status' => 'waiting', 'path' => 'context-audio/original/audio.wav', 'digest' => str_repeat('1', 64)]);
         $asset = ContextAudioAsset::create(['case_context_entry_id' => $entry->id, 'original_path' => $entry->path, 'original_mime' => 'audio/wav', 'original_bytes' => 10, 'duration_ms' => 1000, 'digest' => str_repeat('1', 64), 'status' => 'waiting']);
@@ -78,7 +78,7 @@ class ContextAudioReviewTest extends TestCase
     {
         Queue::fake();
         config(['ai.audio_validated' => true, 'ai.audio_price_micros_per_minute' => 6000]);
-        AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret', 'policy_approved' => true, 'monthly_micros' => 1_000_000, 'processing_micros' => 100_000, 'input_price' => 200_000, 'output_price' => 1_200_000]);
+        AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret', 'policy_approved' => true, 'monthly_micros' => 1_000_000, 'processing_micros' => 100_000, 'input_price' => 200_000, 'output_price' => 1_200_000, 'audio_enabled' => true, 'audio_price_micros_per_minute' => 6000]);
         $user = User::factory()->create();
         $opportunity = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);
         $entry = CaseContextEntry::create(['opportunity_id' => $opportunity->id, 'user_id' => $user->id, 'kind' => 'audio', 'phase' => 'briefing', 'status' => 'waiting', 'path' => 'context-audio/original/audio.wav', 'digest' => str_repeat('2', 64)]);

@@ -28,7 +28,7 @@ class TranscribeContextAudioJobTest extends TestCase
         AiSetting::create([
             'id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret',
             'policy_approved' => true, 'monthly_micros' => 10_000_000, 'processing_micros' => 2_000_000,
-            'input_price' => 200_000, 'output_price' => 1_200_000,
+            'input_price' => 200_000, 'output_price' => 1_200_000, 'audio_enabled' => true, 'audio_price_micros_per_minute' => 6000,
         ]);
         Http::fake(['api.openai.com/v1/audio/transcriptions' => Http::response([
             'text' => 'Olá. Vamos fazer o evento em novembro.',
@@ -74,7 +74,7 @@ class TranscribeContextAudioJobTest extends TestCase
         AiSetting::create([
             'id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret',
             'policy_approved' => true, 'monthly_micros' => 100, 'processing_micros' => 100,
-            'input_price' => 200_000, 'output_price' => 1_200_000,
+            'input_price' => 200_000, 'output_price' => 1_200_000, 'audio_enabled' => true, 'audio_price_micros_per_minute' => 6000,
         ]);
         $opportunity = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);
         $entry = CaseContextEntry::create([

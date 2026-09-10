@@ -72,7 +72,7 @@ class ContextAudioUploadTest extends TestCase
         Storage::fake('local');
         Queue::fake();
         config(['ai.audio_validated' => true, 'ai.audio_price_micros_per_minute' => 6000]);
-        AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret', 'policy_approved' => true, 'monthly_micros' => 1_000_000, 'processing_micros' => 100_000, 'input_price' => 200_000, 'output_price' => 1_200_000]);
+        AiSetting::create(['id' => 1, 'mode' => 'openai', 'credential_source' => 'settings', 'api_key' => 'secret', 'policy_approved' => true, 'monthly_micros' => 1_000_000, 'processing_micros' => 100_000, 'input_price' => 200_000, 'output_price' => 1_200_000, 'audio_enabled' => true, 'audio_price_micros_per_minute' => 6000]);
         $user = User::factory()->create();
         $opportunity = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);
         $wav = $this->wav();

@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\AI\AiConfiguration;
 use App\Contracts\AudioTranscriber;
 use App\Models\CaseContextSegment;
 use App\Models\ContextAudioAsset;
@@ -33,7 +34,7 @@ class TranscribeContextAudio implements ShouldQueue
         }
         $asset->update(['status' => 'transcribing', 'error_code' => null, 'error_message' => null]);
         $asset->entry->update(['status' => 'transcribing']);
-        $price = (int) config('ai.audio_price_micros_per_minute');
+        $price = app(AiConfiguration::class)->audioPriceMicrosPerMinute();
         $estimate = max(1, (int) ceil($asset->duration_ms / 60000)) * $price;
         try {
             $cost = app(AiCostLedger::class)->reserve([

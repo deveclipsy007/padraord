@@ -48,7 +48,7 @@ class BriefingAudioController extends Controller
     public function transcribe(Request $request, Opportunity $opportunity, BriefingAudio $audio, AiConfiguration $config)
     {
         abort_unless($audio->opportunity_id === $opportunity->id, 404);
-        if (! config('ai.audio_validated') || ! config('ai.audio_price_micros_per_minute') || $config->publicState()['status'] !== 'ready') {
+        if (! $config->audioReady()) {
             throw ValidationException::withMessages(['audio' => 'Transcrição real bloqueada: valide a hospedagem, tarifa de áudio, política e limites. Você pode colar a transcrição e continuar.']);
         }
         abort_if($audio->expires_at->isPast(), 410);

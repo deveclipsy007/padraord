@@ -50,7 +50,7 @@ class ContextAudioUploadController extends Controller
         $alreadyCompleted = (bool) $session->case_context_entry_id;
         $entry = $uploads->complete($session, $request->user(), $inspector, $configuration);
         $fitsProvider = $entry->audioAsset && ($entry->audioAsset->prepared_path || $entry->audioAsset->original_bytes <= config('ai.audio_direct_max_bytes'));
-        $canProcess = $fitsProvider && config('ai.audio_validated') && config('ai.audio_price_micros_per_minute') > 0 && $configuration->publicState()['status'] === 'ready';
+        $canProcess = $fitsProvider && $configuration->audioReady();
         if (! $alreadyCompleted && $entry->audioAsset && $canProcess) {
             PrepareContextAudio::dispatch($entry->audioAsset->id);
         } elseif (! $alreadyCompleted && $entry->audioAsset) {

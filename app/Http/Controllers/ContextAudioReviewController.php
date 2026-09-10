@@ -36,8 +36,8 @@ class ContextAudioReviewController extends Controller
     public function process(Opportunity $opportunity, CaseContextEntry $entry, AiConfiguration $configuration)
     {
         abort_unless($entry->opportunity_id === $opportunity->id && $entry->kind === 'audio', 404);
-        if (! config('ai.audio_validated') || config('ai.audio_price_micros_per_minute') <= 0 || $configuration->publicState()['status'] !== 'ready') {
-            throw ValidationException::withMessages(['audio' => 'Configure chave, política, limites e tarifa antes de iniciar uma chamada paga.']);
+        if (! $configuration->audioReady()) {
+            throw ValidationException::withMessages(['audio' => 'Configure chave, política, limites e a tarifa por minuto em Administração → Inteligência artificial antes de iniciar uma chamada paga.']);
         }
         $asset = $entry->audioAsset()->firstOrFail();
         if ($asset->status === 'transcribed' && $entry->status === 'waiting') {

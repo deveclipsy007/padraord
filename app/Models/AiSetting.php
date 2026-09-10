@@ -12,6 +12,6 @@ class AiSetting extends Model
 
     protected function casts(): array
     {
-        return ['api_key' => 'encrypted', 'policy_approved' => 'boolean'];
+        return ['api_key' => 'encrypted', 'policy_approved' => 'boolean', 'audio_enabled' => 'boolean'];
     }
 }
