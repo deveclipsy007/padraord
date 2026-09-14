@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\AuditLog;
 use App\Models\Opportunity;
 use App\Models\PostEventReport;
+use App\Services\EventProfitability;
 use App\Services\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -21,6 +23,15 @@ class PostEventController extends Controller
     }
 
     public function store(Request $request, Opportunity $opportunity): RedirectResponse
+    {
+        return DB::transaction(function () use ($request, $opportunity) {
+            $locked = Opportunity::whereKey($opportunity->id)->lockForUpdate()->firstOrFail();
+
+            return $this->persist($request, $locked);
+        }, 3);
+    }
+
+    private function persist(Request $request, Opportunity $opportunity): RedirectResponse
     {
         $data = $request->validate([
             'summary' => ['nullable', 'string', 'max:5000'],
@@ -81,6 +92,14 @@ class PostEventController extends Controller
         unset($data['actual_total']);
         unset($data['planned_total']);
         unset($data['occurrence_description'], $data['occurrence_solution'], $data['occurrence_extra_total']);
+        $finance = app(EventProfitability::class)->for($opportunity);
+        if ($finance['has_finance']) {
+            $data['planned_total_cents'] = $finance['planned_cost_cents'];
+            $data['actual_total_cents'] = $finance['actual_cost_cents'];
+            if ($requestedStatus === 'closed' && $finance['closure_errors']) {
+                $closureError = implode(' ', $finance['closure_errors']);
+            }
+        }
         $existing = $opportunity->postEventReport;
         if ($existing?->status === 'closed') {
             if ($data['status'] !== 'closed') {

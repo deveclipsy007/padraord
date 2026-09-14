@@ -25,4 +25,8 @@ export default function globalSetup(): void {
         env: { ...process.env, ...e2eEnv },
         stdio: 'inherit',
     });
+    execFileSync('php', ['artisan', 'db:seed', '--class=FinanceE2ESeeder', '--force', '--no-interaction'], {
+        cwd: process.cwd(), env: { ...process.env, ...e2eEnv }, stdio: 'inherit',
+    });
+
 }

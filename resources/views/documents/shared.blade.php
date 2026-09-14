@@ -18,6 +18,7 @@
     <p class="notice">Esta é a versão enviada para sua apreciação. O link é válido até {{ \Carbon\Carbon::parse($expiresAt)->format('d/m/Y') }}.</p>
     @foreach(['objective'=>'Objetivo','scope'=>'Escopo','conditions'=>'Condições'] as $key=>$label)<section><h2>{{ $label }}</h2><p style="white-space:pre-wrap">{{ $sections[$key] ?: 'Não informado' }}</p></section>@endforeach
     <h2>Investimento</h2><p>{{ data_get($document->content,'sources.budget.totalCents') !== null ? 'R$ '.number_format(data_get($document->content,'sources.budget.totalCents')/100,2,',','.') : 'A confirmar na revisão comercial.' }}</p>
+    @include('documents.payment-plan')
     @if(!$decision)<form method="post" action="{{ url('/shared/proposal/'.$token.'/decision') }}">
         @csrf
         <label>Seu nome (opcional)<input name="decided_by_name" maxlength="160"></label>

@@ -83,6 +83,7 @@ function createContext(
             ['Briefing', '/briefing'],
             ['Viabilidade', '/feasibility'],
             ['Orçamento', '/budget'],
+            ['Financeiro', '/finance'],
             ['Documentos', '/documents'],
             ['Produção', '/production'],
             ['Pós-evento', '/post-event'],

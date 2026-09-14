@@ -65,7 +65,7 @@ class DocumentRevisions
             if (($latest?->version ?? 0) !== $v['expected_version']) {
                 $this->fail('O documento mudou. Reabra a versão atual antes de salvar.');
             }$b = $o->budgets()->latest('version')->first();
-            $d = $o->documents()->create(['type' => $type, 'purpose' => $v['purpose'], 'version' => ($latest?->version ?? 0) + 1, 'status' => 'draft', 'title' => $v['title'], 'notes' => $v['notes'] ?? null, 'content' => ['sections' => $v['sections'], 'sources' => ['briefing_revision' => $o->briefing_revision, 'briefing' => $o->briefing_approval, 'budget_id' => $b?->id, 'budget_revision' => $b?->revision, 'budget' => $b?->snapshot, 'case_title' => $o->title, 'client' => $o->client_name]]]);
+            $d = $o->documents()->create(['type' => $type, 'purpose' => $v['purpose'], 'version' => ($latest?->version ?? 0) + 1, 'status' => 'draft', 'title' => $v['title'], 'notes' => $v['notes'] ?? null, 'content' => ['sections' => $v['sections'], 'sources' => ['briefing_revision' => $o->briefing_revision, 'briefing' => $o->briefing_approval, 'budget_id' => $b?->id, 'budget_revision' => $b?->revision, 'budget' => $b?->snapshot, 'case_title' => $o->title, 'client' => $o->client_name, 'payment_plan' => app(EventFinance::class)->plan($o)]]]);
             $this->audit($user, $d, 'document.draft_created');
 
             return $d;
@@ -144,7 +144,7 @@ class DocumentRevisions
     {
         $s = $d->content['sources'] ?? [];
         $b = $o->budgets()->latest('version')->first();
-        if ((int) $o->documents()->where('type', $d->type)->max('version') !== $d->version || ($s['briefing_revision'] ?? null) !== $o->briefing_revision || ($s['budget_id'] ?? null) !== $b?->id || ($s['budget_revision'] ?? null) !== $b?->revision) {
+        if ((int) $o->documents()->where('type', $d->type)->max('version') !== $d->version || ($s['briefing_revision'] ?? null) !== $o->briefing_revision || ($s['budget_id'] ?? null) !== $b?->id || ($s['budget_revision'] ?? null) !== $b?->revision || (array_key_exists('payment_plan', $s) && data_get($s, 'payment_plan.revision') !== data_get(app(EventFinance::class)->plan($o), 'revision'))) {
             $this->fail('As fontes mudaram ou existe uma versão mais recente. Crie e revise um novo rascunho.');
         }
     }

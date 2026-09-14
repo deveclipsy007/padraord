@@ -71,6 +71,7 @@ const moduleLinks = (id: number) => [
     { key: 'journey', label: 'Jornada', href: `/opportunities/${id}/journey`, icon: Route, desc: 'ciclos e decisões' },
     { key: 'briefing', label: 'Briefing', href: `/opportunities/${id}/briefing`, icon: MessageSquareText, desc: 'contexto e lacunas' },
     { key: 'viability', label: 'Viabilidade', href: `/opportunities/${id}/feasibility`, icon: Layers3, desc: 'conceito e entregáveis' },
+    { key: 'finance', label: 'Financeiro', href: `/opportunities/${id}/finance`, icon: WalletCards, desc: 'parcelas, baixas e margem' },
     { key: 'budget', label: 'Orçamento', href: `/opportunities/${id}/budget`, icon: WalletCards, desc: 'custos e memória' },
     { key: 'documents', label: 'Documentos', href: `/opportunities/${id}/documents`, icon: FileText, desc: 'propostas e contrato' },
     { key: 'production', label: 'Produção', href: `/opportunities/${id}/production`, icon: ListChecks, desc: 'tarefas e marcos' },

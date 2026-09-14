@@ -108,31 +108,224 @@
       "id": "rd-b148e6323bee",
       "title": "Definir parcelas e condições que fecham ao centavo",
       "weight": 5,
-      "tests": []
+      "tests": [
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_plan_closes_to_the_cent_and_accepted_terms_are_immutable"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_receivables_require_confirmed_preview_and_support_partial_settlement"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cancel_with_settlement_requires_reason_and_preserves_paid_history"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_payable_requires_same_case_approved_origin_and_authority_before_payment"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cost_variance_blocks_closure_and_profitability_is_provisional_until_closed"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_percentages_and_stale_updates_do_not_change_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_event_relative_dates_and_unresolved_triggers_are_explicit_and_stale_preview_is_refused"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_proposal_preserves_payment_terms_and_old_draft_detects_changed_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_cross_case_settlement_and_changed_idempotency_request_are_refused"
+        }
+      ]
     },
     {
       "id": "rd-3ae801fea93d",
       "title": "Gerir recebíveis com baixas parciais e cancelamento justificado",
       "weight": 3,
-      "tests": []
+      "tests": [
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_plan_closes_to_the_cent_and_accepted_terms_are_immutable"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_receivables_require_confirmed_preview_and_support_partial_settlement"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cancel_with_settlement_requires_reason_and_preserves_paid_history"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_payable_requires_same_case_approved_origin_and_authority_before_payment"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cost_variance_blocks_closure_and_profitability_is_provisional_until_closed"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_percentages_and_stale_updates_do_not_change_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_event_relative_dates_and_unresolved_triggers_are_explicit_and_stale_preview_is_refused"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_proposal_preserves_payment_terms_and_old_draft_detects_changed_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_cross_case_settlement_and_changed_idempotency_request_are_refused"
+        }
+      ]
     },
     {
       "id": "rd-35ae981b7b3b",
       "title": "Aprovar pagamentos com origem rastreável e autoridade",
       "weight": 3,
-      "tests": []
+      "tests": [
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_plan_closes_to_the_cent_and_accepted_terms_are_immutable"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_receivables_require_confirmed_preview_and_support_partial_settlement"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cancel_with_settlement_requires_reason_and_preserves_paid_history"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_payable_requires_same_case_approved_origin_and_authority_before_payment"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cost_variance_blocks_closure_and_profitability_is_provisional_until_closed"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_percentages_and_stale_updates_do_not_change_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_event_relative_dates_and_unresolved_triggers_are_explicit_and_stale_preview_is_refused"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_proposal_preserves_payment_terms_and_old_draft_detects_changed_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_cross_case_settlement_and_changed_idempotency_request_are_refused"
+        },
+        {
+          "file": "tests/Feature/PayableOriginTest.php",
+          "name": "test_package_quote_is_not_multiplied_by_quantity_and_uses_need_category"
+        },
+        {
+          "file": "tests/Feature/PayableOriginTest.php",
+          "name": "test_quote_cannot_create_duplicate_liability_through_a_budget_item"
+        }
+      ]
     },
     {
       "id": "rd-e59afe03e71a",
       "title": "Conferir previsto e realizado por categoria e justificar desvios",
       "weight": 3,
-      "tests": []
+      "tests": [
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_plan_closes_to_the_cent_and_accepted_terms_are_immutable"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_receivables_require_confirmed_preview_and_support_partial_settlement"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cancel_with_settlement_requires_reason_and_preserves_paid_history"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_payable_requires_same_case_approved_origin_and_authority_before_payment"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cost_variance_blocks_closure_and_profitability_is_provisional_until_closed"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_percentages_and_stale_updates_do_not_change_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_event_relative_dates_and_unresolved_triggers_are_explicit_and_stale_preview_is_refused"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_proposal_preserves_payment_terms_and_old_draft_detects_changed_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_cross_case_settlement_and_changed_idempotency_request_are_refused"
+        }
+      ]
     },
     {
       "id": "rd-f0fbec9a57e8",
       "title": "Calcular margem realizada e identificar resultado provisório",
       "weight": 3,
-      "tests": []
+      "tests": [
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_plan_closes_to_the_cent_and_accepted_terms_are_immutable"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_receivables_require_confirmed_preview_and_support_partial_settlement"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cancel_with_settlement_requires_reason_and_preserves_paid_history"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_payable_requires_same_case_approved_origin_and_authority_before_payment"
+        },
+        {
+          "file": "tests/Feature/EventFinanceTest.php",
+          "name": "test_cost_variance_blocks_closure_and_profitability_is_provisional_until_closed"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_percentages_and_stale_updates_do_not_change_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_event_relative_dates_and_unresolved_triggers_are_explicit_and_stale_preview_is_refused"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_proposal_preserves_payment_terms_and_old_draft_detects_changed_plan"
+        },
+        {
+          "file": "tests/Feature/FinanceIntegrityTest.php",
+          "name": "test_cross_case_settlement_and_changed_idempotency_request_are_refused"
+        }
+      ]
     },
     {
       "id": "rd-1178fc8b109a",

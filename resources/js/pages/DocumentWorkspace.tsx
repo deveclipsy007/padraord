@@ -16,7 +16,16 @@ type Props = {
         purpose: string;
         notes?: string;
         sections: Sections;
-        sources?: { briefing_revision: number; budget_id: number | null; budget_revision: number | null; budget?: { totalCents: number } };
+        sources?: {
+            payment_plan?: {
+                revision: number;
+                installments: { label: string; amount_cents: number; trigger: string; due_at: string | null; milestone: string | null }[];
+            };
+            briefing_revision: number;
+            budget_id: number | null;
+            budget_revision: number | null;
+            budget?: { totalCents: number };
+        };
     };
     latestVersion: number;
     stale: boolean;
@@ -106,6 +115,19 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                               )
                             : 'Pendente de orçamento revisado'}
                     </p>
+                    {d.sources?.payment_plan && (
+                        <section>
+                            <h3>Plano de pagamento desta versão</h3>
+                            {d.sources.payment_plan.installments.map((i, index) => (
+                                <p key={index}>
+                                    {i.label} ·{' '}
+                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(i.amount_cents / 100)} ·{' '}
+                                    {i.trigger.replaceAll('_', ' ')} {i.due_at ?? i.milestone}
+                                </p>
+                            ))}
+                            <Link href={`${base}/finance`}>Consultar condições financeiras</Link>
+                        </section>
+                    )}
                     <p>
                         Briefing r{d.sources?.briefing_revision ?? '—'} · Orçamento #{d.sources?.budget_id ?? '—'} r
                         {d.sources?.budget_revision ?? '—'}

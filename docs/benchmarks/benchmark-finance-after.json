@@ -1,0 +1,15 @@
+{
+    "at": "2026-09-14T19:08:48+00:00",
+    "php": "8.5.4",
+    "dataset": {
+        "budget_items": 100,
+        "categories": 10,
+        "receivables": 2
+    },
+    "samples": 30,
+    "warmups": 5,
+    "median_ms": 10.347,
+    "p95_ms": 11.09,
+    "queries_max": 43,
+    "errors": []
+}
