@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Opportunity;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 final class RecordArchiveService
@@ -21,7 +22,16 @@ final class RecordArchiveService
 
     public function contact(Contact $contact, User $actor, string $reason): void
     {
-        $this->update($contact, $actor, $reason, 'contact');
+        DB::transaction(function () use ($contact, $actor, $reason) {
+            Client::whereKey($contact->client_id)->lockForUpdate()->firstOrFail();
+            $contact->refresh();
+            if ($contact->archived_at) {
+                return;
+            }
+            $contact->update(['is_primary' => false, 'revision' => $contact->revision + 1]);
+            app(ClientContactService::class)->reopenQualifications($contact);
+            $this->update($contact, $actor, $reason, 'contact');
+        });
     }
 
     public function opportunity(Opportunity $case, User $actor, string $reason): void

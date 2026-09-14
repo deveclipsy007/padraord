@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Client;
 use App\Models\Opportunity;
 use App\Models\OpportunityQualification;
 use App\Models\User;
@@ -13,6 +14,9 @@ final class QualificationService
     public function save(Opportunity $case, User $actor, array $data): OpportunityQualification
     {
         return DB::transaction(function () use ($case, $actor, $data): OpportunityQualification {
+            if ($case->client_id) {
+                Client::whereKey($case->client_id)->lockForUpdate()->firstOrFail();
+            }
             $locked = Opportunity::query()->whereKey($case->id)->lockForUpdate()->firstOrFail();
             $qualification = OpportunityQualification::query()->firstOrNew(['opportunity_id' => $locked->id]);
 
@@ -21,10 +25,13 @@ final class QualificationService
             }
 
             if (! empty($data['decision_maker_contact_id'])) {
-                $belongsToCase = $locked->client_id && $locked->client?->contacts()->whereKey($data['decision_maker_contact_id'])->exists();
+                $belongsToCase = $locked->client_id && $locked->client?->contacts()->active()->where('is_decision_maker', true)->whereKey($data['decision_maker_contact_id'])->exists();
                 if (! $belongsToCase) {
-                    throw ValidationException::withMessages(['decision_maker_contact_id' => 'O decisor precisa pertencer ao cliente deste caso.']);
+                    throw ValidationException::withMessages(['decision_maker_contact_id' => 'Selecione um contato ativo deste cliente com papel de decisor confirmado.']);
                 }
+            }
+            if ($data['decision_maker_status'] === 'identified' && empty($data['decision_maker_contact_id'])) {
+                throw ValidationException::withMessages(['decision_maker_contact_id' => 'Indique o contato que toma a decisão.']);
             }
 
             $qualification->fill([

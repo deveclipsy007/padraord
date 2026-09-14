@@ -41,7 +41,8 @@ export default defineConfig({
         { name: 'mobile', use: { ...devices['Desktop Chrome'], viewport: { width: 390, height: 844 }, isMobile: true } },
     ],
     webServer: {
-        command: 'php artisan serve --host=127.0.0.1 --port=8123',
+        // The readiness probe runs before globalSetup on a fresh checkout.
+        command: 'php artisan migrate --force --no-interaction && php artisan serve --host=127.0.0.1 --port=8123',
         cwd: root,
         url: `${appUrl}/login`,
         reuseExistingServer: false,

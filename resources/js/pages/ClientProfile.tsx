@@ -7,7 +7,20 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { Surface } from '../components/ui/Surface';
 import { AppLayout } from '../layout';
 
-type Contact = { id: number; name: string; email: string | null; phone: string | null; role: string | null };
+type Contact = {
+    id: number;
+    name: string;
+    email: string | null;
+    phone: string | null;
+    role: string | null;
+    department: string | null;
+    whatsapp: string | null;
+    preferred_channel: string;
+    is_primary: boolean;
+    is_decision_maker: boolean;
+    revision: number;
+    archived_at: string | null;
+};
 type BillingAddress = {
     cep?: string;
     logradouro?: string;
@@ -26,6 +39,7 @@ type Client = {
     tax_id: string | null;
     tax_id_type: string | null;
     state_registration: string | null;
+    municipal_registration: string | null;
     billing_email: string | null;
     billing_address: BillingAddress | null;
     default_payment_terms_days: number | null;
@@ -46,6 +60,12 @@ function ContactForm({ clientId, contact, onSaved }: { clientId: number; contact
         email: contact?.email || '',
         phone: contact?.phone || '',
         role: contact?.role || '',
+        department: contact?.department || '',
+        whatsapp: contact?.whatsapp || '',
+        preferred_channel: contact?.preferred_channel || 'email',
+        is_primary: contact?.is_primary ?? false,
+        is_decision_maker: contact?.is_decision_maker ?? false,
+        revision: contact?.revision ?? 0,
     });
     const submit = () =>
         contact
@@ -77,6 +97,37 @@ function ContactForm({ clientId, contact, onSaved }: { clientId: number; contact
             <Field label="Função" error={form.errors.role}>
                 <input value={form.data.role} onChange={(event) => form.setData('role', event.target.value)} />
             </Field>
+            <Field label="Departamento" error={form.errors.department}>
+                <input value={form.data.department} onChange={(event) => form.setData('department', event.target.value)} />
+            </Field>
+            <Field label="WhatsApp" error={form.errors.whatsapp}>
+                <input type="tel" value={form.data.whatsapp} onChange={(event) => form.setData('whatsapp', event.target.value)} />
+            </Field>
+            <Field label="Canal preferido" error={form.errors.preferred_channel}>
+                <select value={form.data.preferred_channel} onChange={(event) => form.setData('preferred_channel', event.target.value)}>
+                    <option value="email">E-mail</option>
+                    <option value="phone">Telefone</option>
+                    <option value="whatsapp">WhatsApp</option>
+                </select>
+            </Field>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={form.data.is_primary}
+                    onChange={(event) => form.setData('is_primary', event.target.checked)}
+                />{' '}
+                Contato principal
+            </label>
+            <small>Selecionar este contato substitui o principal anterior.</small>
+            <label>
+                <input
+                    type="checkbox"
+                    checked={form.data.is_decision_maker}
+                    onChange={(event) => form.setData('is_decision_maker', event.target.checked)}
+                />{' '}
+                Participa da decisão de contratação
+            </label>
+            <small>Remover este papel reabre as qualificações que dependem deste decisor.</small>
             <FormErrors errors={form.errors} />
             <button className="button button-primary" disabled={form.processing}>
                 {contact ? 'Salvar contato' : 'Adicionar contato'}
@@ -98,6 +149,7 @@ export default function ClientProfile({ client, contractReadiness, duplicates = 
         tax_id: client.tax_id || '',
         tax_id_type: client.tax_id_type || 'cnpj',
         state_registration: client.state_registration || '',
+        municipal_registration: client.municipal_registration || '',
         billing_email: client.billing_email || '',
         default_payment_terms_days: client.default_payment_terms_days ?? 30,
         segment: client.segment || 'corporativo',
@@ -204,22 +256,48 @@ export default function ClientProfile({ client, contractReadiness, duplicates = 
                             </button>
                         </div>
                         <div className="contact-list">
-                            {client.contacts.map((contact) => (
-                                <button className="contact-card" type="button" key={contact.id} onClick={() => setEditingContact(contact)}>
-                                    <span className="contact-card__avatar">
-                                        <UserRound size={17} />
-                                    </span>
-                                    <span>
-                                        <strong>{contact.name}</strong>
-                                        <small>{contact.role || 'Função não informada'}</small>
-                                    </span>
-                                    <span className="contact-card__channels">
-                                        {contact.email && <Mail size={15} />}
-                                        {contact.phone && <Phone size={15} />}
-                                    </span>
-                                    <Pencil size={14} />
-                                </button>
-                            ))}
+                            {client.contacts
+                                .filter((contact) => !contact.archived_at)
+                                .map((contact) => (
+                                    <button
+                                        className="contact-card"
+                                        type="button"
+                                        key={contact.id}
+                                        onClick={() => setEditingContact(contact)}
+                                    >
+                                        <span className="contact-card__avatar">
+                                            <UserRound size={17} />
+                                        </span>
+                                        <span>
+                                            <strong>{contact.name}</strong>
+                                            <small>{contact.role || 'Função não informada'}</small>
+                                            {contact.department && <small>{contact.department}</small>}
+                                            {(contact.is_primary || contact.is_decision_maker) && (
+                                                <small>
+                                                    {[contact.is_primary && 'Principal', contact.is_decision_maker && 'Decisor']
+                                                        .filter(Boolean)
+                                                        .join(' · ')}
+                                                </small>
+                                            )}
+                                            <small>
+                                                Prefere{' '}
+                                                {
+                                                    (
+                                                        { email: 'e-mail', phone: 'telefone', whatsapp: 'WhatsApp' } as Record<
+                                                            string,
+                                                            string
+                                                        >
+                                                    )[contact.preferred_channel]
+                                                }
+                                            </small>
+                                        </span>
+                                        <span className="contact-card__channels">
+                                            {contact.email && <Mail size={15} />}
+                                            {contact.phone && <Phone size={15} />}
+                                        </span>
+                                        <Pencil size={14} />
+                                    </button>
+                                ))}
                             {!client.contacts.length && (
                                 <div className="inline-empty">
                                     Nenhum contato cadastrado. Adicione a primeira pessoa deste relacionamento.
@@ -316,6 +394,12 @@ export default function ClientProfile({ client, contractReadiness, duplicates = 
                             />
                         </Field>
                     </div>
+                    <Field label="Inscrição municipal" error={form.errors.municipal_registration}>
+                        <input
+                            value={form.data.municipal_registration}
+                            onChange={(event) => form.setData('municipal_registration', event.target.value)}
+                        />
+                    </Field>
                     <div className="two-fields">
                         <Field label="Segmento do cliente" error={form.errors.segment}>
                             <select value={form.data.segment} onChange={(event) => form.setData('segment', event.target.value)}>

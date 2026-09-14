@@ -1,0 +1,24 @@
+{
+    "measured_at": "2026-09-14T15:35:42+00:00",
+    "php": "8.5.4",
+    "dataset": {
+        "clients": 100,
+        "contacts": 500
+    },
+    "warmups": 5,
+    "samples": 30,
+    "routes": {
+        "/clients": {
+            "median_ms": 1.697,
+            "p95_ms": 2.232,
+            "queries_max": 10,
+            "errors": []
+        },
+        "/clients/1": {
+            "median_ms": 1.639,
+            "p95_ms": 2.271,
+            "queries_max": 11,
+            "errors": []
+        }
+    }
+}

@@ -10,11 +10,11 @@ class Contact extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['client_id', 'name', 'email', 'phone', 'role', 'archived_at', 'archived_by', 'archive_reason'];
+    protected $fillable = ['client_id', 'name', 'email', 'phone', 'role', 'department', 'whatsapp', 'preferred_channel', 'is_primary', 'is_decision_maker', 'revision', 'archived_at', 'archived_by', 'archive_reason'];
 
     protected function casts(): array
     {
-        return ['archived_at' => 'datetime'];
+        return ['archived_at' => 'datetime', 'is_primary' => 'boolean', 'is_decision_maker' => 'boolean', 'revision' => 'integer'];
     }
 
     public function client(): BelongsTo

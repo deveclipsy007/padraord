@@ -9,6 +9,8 @@ use App\Models\Client;
 use App\Models\Contact;
 use App\Models\User;
 use App\Rules\TaxId;
+use App\Services\ClientContactService;
+use App\Services\ClientRegistrationService;
 use App\Services\RecordArchiveService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,18 +25,16 @@ class FoundationController extends Controller
         AuditLog::create(['user_id' => $request->user()->id, 'action' => $action, 'subject_type' => $subject::class, 'subject_id' => $subject->id]);
     }
 
-    public function clientStore(Request $request)
+    public function clientStore(Request $request, ClientRegistrationService $service)
     {
-        $client = Client::create($this->clientData($request));
-        $this->audit($request, 'client.created', $client);
+        $client = $service->save(null, $request->user(), $this->clientData($request));
 
         return redirect("/clients/{$client->id}")->with('success', 'Cliente criado.');
     }
 
-    public function clientUpdate(Request $request, Client $client)
+    public function clientUpdate(Request $request, Client $client, ClientRegistrationService $service)
     {
-        $client->update($this->clientData($request));
-        $this->audit($request, 'client.updated', $client);
+        $service->save($client, $request->user(), $this->clientData($request));
 
         return back()->with('success', 'Cliente atualizado.');
     }
@@ -112,19 +112,17 @@ class FoundationController extends Controller
         return back()->with('success', 'Cliente restaurado.');
     }
 
-    public function contactStore(Request $request, Client $client)
+    public function contactStore(Request $request, Client $client, ClientContactService $service)
     {
-        $contact = $client->contacts()->create($this->contactData($request));
-        $this->audit($request, 'contact.created', $contact);
+        $service->save($client, null, $request->user(), $this->contactData($request));
 
         return back()->with('success', 'Contato adicionado.');
     }
 
-    public function contactUpdate(Request $request, Client $client, Contact $contact)
+    public function contactUpdate(Request $request, Client $client, Contact $contact, ClientContactService $service)
     {
         abort_unless($contact->client_id === $client->id, 404);
-        $contact->update($this->contactData($request));
-        $this->audit($request, 'contact.updated', $contact);
+        $service->save($client, $contact, $request->user(), $this->contactData($request));
 
         return back()->with('success', 'Contato atualizado.');
     }
@@ -148,7 +146,12 @@ class FoundationController extends Controller
 
     private function contactData(Request $request): array
     {
-        return $request->validate(['name' => 'required|string|max:160', 'email' => 'nullable|email|max:160', 'phone' => 'nullable|string|max:60', 'role' => 'nullable|string|max:160']);
+        return $request->validate([
+            'name' => 'required|string|max:160', 'email' => 'nullable|email|max:160', 'phone' => 'nullable|string|max:60', 'role' => 'nullable|string|max:160',
+            'department' => 'nullable|string|max:160', 'whatsapp' => 'nullable|string|max:60',
+            'is_primary' => 'sometimes|boolean', 'is_decision_maker' => 'sometimes|boolean',
+            'preferred_channel' => ['sometimes', Rule::in(['email', 'phone', 'whatsapp'])], 'revision' => 'sometimes|integer|min:0',
+        ]);
     }
 
     public function userStore(Request $request)

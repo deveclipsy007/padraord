@@ -1,0 +1,159 @@
+{
+  "base_weight": 112,
+  "planned_weight": 186,
+  "criteria": [
+    {
+      "id": "rd-b11634d52499",
+      "title": "Completar cadastro empresarial, faturamento e papéis de contato",
+      "weight": 3,
+      "tests": [
+        {
+          "file": "tests/Feature/ClientContactRolesTest.php",
+          "name": "test_contact_roles_and_preferred_channel_survive_reload"
+        },
+        {
+          "file": "tests/Feature/ClientContactRolesTest.php",
+          "name": "test_selecting_a_new_primary_atomically_replaces_the_previous_one"
+        },
+        {
+          "file": "tests/Feature/ClientContactRolesTest.php",
+          "name": "test_contact_revision_prevents_overwriting_a_concurrent_edit"
+        },
+        {
+          "file": "tests/Feature/ClientContactRolesTest.php",
+          "name": "test_qualification_refuses_non_decision_maker_and_accepts_a_confirmed_decision_maker"
+        },
+        {
+          "file": "tests/Feature/ClientContactRolesTest.php",
+          "name": "test_billing_details_segmentation_and_terms_are_persisted"
+        },
+        {
+          "file": "tests/Feature/ClientContactRolesTest.php",
+          "name": "test_invalid_channel_and_contact_from_another_client_are_refused"
+        },
+        {
+          "file": "tests/Feature/ClientContactRolesTest.php",
+          "name": "test_archiving_a_decision_maker_reopens_qualification_and_restore_does_not_replace_primary"
+        },
+        {
+          "file": "tests/Feature/ClientContactRolesTest.php",
+          "name": "test_duplicate_tax_id_is_refused_with_existing_client_identity"
+        }
+      ]
+    },
+    {
+      "id": "rd-9f6e4e904d4a",
+      "title": "Concluir o briefing tipado e a migração dos campos legados",
+      "weight": 5,
+      "tests": []
+    },
+    {
+      "id": "rd-8218b5105aae",
+      "title": "Registrar requisitos por área com classificação e origem",
+      "weight": 5,
+      "tests": []
+    },
+    {
+      "id": "rd-35c12d1db9b5",
+      "title": "Editar programação com limites de horário e alertas de sobreposição",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-c4df2ebc6aac",
+      "title": "Ligar campos aprovados ao instante do áudio e preservar a origem",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-b148e6323bee",
+      "title": "Definir parcelas e condições que fecham ao centavo",
+      "weight": 5,
+      "tests": []
+    },
+    {
+      "id": "rd-3ae801fea93d",
+      "title": "Gerir recebíveis com baixas parciais e cancelamento justificado",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-35ae981b7b3b",
+      "title": "Aprovar pagamentos com origem rastreável e autoridade",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-e59afe03e71a",
+      "title": "Conferir previsto e realizado por categoria e justificar desvios",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-f0fbec9a57e8",
+      "title": "Calcular margem realizada e identificar resultado provisório",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-1178fc8b109a",
+      "title": "Compor propostas com todas as seções, exclusões e fontes",
+      "weight": 5,
+      "tests": []
+    },
+    {
+      "id": "rd-9868cc450c0a",
+      "title": "Congelar conteúdo e apresentação da proposta liberada",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-0a71f3bbc0b5",
+      "title": "Liberar contratos com cláusulas e plano de pagamento válidos",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-49e7ed13bc80",
+      "title": "Gerenciar anexos privados com tipos, quotas e acesso por caso",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-d14b396dac6a",
+      "title": "Criar projeto e onboarding no mesmo aceite comercial",
+      "weight": 5,
+      "tests": []
+    },
+    {
+      "id": "rd-633ed935f8d0",
+      "title": "Escalar equipe e responsáveis detectando conflitos",
+      "weight": 5,
+      "tests": []
+    },
+    {
+      "id": "rd-40a7ac37faf5",
+      "title": "Conferir montagem e devolução com checklist e fotos",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-777ec0f712d7",
+      "title": "Exibir produção em calendário e linha do tempo com dependências",
+      "weight": 5,
+      "tests": []
+    },
+    {
+      "id": "rd-7988d8dcc556",
+      "title": "Gerar ordem de serviço e registrar recebimento do fornecedor",
+      "weight": 3,
+      "tests": []
+    },
+    {
+      "id": "rd-42a3f939922e",
+      "title": "Comparar cotações equivalentes e exportar a decisão",
+      "weight": 3,
+      "tests": []
+    }
+  ]
+}

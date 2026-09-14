@@ -1,0 +1,35 @@
+import { expect, test } from '@playwright/test';
+import { loginAs } from './helpers';
+
+test('company billing and contact roles remain usable after reload', async ({ page }, testInfo) => {
+    await loginAs(page);
+    await page.goto('/clients');
+    await page.getByRole('button', { name: 'Novo cliente', exact: true }).click();
+    const drawer = page.getByRole('dialog');
+    await drawer.getByLabel('Nome', { exact: true }).fill(`Contato ${testInfo.project.name}`);
+    await drawer.getByRole('button', { name: 'Criar cliente' }).click();
+    await expect(page).toHaveURL(/\/clients\/\d+$/);
+    await page.getByRole('button', { name: 'Editar perfil' }).click();
+    await drawer.getByLabel('Inscrição municipal').fill('IM-123');
+    await drawer.getByLabel('E-mail de faturamento').fill('billing@example.test');
+    await drawer.getByRole('button', { name: 'Salvar', exact: false }).click();
+    await page.getByRole('button', { name: 'Novo contato', exact: true }).click();
+    await drawer.getByLabel('Nome', { exact: true }).fill('Ana Decisora');
+    await drawer.getByLabel('Departamento').fill('Diretoria');
+    await drawer.getByLabel('WhatsApp', { exact: true }).fill('+55 47 99999-1234');
+    await drawer.getByLabel('Canal preferido').selectOption('whatsapp');
+    await drawer.getByLabel('Contato principal', { exact: true }).check();
+    await drawer.getByLabel('Participa da decisão de contratação').check();
+    await drawer.getByRole('button', { name: 'Adicionar contato', exact: true }).click();
+    await expect(drawer).not.toBeVisible();
+    await page.reload();
+    const contact = page.getByRole('button', { name: /Ana Decisora/ });
+    await expect(contact).toContainText('Principal · Decisor');
+    await expect(contact).toContainText('Prefere WhatsApp');
+    await contact.click();
+    await expect(drawer.getByLabel('Contato principal', { exact: true })).toBeChecked();
+    await expect(drawer.getByLabel('Departamento')).toHaveValue('Diretoria');
+    await expect(drawer.getByLabel('Canal preferido')).toHaveValue('whatsapp');
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+    expect(overflow).toBe(false);
+});
