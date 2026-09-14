@@ -1,4 +1,4 @@
-import { ConfirmButton } from '../components/ConfirmButton';
+import { EventBriefEditor, type EventBriefEditorProps } from '../components/EventBriefEditor';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { AppLayout } from '../layout';
@@ -32,7 +32,7 @@ type Run = {
         suggested_changes?: { field: string; current: string | null; suggested: string; reason: string }[];
     } | null;
 };
-type Props = {
+type Props = Omit<EventBriefEditorProps, 'caseId'> & {
     audio: AudioContextData;
     opportunity: { id: number; title: string; clientName: string; briefingStatus: string };
     messages: { id: number; body: string; role: string; createdAt: string }[];
@@ -40,20 +40,13 @@ type Props = {
     runs: Run[];
 };
 
-export default function Briefing({ opportunity, messages, briefing, runs, audio }: Props) {
+export default function Briefing(props: Props) {
+    const { opportunity, messages, briefing, runs, audio } = props;
     const base = `/opportunities/${opportunity.id}/briefing`;
     const { ai } = usePage<{ ai: { mode: string; status: string } }>().props;
     const entry = useForm({ body: '' });
-    const edit = useForm({ fields: briefing.fields, revision: briefing.revision, action: 'save' });
     const [reviewErrors, setReviewErrors] = useState<string[]>([]);
     const [reviewing, setReviewing] = useState(false);
-    useEffect(() => {
-        if (!edit.isDirty) {
-            const next = { fields: briefing.fields, revision: briefing.revision, action: 'save' };
-            edit.setData(next);
-            edit.setDefaults(next);
-        }
-    }, [briefing.revision]);
     useEffect(() => {
         if (opportunity.briefingStatus !== 'processing') return;
         const timer = window.setInterval(() => router.reload({ only: ['opportunity', 'runs', 'messages', 'briefing'] }), 4000);
@@ -89,6 +82,7 @@ export default function Briefing({ opportunity, messages, briefing, runs, audio 
                     </div>
                 }
             />
+            <EventBriefEditor {...props} caseId={opportunity.id} />
             <AssistanceSteps current={briefing.approved ? 4 : messages.length === 0 ? 0 : briefing.gaps.length ? 2 : 1} />
             <section className="assistance-banner">
                 <div>
@@ -263,71 +257,12 @@ export default function Briefing({ opportunity, messages, briefing, runs, audio 
                             {risk}
                         </p>
                     ))}
-                    <details id="briefing-estruturado" open={!latest}>
-                        <summary>Briefing estruturado · edição manual</summary>
-                        <form
-                            className="form-grid"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                edit.post(`${base}/review`, {
-                                    preserveScroll: true,
-                                    onSuccess: (page) => {
-                                        const b = page.props.briefing as Props['briefing'];
-                                        const next = { fields: b.fields, revision: b.revision, action: 'save' };
-                                        edit.setData(next);
-                                        edit.setDefaults(next);
-                                    },
-                                });
-                            }}
-                        >
-                            {Object.entries(labels).map(([field, label]) => (
-                                <label key={field}>
-                                    {label}
-                                    <textarea
-                                        rows={field === 'scope' ? 4 : 2}
-                                        value={edit.data.fields[field] ?? ''}
-                                        onChange={(e) => edit.setData('fields', { ...edit.data.fields, [field]: e.target.value })}
-                                    />
-                                </label>
-                            ))}
-                            {Object.values(edit.errors).map((error, i) => (
-                                <p role="alert" key={i}>
-                                    {error}
-                                </p>
-                            ))}
-                            <button className="button button-subtle" disabled={edit.processing}>
-                                Salvar rascunho manual
-                            </button>
-                            {edit.data.revision !== briefing.revision && (
-                                <ConfirmButton
-                                    message="Substituir seu formulário pelos dados mais recentes? Suas alterações ainda não salvas serão substituídas."
-                                    onConfirm={() => {
-                                        const next = { fields: briefing.fields, revision: briefing.revision, action: 'save' };
-                                        edit.setData(next);
-                                        edit.setDefaults(next);
-                                    }}
-                                >
-                                    Carregar versão atual
-                                </ConfirmButton>
-                            )}
-                        </form>
-                    </details>
+                    <a className="button button-subtle" href="#briefing-estruturado">
+                        Revisar dados do evento
+                    </a>
                     <p>
-                        Revisão {briefing.revision} · {briefing.approved ? 'Aprovação humana registrada' : 'Rascunho em preparação'}
-                    </p>
-                    <button
-                        className="button button-primary"
-                        disabled={reviewing || briefing.gaps.length > 0 || briefing.approved || edit.isDirty}
-                        onClick={() => decide('approve')}
-                    >
-                        Aprovar briefing
-                    </button>
-                    <p>
-                        {edit.isDirty
-                            ? 'Salve ou descarte suas alterações antes de aprovar.'
-                            : briefing.gaps.length
-                              ? 'Resolva as informações essenciais acima para habilitar a aprovação.'
-                              : 'Aprovar o briefing não aprova preços, fornecedores ou documentos.'}
+                        O briefing estruturado reúne datas, público, investimento, requisitos e origem. Aprove quando os campos essenciais
+                        estiverem completos.
                     </p>
                 </aside>
             </div>

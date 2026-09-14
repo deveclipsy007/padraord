@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\AI\BriefingContext;
 use App\Models\AssistantPreview;
 use App\Models\AuditLog;
 use App\Models\CaseContextEntry;
@@ -59,7 +60,8 @@ class CaseContextService
                 fn (array $change, int $index) => in_array($change['module'], $modules, true) && ($selectedChanges === null || in_array($index, $selectedChanges, true)),
                 ARRAY_FILTER_USE_BOTH,
             ));
-            $briefing = $freshCase->briefing_data ?? [];
+            $briefing = app(BriefingContext::class)->fields($freshCase);
+            $beforeBriefing = $briefing;
             foreach ($accepted as $change) {
                 if ($change['module'] === 'briefing') {
                     $briefing[$change['field']] = $change['suggested'];
@@ -72,8 +74,8 @@ class CaseContextService
             if ($caseChanges) {
                 $freshCase->save();
             }
-            if (in_array('briefing', $modules, true) && $briefing !== ($freshCase->briefing_data ?? [])) {
-                $freshCase->update(['briefing_data' => $briefing, 'briefing_revision' => $freshCase->briefing_revision + 1, 'briefing_status' => 'awaiting_review']);
+            if (in_array('briefing', $modules, true) && $briefing !== $beforeBriefing) {
+                app(EventBriefService::class)->updateContext($freshCase, $user, $freshCase->briefing_revision, $briefing);
             }
             $viabilityChanges = array_filter($accepted, fn (array $change) => $change['module'] === 'viability');
             if ($viabilityChanges) {
@@ -108,7 +110,7 @@ class CaseContextService
             if (! $module || ! $field) {
                 continue;
             }
-            $current = $module === 'case' ? $case->{$field} : ($module === 'briefing' ? data_get($case->briefing_data, $field) : ViabilityProject::where('opportunity_id', $case->id)->value($field));
+            $current = $module === 'case' ? $case->{$field} : ($module === 'briefing' ? data_get(app(BriefingContext::class)->fields($case), $field) : ViabilityProject::where('opportunity_id', $case->id)->value($field));
             $changes[] = ['module' => $module, 'field' => $field, 'current' => $current, 'suggested' => $value, 'reason' => 'Informação explicitamente identificada no contexto.', 'kind' => 'fact', 'evidence' => $line, 'impacts' => $module === 'briefing' && $field === 'scope' ? ['viability', 'budget', 'documents', 'production'] : [$module]];
         }
 

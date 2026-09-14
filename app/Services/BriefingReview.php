@@ -14,12 +14,10 @@ class BriefingReview
     public function apply(Opportunity $case, User $user, array $input): void
     {
         DB::transaction(function () use ($case, $user, $input) {
-            // Compare-and-swap acquires the write lock before reading shared state.
-            $changed = Opportunity::whereKey($case->id)->where('briefing_revision', $input['revision'])->increment('briefing_revision');
-            if (! $changed) {
+            $o = Opportunity::whereKey($case->id)->lockForUpdate()->firstOrFail();
+            if ($o->briefing_revision !== (int) $input['revision']) {
                 throw ValidationException::withMessages(['revision' => 'O briefing mudou em outra ação. Atualize a página e compare antes de salvar; seu texto permanece no formulário.']);
             }
-            $o = $case->fresh();
             $fields = app(BriefingContext::class)->fields($o);
             $before = $fields;
             if ($input['action'] === 'save') {
@@ -43,21 +41,17 @@ class BriefingReview
                 }
                 $run->update(['decisions' => $decisions]);
             }
-            $o->briefing_data = $fields;
-            if ($before === $fields && $input['action'] !== 'approve') {
-                $o->briefing_revision = (int) $input['revision'];
-            }
+            $service = app(EventBriefService::class);
             if ($before !== $fields) {
-                $o->briefing_status = 'awaiting_review';
+                $service->updateContext($o, $user, (int) $input['revision'], $fields);
             }
             if ($input['action'] === 'approve') {
                 if (app(BriefingContext::class)->gaps($o)) {
                     throw ValidationException::withMessages(['review' => 'Preencha objetivo, público, data, local, investimento e escopo antes de aprovar.']);
                 }
-                $o->briefing_status = 'complete';
-                $o->briefing_approval = ['revision' => $o->briefing_revision, 'fields' => $fields, 'user_id' => $user->id, 'at' => now()->toISOString()];
+                $service->approve($o, $user, (int) $input['revision']);
             }
-            $o->save();
+            $o->refresh();
             AuditLog::create(['user_id' => $user->id, 'action' => 'briefing.'.$input['action'], 'subject_type' => Opportunity::class, 'subject_id' => $o->id, 'metadata' => ['revision' => $o->briefing_revision, 'before' => $before, 'after' => $fields, 'previous_approval_preserved' => (bool) $o->briefing_approval]]);
         }, 3);
     }

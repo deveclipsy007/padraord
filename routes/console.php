@@ -5,6 +5,7 @@ use App\Models\AuditLog;
 use App\Models\BriefingAudio;
 use App\Models\CaseContextEntry;
 use App\Models\Opportunity;
+use App\Services\BriefSourceService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -66,6 +67,15 @@ Artisan::command('context:purge-expired-audio', function () {
         $removed++;
     }
     foreach (CaseContextEntry::with('audioAsset')->where('kind', 'audio')->where('expires_at', '<', now())->whereNotIn('status', ['queued', 'preparing', 'transcribing', 'extracting'])->cursor() as $entry) {
+        if (app(BriefSourceService::class)->retained($entry)) {
+            $reason = $entry->retain_forever ? 'preferencia_de_retencao' : 'fonte_de_briefing_aprovado';
+            if ($entry->retention_reason !== $reason) {
+                $entry->update(['retention_reason' => $reason]);
+                AuditLog::create(['action' => 'context.audio.retained', 'subject_type' => Opportunity::class, 'subject_id' => $entry->opportunity_id, 'metadata' => ['entry_id' => $entry->id, 'reason' => $reason]]);
+            }
+
+            continue;
+        }
         $asset = $entry->audioAsset;
         if (! $asset || $asset->status === 'expired') {
             continue;

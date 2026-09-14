@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\AI\BriefingContext;
 use App\Enums\CommercialStage;
 use App\Models\AuditLog;
 use App\Models\Opportunity;
@@ -63,7 +64,7 @@ final class CommercialStageTransitionService
             if ($target === CommercialStage::INITIAL_BRIEFING && ! $locked->activities()->where('type', 'meeting')->where('status', 'done')->exists() && blank($data['evidence'] ?? null)) {
                 $this->fail('transition', 'Conclua a reunião vinculada ou registre a evidência da conversa antes de iniciar o briefing.');
             }
-            if ($target === CommercialStage::VIABILITY_OFFER && ! $locked->briefingMessages()->exists() && blank($locked->briefing_data)) {
+            if ($target === CommercialStage::VIABILITY_OFFER && ! $locked->briefingMessages()->exists() && ! collect(app(BriefingContext::class)->fields($locked))->contains(fn ($value) => filled($value))) {
                 $this->fail('transition', 'Adicione contexto ao briefing antes de preparar a oferta de Viabilidade.');
             }
 

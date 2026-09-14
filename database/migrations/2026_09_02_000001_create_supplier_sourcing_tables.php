@@ -31,7 +31,7 @@ return new class extends Migration
             $table->foreignId('selected_by')->constrained('users')->restrictOnDelete();
             $table->text('note');
             $table->timestamps();
-            $table->unique(['supplier_need_id', 'supplier_quote_id']);
+            $table->unique(['supplier_need_id', 'supplier_quote_id'], 'supplier_need_quote_unique');
         });
     }
 

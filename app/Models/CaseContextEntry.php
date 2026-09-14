@@ -18,6 +18,9 @@ class CaseContextEntry extends Model
             'revision' => 'integer',
             'case_revision' => 'integer',
             'expires_at' => 'datetime',
+            'meeting_date' => 'datetime',
+            'participants' => 'array',
+            'retain_forever' => 'boolean',
         ];
     }
 

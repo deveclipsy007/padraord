@@ -8,6 +8,7 @@ use App\Jobs\PrepareContextAudio;
 use App\Models\AuditLog;
 use App\Models\CaseContextEntry;
 use App\Models\Opportunity;
+use App\Services\BriefSourceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -63,7 +64,7 @@ class ContextAudioReviewController extends Controller
     public function audio(Opportunity $opportunity, CaseContextEntry $entry)
     {
         abort_unless($entry->opportunity_id === $opportunity->id && $entry->kind === 'audio', 404);
-        abort_if($entry->expires_at?->isPast(), 410, 'A retenção deste áudio expirou. A transcrição permanece preservada.');
+        abort_if($entry->expires_at?->isPast() && ! app(BriefSourceService::class)->retained($entry), 410, 'A retenção deste áudio expirou. A transcrição permanece preservada.');
         $asset = $entry->audioAsset()->firstOrFail();
         abort_unless(Storage::disk('local')->exists($asset->original_path), 404);
 

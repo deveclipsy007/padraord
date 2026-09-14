@@ -18,7 +18,7 @@ class CaseWorkspaceSummary
         $budget = $case->budgets()->latest('version')->first();
         $modules = [
             ['key' => 'journey', 'label' => 'Jornada', 'status' => $journey ? ($journey->outcome ? 'complete' : 'draft') : 'empty', 'pending' => $journey ? 0 : 1],
-            ['key' => 'briefing', 'label' => 'Briefing', 'status' => $case->briefing_status === 'complete' ? 'approved' : ($case->briefingMessages()->exists() || filled($case->briefing_data) ? 'needs_review' : 'empty'), 'pending' => count($this->briefingContext->gaps($case))],
+            ['key' => 'briefing', 'label' => 'Briefing', 'status' => $case->briefing_status === 'complete' ? 'approved' : ($case->briefingMessages()->exists() || collect($this->briefingContext->fields($case))->contains(fn ($value) => filled($value)) ? 'needs_review' : 'empty'), 'pending' => count($this->briefingContext->gaps($case))],
             ['key' => 'viability', 'label' => 'Viabilidade', 'status' => $viability?->status ?? 'empty', 'pending' => $viability ? max(0, 4 - $viability->deliverables()->where('status', '!=', 'pending')->count()) : 1],
             ['key' => 'budget', 'label' => 'Orçamento', 'status' => $budget?->status === 'approved' ? 'approved' : ($budget ? 'draft' : 'empty'), 'pending' => $budget?->items()->count() ? 0 : 1],
             ['key' => 'documents', 'label' => 'Documentos', 'status' => $case->documents()->where('status', 'sent')->exists() ? 'complete' : ($case->documents()->exists() ? 'draft' : 'empty'), 'pending' => $case->documents()->exists() ? 0 : 1],

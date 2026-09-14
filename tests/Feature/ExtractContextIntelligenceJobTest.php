@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\AI\BriefingContext;
 use App\Contracts\ContextIntelligenceExtractor;
 use App\Jobs\ExtractContextIntelligence;
 use App\Models\AiSetting;
@@ -74,7 +75,7 @@ class ExtractContextIntelligenceJobTest extends TestCase
         $this->actingAs($user)->post("/opportunities/{$opportunity->id}/context/{$entry->id}/preview/{$preview->id}/confirm", [
             'modules' => ['briefing'],
         ])->assertSessionHasNoErrors();
-        $this->assertSame('Integrar a liderança', $opportunity->fresh()->briefing_data['objective']);
+        $this->assertSame('Integrar a liderança', app(BriefingContext::class)->fields($opportunity->fresh())['objective']);
         Http::assertSentCount(1);
     }
 

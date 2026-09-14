@@ -51,19 +51,58 @@
       "id": "rd-8218b5105aae",
       "title": "Registrar requisitos por área com classificação e origem",
       "weight": 5,
-      "tests": []
+      "tests": [
+        {
+          "file": "tests/Feature/BriefRequirementsTest.php",
+          "name": "test_confirmed_requirements_complement_production_preview_and_reopening_invalidates_it"
+        },
+        {
+          "file": "tests/Feature/BriefRequirementsTest.php",
+          "name": "test_hypothesis_requires_item_confirmation_and_generates_a_need_only_once"
+        },
+        {
+          "file": "tests/Feature/BriefRequirementsTest.php",
+          "name": "test_cross_case_evidence_invalid_area_and_stale_preview_are_refused"
+        }
+      ]
     },
     {
       "id": "rd-35c12d1db9b5",
       "title": "Editar programação com limites de horário e alertas de sobreposição",
       "weight": 3,
-      "tests": []
+      "tests": [
+        {
+          "file": "tests/Feature/BriefProgramTest.php",
+          "name": "test_overlap_is_visible_but_blocks_outside_event_are_refused"
+        },
+        {
+          "file": "tests/Feature/BriefProgramTest.php",
+          "name": "test_reordering_checks_complete_same_case_set_and_revision"
+        }
+      ]
     },
     {
       "id": "rd-c4df2ebc6aac",
       "title": "Ligar campos aprovados ao instante do áudio e preservar a origem",
       "weight": 3,
-      "tests": []
+      "tests": [
+        {
+          "file": "tests/Feature/BriefSourcesTest.php",
+          "name": "test_approval_preserves_recordings_used_in_fields_and_requirements_after_reopening"
+        },
+        {
+          "file": "tests/Feature/BriefSourcesTest.php",
+          "name": "test_confirmed_source_keeps_exact_time_and_transcript_after_other_fields_change"
+        },
+        {
+          "file": "tests/Feature/BriefSourcesTest.php",
+          "name": "test_source_must_belong_to_case_and_selected_recording"
+        },
+        {
+          "file": "tests/Feature/BriefSourcesTest.php",
+          "name": "test_purge_preserves_audio_used_by_an_approved_brief_and_it_remains_playable"
+        }
+      ]
     },
     {
       "id": "rd-b148e6323bee",

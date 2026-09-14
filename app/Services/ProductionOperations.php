@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\AuditLog;
+use App\Models\BriefRequirement;
+use App\Models\EventBrief;
 use App\Models\Opportunity;
 use App\Models\ProductionTask;
 use App\Models\ProductionTaskPreview;
@@ -246,8 +248,17 @@ final class ProductionOperations
         $budget = $opportunity->budgets()->where('status', 'approved')->latest('version')->first();
         $this->require($budget !== null, 'Aprove um orçamento antes de preparar a produção.', 'scope');
         $items = $budget->items()->orderBy('id')->get()->map(fn ($item): array => ['description' => $item->description, 'category' => $item->category, 'quantity' => $item->quantity, 'unit' => $item->unit])->values()->all();
+        $brief = EventBrief::where('opportunity_id', $opportunity->id)->where('status', 'approved')->first();
+        if ($brief) {
+            foreach (BriefRequirement::where('event_brief_id', $brief->id)->where('status', 'confirmed')->orderBy('id')->get() as $requirement) {
+                $items[] = ['description' => $requirement->requirement, 'category' => $requirement->area, 'quantity' => $requirement->quantity, 'unit' => $requirement->unit, 'requirement_id' => $requirement->id];
+            }
+        }
         $this->require($items !== [], 'O orçamento aprovado não possui itens para converter em tarefas.', 'scope');
         $source = ['budget_id' => $budget->id, 'budget_version' => $budget->version, 'budget_revision' => $budget->revision, 'updated_at' => optional($budget->updated_at)->toIso8601String()];
+        if ($brief) {
+            $source['brief_revision'] = $brief->revision;
+        }
         $hash = hash('sha256', json_encode([$source, $items], JSON_THROW_ON_ERROR));
 
         return ProductionTaskPreview::firstOrCreate(['opportunity_id' => $opportunity->id, 'source_hash' => $hash], ['created_by' => $actor->id, 'source' => $source, 'items' => $items, 'status' => 'pending']);
@@ -265,6 +276,10 @@ final class ProductionOperations
             $source = $locked->source ?? [];
             $budget = $opportunity->budgets()->where('status', 'approved')->latest('version')->first();
             $this->require($budget && (int) $budget->id === (int) ($source['budget_id'] ?? 0) && (int) $budget->revision === (int) ($source['budget_revision'] ?? -1), 'O orçamento aprovado mudou. Gere uma nova prévia.', 'preview');
+            if (array_key_exists('brief_revision', $source)) {
+                $brief = EventBrief::where('opportunity_id', $opportunity->id)->where('status', 'approved')->first();
+                $this->require($brief && $brief->revision === $source['brief_revision'], 'O briefing aprovado mudou. Gere uma nova prévia de produção.', 'preview');
+            }
             $taskIds = [];
             foreach (($locked->items ?? []) as $index => $item) {
                 $task = ProductionTask::firstOrCreate(['source_preview_id' => $locked->id, 'source_item_index' => $index], ['opportunity_id' => $opportunity->id, 'assigned_to' => $actor->id, 'title' => $item['description'], 'description' => 'Preparado a partir do orçamento aprovado · '.($item['category'] ?? 'Operação'), 'phase' => 'preparation', 'status' => 'todo', 'priority' => 'normal', 'due_date' => null, 'sort_order' => $index]);

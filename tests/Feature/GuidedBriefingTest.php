@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\AI\AiCompletion;
 use App\AI\AiProvider;
+use App\AI\BriefingContext;
 use App\Jobs\AnalyzeBriefing;
 use App\Models\Opportunity;
 use App\Models\User;
@@ -26,9 +27,9 @@ class GuidedBriefingTest extends TestCase
         $o = Opportunity::create(['title' => 'Evento', 'client_name' => 'Cliente', 'stage' => 'briefing']);
         $this->actingAs(User::factory()->create());
         $this->post("/opportunities/$o->id/briefing/review", ['revision' => 0, 'action' => 'save', 'fields' => ['objective' => 'Conectar equipe']])->assertRedirect();
-        $this->assertSame('Conectar equipe', $o->fresh()->briefing_data['objective']);
+        $this->assertSame('Conectar equipe', app(BriefingContext::class)->fields($o->fresh())['objective']);
         $this->post("/opportunities/$o->id/briefing/review", ['revision' => 0, 'action' => 'save', 'fields' => ['objective' => 'Sobrescrever']])->assertSessionHasErrors('revision');
-        $this->assertSame('Conectar equipe', $o->fresh()->briefing_data['objective']);
+        $this->assertSame('Conectar equipe', app(BriefingContext::class)->fields($o->fresh())['objective']);
     }
 
     public function test_job_receives_consolidated_context_and_does_not_mutate_briefing(): void
@@ -52,7 +53,7 @@ class GuidedBriefingTest extends TestCase
         $this->assertSame(['location' => 'Recife'], $o->fresh()->briefing_data);
         $run = $o->aiRuns()->first();
         $this->actingAs(User::factory()->create())->post("/opportunities/$o->id/briefing/review", ['revision' => 2, 'action' => 'accept', 'run_id' => $run->id, 'indices' => [0]])->assertRedirect();
-        $this->assertSame('300 pessoas', $o->fresh()->briefing_data['audience']);
+        $this->assertSame('300 pessoas', app(BriefingContext::class)->fields($o->fresh())['audience']);
     }
 
     public function test_suggestion_from_another_case_is_rejected(): void

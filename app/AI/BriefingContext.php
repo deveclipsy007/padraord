@@ -2,6 +2,7 @@
 
 namespace App\AI;
 
+use App\Models\EventBrief;
 use App\Models\Opportunity;
 
 class BriefingContext
@@ -18,6 +19,11 @@ class BriefingContext
 
     public function fields(Opportunity $o): array
     {
+        $brief = EventBrief::where('opportunity_id', $o->id)->first();
+        if ($brief) {
+            return $brief->contextFields();
+        }
+
         return array_replace(array_fill_keys(BriefingPayload::FIELDS, ''), array_filter(['objective' => $o->objective, 'location' => $o->location, 'event_date' => $o->event_date?->format('Y-m-d')], fn ($v) => $v !== null), $o->briefing_data ?? []);
     }
 

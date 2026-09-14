@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\AI\BriefingContext;
 use App\Models\AssistantPreview;
 use App\Models\Opportunity;
 use App\Models\User;
@@ -79,7 +80,7 @@ class IntelligentCaseWorkspaceTest extends TestCase
             'modules' => ['briefing', 'viability'],
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame('integrar a liderança', $case->fresh()->briefing_data['objective']);
+        $this->assertSame('integrar a liderança', app(BriefingContext::class)->fields($case->fresh())['objective']);
         $this->assertDatabaseHas('viability_projects', ['opportunity_id' => $case->id, 'concept' => 'encontro imersivo']);
 
         $this->actingAs($user)->post("/opportunities/{$case->id}/context/{$preview->context['entry_id']}/preview/{$preview->id}/confirm", [
@@ -105,8 +106,9 @@ class IntelligentCaseWorkspaceTest extends TestCase
             'changes' => [0],
         ])->assertSessionHasNoErrors();
 
-        $this->assertSame('integrar a liderança', $case->fresh()->briefing_data['objective']);
-        $this->assertArrayNotHasKey('audience', $case->fresh()->briefing_data);
+        $this->assertSame('integrar a liderança', app(BriefingContext::class)->fields($case->fresh())['objective']);
+        $this->assertSame('', app(BriefingContext::class)->fields($case->fresh())['audience']);
+        $this->assertNull($case->fresh()->getRawOriginal('briefing_data'));
         $this->assertDatabaseMissing('viability_projects', ['opportunity_id' => $case->id]);
     }
 }

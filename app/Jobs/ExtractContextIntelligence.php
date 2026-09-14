@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\AI\AiConfiguration;
+use App\AI\BriefingContext;
 use App\AI\ContextIntelligenceSchema;
 use App\AI\MeteredAiProvider;
 use App\Contracts\ContextIntelligenceExtractor;
@@ -46,7 +47,7 @@ class ExtractContextIntelligence implements ShouldQueue
         $opportunity = $entry->opportunity()->firstOrFail();
         $context = [
             'opportunity' => $opportunity->only(['id', 'title', 'stage', 'event_date', 'location', 'objective']),
-            'briefing' => $opportunity->briefing_data ?? [],
+            'briefing' => app(BriefingContext::class)->fields($opportunity),
             'briefing_revision' => $opportunity->briefing_revision,
             'viability' => ViabilityProject::where('opportunity_id', $opportunity->id)->first()?->toArray(),
         ];
@@ -144,7 +145,7 @@ class ExtractContextIntelligence implements ShouldQueue
     {
         return match ($module) {
             'case' => $opportunity->{$field} ?? null,
-            'briefing' => data_get($opportunity->briefing_data, $field),
+            'briefing' => data_get(app(BriefingContext::class)->fields($opportunity), $field),
             'viability' => data_get($context['viability'], $field),
             default => null,
         };

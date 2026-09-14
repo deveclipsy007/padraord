@@ -20,4 +20,9 @@ export default function globalSetup(): void {
         stdio: 'inherit',
     });
     console.log(`Playwright database prepared at ${e2eDatabase}`);
+    execFileSync('php', ['artisan', 'db:seed', '--class=BriefSourceE2ESeeder', '--force', '--no-interaction'], {
+        cwd: process.cwd(),
+        env: { ...process.env, ...e2eEnv },
+        stdio: 'inherit',
+    });
 }
