@@ -115,6 +115,15 @@ Antes da primeira página nova, registrar capturas de Dashboard, oportunidade, d
 2. Criar comparação exportável com decisão, justificativa e histórico sem alterar a cotação original.
 3. Verificar layout de tabela responsiva e leitura por teclado.
 
+## Registro da Missão 4 — 15 de setembro
+
+- Implementação integrada em `3179367` (`feat: add auditable quote comparisons`): comparação registra o recorte de cada cotação, normaliza preço por unidade ou pacote para o valor comparável, exige justificativa da decisão e exporta o registro sem alterar a cotação de origem.
+- Cotações expiradas, substituídas ou incompletas não podem decidir a comparação. Quando os serviços diferem, a justificativa de escopo passa a ser obrigatória; a decisão fica registrada no histórico e na auditoria.
+- A interface passou a concentrar seleção, valor comparável, diferença de escopo, decisão e histórico em uma superfície operacional; a jornada foi verificada em desktop, tablet e celular sem transbordamento horizontal.
+- Evidência local: `SupplierQuoteComparisonTest` e a regressão do workspace passaram com 7 testes e 77 asserções; `npm run quality` passou com 23 testes de interface; Playwright da comparação passou nos três tamanhos.
+- O Pulse recebeu a revisão de escopo r9, associando os três cenários específicos de `SupplierQuoteComparisonTest.php` ao critério. Critérios, pesos e denominador de 282 pontos não foram alterados.
+- A auditoria isolada `71e77058-fb1c-4e67-9948-1daec8898d58`, no commit `3179367`, comprovou 59 critérios, sem falhas nem avisos. Os 3 pontos da comparação receberam evidência válida: a medição passou para **182/282 pontos** (64,539% exatos; o painel apresenta 64,5% sem arredondar para cima).
+
 ## Missão 5 — bloqueios e fila de decisões (+3)
 
 **Critério:** `rd-4a06da12e862`.
