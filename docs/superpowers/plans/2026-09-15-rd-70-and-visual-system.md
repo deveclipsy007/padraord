@@ -183,6 +183,14 @@ Antes da primeira página nova, registrar capturas de Dashboard, oportunidade, d
 2. Testar filtros combináveis, seleção em lote, desfazer quando aplicável e atalhos que não sequestram campos de texto.
 3. Conferir foco, atalhos no macOS, responsividade e persistência.
 
+**Registro executado:**
+
+- Implementação em `0f00169` (`feat: streamline pipeline operations`): o Pipeline agora permite alterar prioridade diretamente na lista, selecionar oportunidades filtradas, aplicar prioridade em lote e desfazer a ação enquanto cada revisão ainda corresponde ao estado registrado. A operação bloqueia e valida todas as oportunidades na mesma transação, preserva o histórico por caso e recusa desfazer uma decisão que já recebeu alteração posterior.
+- Os filtros preservam a seleção apenas enquanto a oportunidade continua visível. `⌘/Ctrl+Shift+A` seleciona os casos visíveis e `Escape` limpa a seleção; atalhos globais não interceptam digitação em campos, seletores, áreas de texto ou elementos editáveis.
+- Evidência local: `npm run quality` passou. Os testes PHP focados passaram com **18 testes e 145 asserções**. A jornada Playwright de operações do Pipeline passou em desktop, tablet e celular; a inspeção visual confirmou cartões, controles e barra de lote na paleta grafite sóbria, sem overflow horizontal da página.
+- O Pulse recebeu a revisão r13, sem alterar os **85 critérios** nem os **282 pontos** aprovados. O critério foi associado à jornada específica de `tests/e2e/pipeline-operations.spec.ts`; nenhuma alegação foi promovida sem essa execução.
+- A auditoria isolada `776752a9-a1f3-4cb7-9f6e-f6bb2b443719`, no commit `0f001690528d6e22b996695ea85aa86cc1800553`, concluiu com PHPUnit (**275 testes, 1.903 asserções**), Vitest e Playwright completos (**90 cenários esperados, 0 inesperados e 0 instáveis**). O lote levou 118,276 s no Playwright e não registrou falhas ou avisos. A medição passou para **198/282 pontos** (**70,2128% exatos**; o painel apresenta **70,2%**), com 63 critérios de evidência válida, 22 pendentes e nenhum aguardando revalidação.
+
 ## Procedimento obrigatório ao fim de cada missão
 
 1. Rodar primeiro as verificações focadas e depois a regressão apropriada.
