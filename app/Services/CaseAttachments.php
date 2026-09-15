@@ -6,6 +6,7 @@ use App\Models\Attachment;
 use App\Models\AuditLog;
 use App\Models\BriefRequirement;
 use App\Models\Opportunity;
+use App\Models\ProductionChecklistItem;
 use App\Models\TechnicalValidation;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -31,7 +32,7 @@ final class CaseAttachments
     {
         $validated = Validator::make($input, [
             'module' => 'required|in:'.implode(',', self::MODULES),
-            'linked_type' => 'nullable|in:requirement,technical_validation,payable,venue',
+            'linked_type' => 'nullable|in:requirement,technical_validation,production_checklist_item,payable,venue',
             'linked_id' => 'nullable|integer|min:1',
         ])->validate();
 
@@ -158,6 +159,17 @@ final class CaseAttachments
             ];
         }
 
+        foreach (ProductionChecklistItem::query()
+            ->whereHas('checklist', fn ($query) => $query->where('opportunity_id', $case->id))
+            ->with('checklist:id,title,phase')
+            ->get() as $item) {
+            $links[] = [
+                'key' => 'production_checklist_item:'.$item->id,
+                'module' => 'production',
+                'label' => ($item->checklist?->title ?? 'Checklist de produção').' · '.$item->title,
+            ];
+        }
+
         foreach (DB::table('payables')->where('opportunity_id', $case->id)->get() as $payable) {
             $links[] = [
                 'key' => 'payable:'.$payable->id,
@@ -222,6 +234,11 @@ final class CaseAttachments
                     ->exists(),
             'technical_validation' => $module === 'production'
                 && TechnicalValidation::whereKey($id)->where('opportunity_id', $case->id)->exists(),
+            'production_checklist_item' => $module === 'production'
+                && ProductionChecklistItem::query()
+                    ->whereKey($id)
+                    ->whereHas('checklist', fn ($query) => $query->where('opportunity_id', $case->id))
+                    ->exists(),
             'payable' => $module === 'finance'
                 && DB::table('payables')->where('id', $id)->where('opportunity_id', $case->id)->exists(),
             'venue' => $module === 'venue' && $case->venue_id === $id,

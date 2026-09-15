@@ -74,12 +74,12 @@ describe('clean iOS visual system', () => {
         expect(shell).toContain('.context-rail + .main-content { grid-column: 2; grid-row: 2; }');
     });
 
-    it('keeps the operational board contained and gives primary actions the product accent', () => {
+    it('keeps the operational board contained and uses graphite for primary actions', () => {
         const cssRoot = fileURLToPath(new URL('../../../css/', import.meta.url));
         const components = readFileSync(`${cssRoot}components.css`, 'utf8');
         const modules = readFileSync(`${cssRoot}modules.css`, 'utf8');
 
-        expect(components).toContain('background: linear-gradient(135deg,var(--rd-violet)');
+        expect(components).toContain('background: #1d1d1f;');
         expect(modules).toContain('.pipeline-board-shell');
         expect(modules).toContain('overflow: hidden');
         expect(modules).toContain('.pipeline-full { width: 100%; max-width: 100%;');
@@ -91,7 +91,7 @@ describe('clean iOS visual system', () => {
         const modules = readFileSync(`${cssRoot}modules.css`, 'utf8');
 
         expect(controls).toContain('appearance:none');
-        expect(controls).toContain('linear-gradient(135deg,#8462f6,#6f4ee8)');
+        expect(controls).toContain('background:#2d2d32');
         expect(modules).toContain('.directory-search');
         expect(modules).toContain('.client-directory');
     });

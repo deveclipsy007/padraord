@@ -11,11 +11,11 @@ class ProductionTask extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['opportunity_id', 'assigned_to', 'title', 'description', 'status', 'priority', 'due_date', 'sort_order', 'phase', 'dependency_id', 'blocked_reason', 'started_at', 'completed_at', 'technical_validation_id', 'source_preview_id', 'source_item_index', 'revision'];
+    protected $fillable = ['opportunity_id', 'assigned_to', 'title', 'description', 'status', 'priority', 'due_date', 'sort_order', 'phase', 'dependency_id', 'blocked_reason', 'started_at', 'completed_at', 'technical_validation_id', 'source_preview_id', 'source_item_index', 'revision', 'scheduled_starts_at', 'scheduled_ends_at'];
 
     protected function casts(): array
     {
-        return ['due_date' => 'date', 'started_at' => 'datetime', 'completed_at' => 'datetime', 'revision' => 'integer'];
+        return ['due_date' => 'date', 'started_at' => 'datetime', 'completed_at' => 'datetime', 'scheduled_starts_at' => 'datetime', 'scheduled_ends_at' => 'datetime', 'revision' => 'integer'];
     }
 
     public function opportunity(): BelongsTo
@@ -41,5 +41,15 @@ class ProductionTask extends Model
     public function sourcePreview(): BelongsTo
     {
         return $this->belongsTo(ProductionTaskPreview::class, 'source_preview_id');
+    }
+
+    public function assignments(): HasMany
+    {
+        return $this->hasMany(ProductionTaskAssignment::class)->orderByDesc('is_responsible')->orderBy('id');
+    }
+
+    public function checklists(): HasMany
+    {
+        return $this->hasMany(ProductionChecklist::class);
     }
 }

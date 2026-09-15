@@ -1,30 +1,30 @@
 :root {
     --rd-font-ui: "Manrope Variable", "Avenir Next", -apple-system, BlinkMacSystemFont, sans-serif;
     --rd-font-display: "Manrope Variable", "Avenir Next", -apple-system, BlinkMacSystemFont, sans-serif;
-    --rd-canvas: #eaf0f7;
-    --rd-canvas-deep: #dfe8f3;
-    --rd-surface: #f9fbff;
-    --rd-surface-glass: rgba(255, 255, 255, .72);
-    --rd-surface-glass-strong: rgba(255, 255, 255, .84);
-    --rd-ink: #17181d;
-    --rd-muted: #687184;
-    --rd-muted-soft: #8e97a8;
-    --rd-line: rgba(70, 86, 110, .11);
-    --rd-line-strong: rgba(58, 72, 94, .18);
-    --rd-violet: #7657f5;
-    --rd-violet-deep: #6547dc;
-    --rd-violet-soft: #e7e1ff;
-    --rd-blue: #6fa7ff;
+    --rd-canvas: #f5f5f7;
+    --rd-canvas-deep: #ededf0;
+    --rd-surface: #ffffff;
+    --rd-surface-glass: #ffffff;
+    --rd-surface-glass-strong: #ffffff;
+    --rd-ink: #1d1d1f;
+    --rd-muted: #6e6e73;
+    --rd-muted-soft: #8e8e93;
+    --rd-line: rgba(29, 29, 31, .12);
+    --rd-line-strong: rgba(29, 29, 31, .20);
+    --rd-violet: #4b4b52;
+    --rd-violet-deep: #2d2d32;
+    --rd-violet-soft: #ececef;
+    --rd-blue: #8e8e93;
     --rd-green: #2b9a70;
     --rd-amber: #c38425;
     --rd-red: #c24f5d;
-    --rd-radius-control: 12px;
-    --rd-radius-item: 16px;
-    --rd-radius-card: 22px;
-    --rd-radius-feature: 28px;
-    --rd-shadow-sm: 0 8px 22px rgba(57, 76, 104, .07);
-    --rd-shadow: 0 18px 45px rgba(57, 76, 104, .10);
-    --rd-focus: 0 0 0 4px rgba(118, 87, 245, .18);
+    --rd-radius-control: 10px;
+    --rd-radius-item: 12px;
+    --rd-radius-card: 16px;
+    --rd-radius-feature: 20px;
+    --rd-shadow-sm: 0 1px 2px rgba(29, 29, 31, .06);
+    --rd-shadow: 0 8px 24px rgba(29, 29, 31, .08);
+    --rd-focus: 0 0 0 4px rgba(29, 29, 31, .14);
     --rd-space-1: 4px;
     --rd-space-2: 8px;
     --rd-space-3: 12px;
@@ -67,18 +67,18 @@
     --rd-danger-surface: #fbe2e5;
     --rd-info: #2a5fa8;
     --rd-info-surface: #dfeaff;
-    --rd-neutral-surface: #e8edf4;
+    --rd-neutral-surface: #ececef;
 
     /* Paleta categórica dos gráficos. Ordem fixa: trocar a posição muda a cor
        de séries já publicadas. Distinguível também em escala de cinza. */
-    --rd-series-1: #7657f5;
-    --rd-series-2: #2a8fb8;
+    --rd-series-1: #343438;
+    --rd-series-2: #626269;
     --rd-series-3: #2b9a70;
     --rd-series-4: #c38425;
-    --rd-series-5: #b0568e;
-    --rd-series-6: #5a6c8f;
-    --rd-series-muted: #c3cbd8;
-    --rd-grid-line: rgba(70, 86, 110, .14);
+    --rd-series-5: #8a8a91;
+    --rd-series-6: #a2a2a8;
+    --rd-series-muted: #d1d1d6;
+    --rd-grid-line: rgba(29, 29, 31, .14);
 }
 
 html { background: var(--rd-canvas); }
@@ -90,5 +90,5 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
 
 @supports not (backdrop-filter: blur(1px)) {
-    :root { --rd-surface-glass: #f5f8fc; --rd-surface-glass-strong: #f9fbff; }
+    :root { --rd-surface-glass: #fff; --rd-surface-glass-strong: #fff; }
 }

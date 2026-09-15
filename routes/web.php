@@ -201,11 +201,17 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/opportunities/{opportunity}/post-event', [PostEventController::class, 'store'])->name('opportunities.post-event.store');
     Route::post('/opportunities/{opportunity}/post-event/reopen', [PostEventController::class, 'reopen'])->name('opportunities.post-event.reopen');
     Route::post('/opportunities/{opportunity}/production/tasks', [ProductionController::class, 'storeTask'])->name('opportunities.production.tasks.store');
+    Route::post('/opportunities/{opportunity}/production/checklists', [ProductionController::class, 'storeChecklist'])->name('opportunities.production.checklists.store');
+    Route::post('/opportunities/{opportunity}/production/checklists/items/{item}/complete', [ProductionController::class, 'completeChecklistItem'])->name('opportunities.production.checklists.items.complete');
+    Route::post('/opportunities/{opportunity}/production/service-orders', [ProductionController::class, 'storeServiceOrder'])->name('opportunities.production.service-orders.store');
+    Route::post('/opportunities/{opportunity}/production/service-orders/{order}/issue', [ProductionController::class, 'issueServiceOrder'])->name('opportunities.production.service-orders.issue');
+    Route::post('/opportunities/{opportunity}/production/service-orders/{order}/receive', [ProductionController::class, 'receiveServiceOrder'])->name('opportunities.production.service-orders.receive');
     Route::post('/opportunities/{opportunity}/production/technical-validations', [ProductionController::class, 'saveTechnicalValidation'])->name('opportunities.production.technical-validations.store');
     Route::post('/opportunities/{opportunity}/production/technical-validations/{validation}/confirm', [ProductionController::class, 'confirmTechnicalValidation'])->name('opportunities.production.technical-validations.confirm');
     Route::post('/opportunities/{opportunity}/production/prepare', [ProductionController::class, 'prepareScope'])->name('opportunities.production.prepare');
     Route::post('/opportunities/{opportunity}/production/previews/{preview}/confirm', [ProductionController::class, 'confirmScope'])->name('opportunities.production.previews.confirm');
     Route::patch('/production/tasks/{task}', [ProductionController::class, 'updateTask'])->name('production.tasks.update');
+    Route::post('/production/tasks/{task}/schedule', [ProductionController::class, 'scheduleTask'])->name('production.tasks.schedule');
     Route::get('/opportunities/{opportunity}/{type}', [DocumentController::class, 'show'])->whereIn('type', ['proposal', 'contract'])->name('opportunities.document');
     Route::post('/opportunities/{opportunity}/{type}', [DocumentController::class, 'update'])->whereIn('type', ['proposal', 'contract'])->name('opportunities.document.update');
     Route::post('/feedback', [FeedbackController::class, 'store'])->name('feedback.store');
