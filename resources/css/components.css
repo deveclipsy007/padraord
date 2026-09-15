@@ -114,6 +114,33 @@
 .share-link-row input { flex: 1; min-width: 0; }
 .share-link-row > span { flex: 1; min-width: 0; color: var(--rd-muted); font-size: 13px; }
 .signature-panel { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rd-line); }
+.document-grid { gap: 16px; margin-top: 32px; }
+.document-preview,
+.document-editor-panel,
+.document-history-panel {
+    border-color: #d5d5d7;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+.document-preview {
+    display: block;
+    min-height: 0;
+    padding: clamp(24px, 4vw, 48px);
+}
+.document-preview > h2 { margin: 11px 0 28px; color: #1d1d1f; font-size: clamp(27px, 3vw, 38px); font-weight: 650; letter-spacing: -.05em; }
+.document-preview > section { padding: 18px 0; border-top: 1px solid #e8e8ed; }
+.document-preview > section h3 { margin: 0 0 7px; color: #424245; font-size: 12px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; }
+.document-preview > section p { color: #424245; font-size: 14px; line-height: 1.65; }
+.document-editor-panel > h2,
+.document-history-panel > h2 { margin-bottom: 8px; color: #1d1d1f; font-size: 20px; letter-spacing: -.03em; }
+.document-editor-panel > p,
+.document-history-panel > p { color: #6e6e73; font-size: 13px; line-height: 1.55; }
+.document-editor-panel hr { margin: 30px 0; border: 0; border-top: 1px solid #e8e8ed; }
+.document-editor-panel h3,
+.document-history-panel h3 { color: #1d1d1f; font-size: 15px; }
+.document-history-panel { margin-top: 16px; }
 .supplier-needs-list { display: grid; gap: 10px; margin-top: 18px; }
 @media (max-width: 640px) { .share-link-row { align-items: stretch; flex-direction: column; } .share-link-row .button { width: 100%; } }
 

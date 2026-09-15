@@ -4,7 +4,14 @@ import { AppLayout } from '../layout';
 import { Field } from '../components/FormControls';
 import { CasePageHeader } from '../components/CasePageHeader';
 import { ExternalLink, Files } from 'lucide-react';
-type Sections = { objective: string; scope: string; conditions: string };
+type Sections = {
+    objective: string;
+    scope: string;
+    inclusions: string;
+    exclusions: string;
+    clauses: string;
+    conditions: string;
+};
 type Props = {
     opportunity: { id: number; title: string; clientName: string };
     document: {
@@ -33,7 +40,14 @@ type Props = {
     versions: { version: number; status: string; purpose: string; sections: Partial<Sections> }[];
     shareLinks?: { id: number; expiresAt: string; revokedAt?: string | null; views: number; firstViewedAt?: string | null }[];
 };
-const labels: Record<keyof Sections, string> = { objective: 'Objetivo', scope: 'Escopo', conditions: 'Condições' };
+const labels: Record<keyof Sections, string> = {
+    objective: 'Objetivo',
+    scope: 'Escopo',
+    inclusions: 'O que está incluído',
+    exclusions: 'Fora do escopo',
+    clauses: 'Cláusulas',
+    conditions: 'Condições',
+};
 export default function DocumentWorkspace(props: Props) {
     return (
         <AppLayout>
@@ -50,10 +64,15 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
     const [signerName, setSignerName] = useState(''),
         [signedAt, setSignedAt] = useState(new Date().toISOString().slice(0, 10)),
         [signatureMethod, setSignatureMethod] = useState('plataforma_externa'),
-        [signatureEvidence, setSignatureEvidence] = useState('');
+        [signatureEvidence, setSignatureEvidence] = useState(''),
+        [reopenReason, setReopenReason] = useState('');
     const flash = usePage<{ flash?: { share_url?: string } }>().props.flash;
     const old = versions.find((v) => String(v.version) === compare);
     const base = `/opportunities/${opportunity.id}`;
+    const sectionKeys: (keyof Sections)[] =
+        d.type === 'contract'
+            ? ['objective', 'scope', 'clauses', 'conditions']
+            : ['objective', 'scope', 'inclusions', 'exclusions', 'conditions'];
     function action(kind: string, data: Record<string, string> = {}) {
         setBusy(true);
         router.post(`${base}/documents/${d.id}/${kind}`, data, {
@@ -68,7 +87,7 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
             <CasePageHeader
                 id={opportunity.id}
                 eyebrow={d.type === 'contract' ? 'Contrato' : d.purpose === 'management' ? 'Proposta de Gestão' : 'Proposta de Viabilidade'}
-                title={d.type === 'contract' ? 'Contrato · rascunho' : 'Proposta revisada'}
+                title={d.type === 'contract' ? `Contrato · v${d.version || 1}` : 'Proposta comercial'}
                 client={opportunity.clientName}
                 status={`v${d.version} · ${d.status}`}
                 actions={
@@ -81,6 +100,17 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                                 <ExternalLink size={15} /> Abrir PDF
                             </a>
                         )}
+                        {d.id &&
+                            ['reviewed', 'sent', 'accepted', 'changes_requested', 'signed_external', 'reopened'].includes(d.status) && (
+                                <a
+                                    className="button button-subtle"
+                                    href={`${base}/documents/${d.id}/release`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <ExternalLink size={15} /> Versão liberada
+                                </a>
+                            )}
                     </div>
                 }
             />
@@ -99,9 +129,9 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                 <article className="rd-panel document-preview">
                     <span className="eyebrow">PRÉVIA EDITÁVEL · NÃO É ENVIO</span>
                     <h2>{f.data.title}</h2>
-                    {Object.entries(labels).map(([key, label]) => (
+                    {sectionKeys.map((key) => (
                         <section key={key}>
-                            <h3>{label}</h3>
+                            <h3>{labels[key]}</h3>
                             <p style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
                                 {f.data.sections[key as keyof Sections] || 'Ainda não informado'}
                             </p>
@@ -133,7 +163,7 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                         {d.sources?.budget_revision ?? '—'}
                     </p>
                 </article>
-                <section className="rd-panel">
+                <section className="rd-panel document-editor-panel">
                     <h2>Preparar nova versão</h2>
                     <p>Salvar cria um rascunho novo. As versões anteriores não serão sobrescritas.</p>
                     <form
@@ -151,14 +181,20 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                         <Field label="Título">
                             <input required value={f.data.title} onChange={(e) => f.setData('title', e.target.value)} />
                         </Field>
-                        <Field label="Finalidade">
-                            <select value={f.data.purpose} onChange={(e) => f.setData('purpose', e.target.value)}>
-                                <option value="viability">Viabilidade</option>
-                                <option value="management">Gestão</option>
-                            </select>
-                        </Field>
-                        {Object.entries(labels).map(([key, label]) => (
-                            <Field label={label} key={key}>
+                        {d.type === 'proposal' ? (
+                            <Field label="Finalidade">
+                                <select value={f.data.purpose} onChange={(e) => f.setData('purpose', e.target.value)}>
+                                    <option value="viability">Viabilidade</option>
+                                    <option value="management">Gestão</option>
+                                </select>
+                            </Field>
+                        ) : (
+                            <Field label="Finalidade">
+                                <input value="Contrato" disabled />
+                            </Field>
+                        )}
+                        {sectionKeys.map((key) => (
+                            <Field label={labels[key]} key={key}>
                                 <textarea
                                     required
                                     rows={5}
@@ -179,13 +215,12 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                     <p>Alterações ainda não salvas não entram na revisão ou no PDF.</p>
                     <button
                         className="button button-subtle"
-                        disabled={busy || !d.id || d.type !== 'proposal' || !canReview || stale || d.status !== 'draft' || f.isDirty}
+                        disabled={busy || !d.id || !canReview || stale || d.status !== 'draft' || f.isDirty}
                         onClick={() => action('review')}
                     >
                         Revisar e liberar versão salva
                     </button>
                     {!canReview && <p>Liberação depende de autoridade comercial e regras validadas. Rascunhos continuam disponíveis.</p>}
-                    {d.type === 'contract' && <p>Liberação contratual depende de modelo validado e fica fora deste ciclo.</p>}
                     {d.status === 'reviewed' && (
                         <>
                             <Field label="Evidência do envio manual">
@@ -204,7 +239,7 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                             </button>
                         </>
                     )}
-                    {d.status === 'sent' && (
+                    {d.type === 'proposal' && d.status === 'sent' && (
                         <section className="share-link-actions">
                             <h3>Compartilhar com o cliente</h3>
                             <p>
@@ -270,6 +305,24 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                             </div>
                         </section>
                     )}
+                    {d.type === 'contract' && d.status === 'signed_external' && (
+                        <section className="signature-panel" aria-labelledby="reopen-title">
+                            <h3 id="reopen-title">Reabrir para aditivo</h3>
+                            <p className="field-help">
+                                O contrato assinado continua preservado. Registre o motivo antes de criar uma nova versão.
+                            </p>
+                            <Field label="Motivo da reabertura">
+                                <textarea value={reopenReason} onChange={(e) => setReopenReason(e.target.value)} minLength={3} />
+                            </Field>
+                            <button
+                                className="button button-subtle"
+                                disabled={busy || reopenReason.trim().length < 3}
+                                onClick={() => action('reopen', { reason: reopenReason })}
+                            >
+                                Registrar reabertura
+                            </button>
+                        </section>
+                    )}
                     {flash?.share_url && (
                         <section className="rd-panel share-link-panel" aria-labelledby="share-link-title">
                             <h3 id="share-link-title">Link privado da versão enviada</h3>
@@ -313,7 +366,7 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                     )}
                 </section>
             </section>
-            <section className="rd-panel">
+            <section className="rd-panel document-history-panel">
                 <h2>Histórico e comparação</h2>
                 <div className="rd-form-actions">
                     {versions.map((v) => (
@@ -339,16 +392,13 @@ function Editor({ opportunity, document: d, latestVersion, stale, canReview, ver
                     </select>
                 </Field>
                 {old &&
-                    Object.entries(labels).map(([key, label]) => (
+                    sectionKeys.map((key) => (
                         <section key={key}>
                             <h3>
-                                {label} ·{' '}
-                                {old.sections[key as keyof Sections] === f.data.sections[key as keyof Sections]
-                                    ? 'sem alteração'
-                                    : 'alterado'}
+                                {labels[key]} · {old.sections[key] === f.data.sections[key] ? 'sem alteração' : 'alterado'}
                             </h3>
-                            <p style={{ whiteSpace: 'pre-wrap' }}>Anterior: {old.sections[key as keyof Sections] || 'Não informado'}</p>
-                            <p style={{ whiteSpace: 'pre-wrap' }}>Atual: {f.data.sections[key as keyof Sections]}</p>
+                            <p style={{ whiteSpace: 'pre-wrap' }}>Anterior: {old.sections[key] || 'Não informado'}</p>
+                            <p style={{ whiteSpace: 'pre-wrap' }}>Atual: {f.data.sections[key]}</p>
                         </section>
                     ))}
             </section>

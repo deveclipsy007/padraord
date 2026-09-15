@@ -56,6 +56,8 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/assistant/chat/{turn}/preview', [AssistantController::class, 'editChatPreview'])->whereNumber('turn');
     Route::post('/assistant/interpret', [AssistantController::class, 'interpret'])->middleware('throttle:10,1');
     Route::post('/opportunities/{opportunity}/documents/{document}/review', [DocumentController::class, 'review']);
+    Route::get('/opportunities/{opportunity}/documents/{document}/release', [DocumentController::class, 'release']);
+    Route::post('/opportunities/{opportunity}/documents/{document}/reopen', [DocumentController::class, 'reopen']);
     Route::post('/opportunities/{opportunity}/documents/{document}/sent', [DocumentController::class, 'sent']);
     Route::post('/opportunities/{opportunity}/documents/{document}/external-signature', [DocumentController::class, 'externalSignature']);
     Route::post('/opportunities/{opportunity}/documents/{document}/share', [DocumentController::class, 'share']);

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\DocumentRevisions;
 use App\Services\DocumentSharing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,13 +15,13 @@ class DocumentShareController extends Controller
     {
         $resolved = $sharing->resolve($token, $request);
         $document = $resolved['document'];
-        $sections = $document->content['sections'] ?? [];
+        $release = app(DocumentRevisions::class)->released($document);
 
         return view('documents.shared', [
             'token' => $token,
             'document' => $document,
             'opportunity' => $document->opportunity,
-            'sections' => ['objective' => $sections['objective'] ?? '', 'scope' => $sections['scope'] ?? '', 'conditions' => $sections['conditions'] ?? ''],
+            'release' => $release,
             'expiresAt' => $resolved['share']->expires_at,
             'decision' => DB::table('document_share_decisions')->where('share_link_id', $resolved['share']->id)->first(),
         ]);

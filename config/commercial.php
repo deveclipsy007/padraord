@@ -5,4 +5,5 @@ return [
     'rules_approved' => (bool) env('COMMERCIAL_RULES_APPROVED', false),
     'rules_evidence' => env('COMMERCIAL_RULES_EVIDENCE'),
     'contract_template_approved' => (bool) env('CONTRACT_TEMPLATE_APPROVED', false),
+    'contract_template_evidence' => env('CONTRACT_TEMPLATE_EVIDENCE'),
 ];

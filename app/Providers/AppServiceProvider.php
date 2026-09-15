@@ -10,7 +10,9 @@ use App\AI\MeteredAiProvider;
 use App\AI\NullAiProvider;
 use App\AI\OpenAiAudioTranscriber;
 use App\AI\OpenAiContextIntelligenceExtractor;
+use App\Channels\ManualCommercialChannel;
 use App\Contracts\AudioTranscriber;
+use App\Contracts\CommercialChannel;
 use App\Contracts\ContextIntelligenceExtractor;
 use App\Contracts\MediaPreparationProvider;
 use App\Contracts\OdooCostExporter;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(CommercialChannel::class, ManualCommercialChannel::class);
         $this->app->bind(MediaPreparationProvider::class, PassThroughMediaPreparationProvider::class);
         $this->app->bind(AudioTranscriber::class, OpenAiAudioTranscriber::class);
         $this->app->bind(ContextIntelligenceExtractor::class, function () {

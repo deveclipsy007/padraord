@@ -22,6 +22,8 @@ class DocumentSharing
         if ($document->status !== 'sent' || ! $document->sent_at || $document->type !== 'proposal') {
             $this->fail('Compartilhe somente uma proposta enviada e preservada.');
         }
+        app(DocumentRevisions::class)->released($document);
+        $document->refresh();
         if ($expiresAt) {
             $expiresAt = Validator::make(['expires_at' => $expiresAt], ['expires_at' => 'date'])->validate()['expires_at'];
         }
@@ -93,13 +95,20 @@ class DocumentSharing
                     if ($existing->decision !== $data['decision'] || (string) $existing->message !== (string) ($data['message'] ?? '')) {
                         $this->fail('Este link já recebeu uma decisão diferente.');
                     }
+                    if ($existing->decision === 'accepted') {
+                        app(CommercialAcceptance::class)->record(
+                            $locked,
+                            Opportunity::findOrFail($locked->opportunity_id),
+                            $existing,
+                        );
+                    }
 
                     return;
                 }
                 if ($locked->status !== 'sent') {
                     $this->fail('Esta versão não está mais disponível para decisão.');
                 }
-                DB::table('document_share_decisions')->insert([
+                $decisionId = DB::table('document_share_decisions')->insertGetId([
                     'share_link_id' => $resolved['share']->id,
                     'document_id' => $locked->id,
                     'decision' => $data['decision'],
@@ -112,6 +121,14 @@ class DocumentSharing
                     'updated_at' => now(),
                 ]);
                 $locked->update(['status' => $data['decision'] === 'accepted' ? 'accepted' : 'changes_requested']);
+                if ($data['decision'] === 'accepted') {
+                    $decision = DB::table('document_share_decisions')->find($decisionId);
+                    app(CommercialAcceptance::class)->record(
+                        $locked->fresh(),
+                        Opportunity::findOrFail($locked->opportunity_id),
+                        $decision,
+                    );
+                }
             }, 3);
         } catch (QueryException $e) {
             if (! str_contains(strtolower($e->getMessage()), 'unique')) {

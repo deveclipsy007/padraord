@@ -21,7 +21,7 @@ class DocumentRevisionTest extends TestCase
         $o = Opportunity::create(['title' => 'Horizonte', 'client_name' => 'Cliente', 'stage' => 'briefing', 'briefing_revision' => 1, 'briefing_approval' => ['revision' => 1, 'fields' => ['scope' => 'Iluminação']]]);
         $b = $o->budgets()->create(['version' => 1, 'revision' => 1, 'purpose' => 'execution', 'status' => 'approved', 'snapshot' => ['demo' => false, 'totalCents' => 100000]]);
         $this->actingAs($u);
-        $this->post("/opportunities/$o->id/proposal", ['title' => 'Proposta de Gestão', 'purpose' => 'management', 'expected_version' => 0, 'sections' => ['objective' => 'Evento', 'scope' => 'Iluminação', 'conditions' => 'Condições validadas']])->assertRedirect();
+        $this->post("/opportunities/$o->id/proposal", ['title' => 'Proposta de Gestão', 'purpose' => 'management', 'expected_version' => 0, 'sections' => ['objective' => 'Evento', 'scope' => 'Iluminação', 'inclusions' => 'Operação técnica', 'exclusions' => 'Mobiliário', 'conditions' => 'Condições validadas']])->assertRedirect();
         $d = $o->documents()->first();
         $this->postJson("/opportunities/$o->id/documents/$d->id/review")->assertRedirect();
         $d->refresh();

@@ -403,17 +403,17 @@
 .impact-notice p { margin: 0; }
 .feasibility-side .button-primary { width: 100%; justify-content: center; }
 
-.documents-hub-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
-.document-hub-card { display: flex; flex-direction: column; min-height: 250px; }
-.document-hub-card__icon { display: grid; place-items: center; width: 42px; height: 42px; color: #6048c9; border-radius: 14px; background: var(--rd-violet-soft); }
-.document-hub-card h2 { margin: 16px 0 7px; font-size: 19px; letter-spacing: -.025em; }
-.document-hub-card p { min-height: 40px; margin: 0; color: var(--rd-muted); font-size: 12px; line-height: 1.5; }
+.documents-hub-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.document-hub-card { display: flex; flex-direction: column; min-height: 205px; border-color: #d5d5d7; border-radius: 12px; background: #fff; box-shadow: none; }
+.document-hub-card__icon { display: grid; place-items: center; width: 38px; height: 38px; color: #424245; border: 1px solid #d5d5d7; border-radius: 9px; background: #f5f5f7; }
+.document-hub-card h2 { margin: 15px 0 7px; color: #1d1d1f; font-size: 18px; letter-spacing: -.03em; }
+.document-hub-card p { min-height: 40px; margin: 0; color: #6e6e73; font-size: 12px; line-height: 1.5; }
 .document-hub-card .status-badge { align-self: flex-start; margin-top: 14px; }
 .document-hub-card .button { align-self: flex-start; margin-top: auto; }
 .document-source-note { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; padding: 14px 16px; color: #5c6575; border-radius: 16px; background: rgba(255,255,255,.47); font-size: 12px; line-height: 1.5; }
-.documents-timeline { margin-top: 16px; }
+.documents-timeline { margin-top: 16px; border-color: #d5d5d7; border-radius: 12px; background: #fff; box-shadow: none; }
 .document-version-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 54px; padding: 5px 8px; color: inherit; border-top: 1px solid var(--rd-line); text-decoration: none; }
-.document-version-row:hover { background: rgba(236,241,247,.46); }
+.document-version-row:hover { background: #f5f5f7; }
 .case-attachments { margin-top: 16px; border-color: var(--rd-line); background: rgba(255,254,250,.88); box-shadow: none; }
 .case-attachments__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--rd-line); }
 .case-attachments__header h2 { margin: 5px 0 7px; font-size: 20px; font-weight: 660; letter-spacing: -.035em; }
