@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { FileCheck2, FileText, ShieldCheck } from 'lucide-react';
+import { CaseAttachmentsPanel, type AttachmentLink, type CaseAttachment } from '../components/CaseAttachmentsPanel';
 import { CasePageHeader } from '../components/CasePageHeader';
 import { AppLayout } from '../layout';
 import { Surface } from '../components/ui/Surface';
@@ -18,9 +19,15 @@ type Document = {
 export default function DocumentsHub({
     opportunity,
     documents,
+    attachments,
+    attachmentLinks,
+    attachmentQuota,
 }: {
     opportunity: { id: number; title: string; clientName: string };
     documents: Document[];
+    attachments: CaseAttachment[];
+    attachmentLinks: AttachmentLink[];
+    attachmentQuota: number;
 }) {
     const groups = [
         { key: 'viability', title: 'Proposta de Viabilidade', type: 'proposal', icon: FileText },
@@ -93,6 +100,12 @@ export default function DocumentsHub({
                     <p className="inline-empty">Os documentos criados a partir de snapshots aparecerão aqui.</p>
                 )}
             </Surface>
+            <CaseAttachmentsPanel
+                opportunityId={opportunity.id}
+                attachments={attachments}
+                attachmentLinks={attachmentLinks}
+                attachmentQuota={attachmentQuota}
+            />
         </AppLayout>
     );
 }

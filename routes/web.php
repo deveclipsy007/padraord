@@ -7,6 +7,7 @@ use App\Http\Controllers\BriefingAudioController;
 use App\Http\Controllers\BriefingController;
 use App\Http\Controllers\BriefStructureController;
 use App\Http\Controllers\BudgetController;
+use App\Http\Controllers\CaseAttachmentController;
 use App\Http\Controllers\CaseContextController;
 use App\Http\Controllers\CaseJourneyController;
 use App\Http\Controllers\CommercialWorkflowController;
@@ -150,6 +151,10 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/team', [OperationalPagesController::class, 'team'])->name('team');
     Route::get('/help', [OperationalPagesController::class, 'help'])->name('help');
     Route::get('/search', SearchController::class)->name('search');
+    Route::post('/opportunities/{opportunity}/attachments', [CaseAttachmentController::class, 'store']);
+    Route::get('/opportunities/{opportunity}/attachments/{attachment}', [CaseAttachmentController::class, 'download']);
+    Route::post('/opportunities/{opportunity}/attachments/{attachment}/archive', [CaseAttachmentController::class, 'archive']);
+    Route::post('/opportunities/{opportunity}/attachments/{attachment}/restore', [CaseAttachmentController::class, 'restore']);
     Route::get('/opportunities/{opportunity}/finance', [EventFinanceController::class, 'show']);
     Route::post('/opportunities/{opportunity}/finance/plan', [EventFinanceController::class, 'plan']);
     Route::post('/opportunities/{opportunity}/finance/plan/{plan}/accept', [EventFinanceController::class, 'accept']);
