@@ -63,7 +63,10 @@ Antes da primeira página nova, registrar capturas de Dashboard, oportunidade, d
 - A interface de Documentos agora apresenta uma lista de anexos operacional, com quota, vínculo, estado e ações. A inspeção em tablet encontrou uma ação fora da grade; o teste de limites reproduziu a falha e a grade foi corrigida.
 - Evidência local: `CaseAttachmentsTest` passou com 4 testes e 82 asserções; a suíte PHP completa passou com 253 testes e 1.716 asserções; `npm run quality` e a jornada Playwright em desktop/tablet/mobile passaram.
 - MariaDB não foi aprovado: o script parou com `Connection refused` em `127.0.0.1:3306`; não existe servidor ou contêiner local configurado. A migração é aditiva e passou em SQLite, mas essa evidência externa continua pendente.
-- Ainda falta nesta missão: commit, integração na branch monitorada, associação explícita de `CaseAttachmentsTest` e `case-attachments.spec.ts` ao critério no Pulse e auditoria isolada. Somente essa auditoria pode registrar os +3 pontos.
+- A implementação foi integrada por fast-forward na branch monitorada em `7f72ae9` (`feat: add private case attachments`).
+- O Pulse recebeu a revisão de escopo r5 sem mudar critérios, pesos ou denominador: os quatro casos de `CaseAttachmentsTest.php` foram associados ao G5. A jornada Playwright continua como regressão de interface separada, sem ser usada para atribuir estes pontos.
+- A auditoria isolada da r5 concluiu em 145,7 s com 49 critérios comprovados, zero falhas e zero avisos. O G5 recebeu evidência válida e a medição passou de 143/282 (50,7%) para 146/282 (51,7%, conforme apresentação do Pulse).
+- MariaDB continua pendente por indisponibilidade local (`Connection refused` em `127.0.0.1:3306`) e não foi usado como evidência para a promoção do critério.
 
 ## Missão 2 — documentos, congelamento, contrato e aceite (+17)
 
