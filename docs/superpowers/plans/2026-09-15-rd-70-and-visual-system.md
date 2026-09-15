@@ -79,6 +79,16 @@ Antes da primeira página nova, registrar capturas de Dashboard, oportunidade, d
 5. Preparar contrato de canais atrás de configuração explícita, sem ativar integração externa; demonstrar compatibilidade por testes.
 6. Validar no navegador a proposta, o contrato e o aceite em desktop, tablet e celular, aplicando a linguagem visual revisada aos espaços de leitura e decisão.
 
+## Registro da Missão 2 — 15 de setembro
+
+- Implementação integrada em `f0d12a8` (`feat: complete commercial delivery flow`): proposta com seções explícitas, exclusões e fontes; snapshot de liberação com hash e renderização preservada; contrato com cláusulas, dados empresariais, evento, orçamento e plano de pagamento aceito; reabertura auditada após assinatura.
+- O aceite público agora cria, na mesma transação, projeto de entrega, três passos de onboarding, recibo versionado e outbox local idempotente. O adaptador de canais prepara somente o evento `manual`; nenhum transporte externo foi ativado.
+- A área de documentos passou a distinguir proposta e contrato, exibir seções relevantes, abrir a versão liberada e registrar reabertura. O hub e o workspace receberam superfícies mais planas, bordas discretas e leitura operacional; a revisão global grafite/cinza permanece como trabalho visual separado.
+- Evidência local: `CommercialDeliveryTest` passou com 5 testes e 34 asserções; o lote de regressão comercial passou com 23 testes e 133 asserções; a suíte PHP completa passou com 258 testes e 1.750 asserções; `npm run quality` passou; Playwright da jornada comercial passou em desktop, tablet e celular.
+- A migração `2026_09_15_000008_create_commercial_delivery_records.php` passou em SQLite. MariaDB continua sem evidência porque não há servidor local disponível em `127.0.0.1:3306`; isso não foi tratado como aprovação.
+- O Pulse recebeu a revisão de escopo r6 sem alterar os 85 critérios, os pesos ou o denominador de 282 pontos. Foram associados, um por critério, os testes de `CommercialDeliveryTest.php` para G1, G2, G4, G6 e D5.
+- A auditoria isolada r6 concluiu em 143,6 s com 54 critérios comprovados, zero falhas e zero avisos. Os 17 pontos comerciais receberam evidência válida: a medição passou de 146/282 (51,7%) para 163/282 (57,8%, conforme apresentação do Pulse). Restam 23 critérios sem cobertura automatizada e 8 de conferência humana.
+
 ## Missão 3 — produção operacional (+16)
 
 **Critérios:** `rd-633ed935f8d0`, `rd-40a7ac37faf5`, `rd-777ec0f712d7`, `rd-7988d8dcc556`.
