@@ -109,6 +109,8 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/activities/{activity}/reschedule', [FoundationController::class, 'activityReschedule']);
     Route::post('/activities/{activity}/assign', [FoundationController::class, 'activityAssign']);
     Route::delete('/activities/{activity}', [FoundationController::class, 'activityDestroy']);
+    Route::post('/pipeline/bulk-priority', [CommercialWorkflowController::class, 'bulkPriority']);
+    Route::post('/pipeline/bulk-priority/undo', [CommercialWorkflowController::class, 'undoBulkPriority']);
     Route::get('/opportunities/{opportunity}', [OpportunityWorkspaceController::class, 'show'])->name('opportunities.show');
     Route::post('/opportunities/{opportunity}/archive', [CommercialWorkflowController::class, 'archive']);
     Route::post('/opportunities/{opportunity}/restore', [CommercialWorkflowController::class, 'restore']);

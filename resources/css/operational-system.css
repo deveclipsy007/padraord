@@ -166,6 +166,116 @@
     color: #55555d;
 }
 
+.pipeline-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 12px 0;
+    padding: 11px 12px;
+    color: var(--rd-ink);
+    border: 1px solid #d8d8dd;
+    border-radius: var(--rd-radius-item);
+    background: #f7f7f8;
+}
+
+.pipeline-undo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin: 12px 12px 0;
+    padding: 9px 12px;
+    color: #3f3f45;
+    border-bottom: 1px solid #dedee3;
+    background: #fafafa;
+    font-size: 12px;
+}
+
+.pipeline-undo span {
+    margin-right: auto;
+}
+
+.pipeline-undo .button {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 12px;
+}
+
+.pipeline-undo .icon-button {
+    width: 30px;
+    min-height: 30px;
+    color: var(--rd-muted);
+}
+
+.pipeline-bulk-actions strong {
+    margin-right: auto;
+    font-size: 13px;
+    font-weight: 680;
+}
+
+.pipeline-bulk-actions select,
+.pipeline-inline-select select {
+    min-height: 34px;
+    color: var(--rd-ink);
+    border: 1px solid #cfcfd5;
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+}
+
+.pipeline-bulk-actions select {
+    min-width: 154px;
+    padding: 0 27px 0 10px;
+    font-size: 12px;
+}
+
+.pipeline-bulk-actions .button {
+    min-height: 34px;
+    padding: 0 11px;
+    white-space: nowrap;
+}
+
+.pipeline-bulk-actions small {
+    color: var(--rd-muted);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.pipeline-bulk-actions kbd {
+    margin-left: 3px;
+    padding: 1px 4px;
+    color: var(--rd-muted);
+    border: 1px solid #cfcfd5;
+    border-radius: 4px;
+    background: #fff;
+    font: inherit;
+    font-size: 10px;
+}
+
+.pipeline-selection-cell {
+    width: 36px;
+    padding-right: 0 !important;
+    text-align: center !important;
+}
+
+.pipeline-selection-cell input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #3f3f45;
+}
+
+.pipeline-inline-select select {
+    min-width: 105px;
+    padding: 0 25px 0 9px;
+    font-size: 12px;
+}
+
+.pipeline-inline-select select:focus-visible,
+.pipeline-bulk-actions select:focus-visible {
+    outline: 3px solid rgba(63, 63, 69, 0.22);
+    outline-offset: 2px;
+}
+
 @media (max-width: 1080px) {
     .context-rail {
         display: grid;
@@ -247,6 +357,39 @@
     .event-brief {
         margin-top: 16px;
         padding: 20px;
+    }
+
+    .pipeline-bulk-actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        margin: 10px 8px 0;
+    }
+
+    .pipeline-undo {
+        margin: 10px 8px 0;
+    }
+
+    .pipeline-bulk-actions strong,
+    .pipeline-bulk-actions small {
+        grid-column: 1 / -1;
+    }
+
+    .pipeline-bulk-actions select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .pipeline-bulk-actions .button {
+        width: 100%;
+    }
+
+    .pipeline-bulk-actions small {
+        white-space: normal;
+    }
+
+    .pipeline-inline-select select {
+        min-width: 94px;
     }
 
     .document-preview,

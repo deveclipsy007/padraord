@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\CommercialStage;
 use App\Enums\OpportunityPriority;
+use App\Models\AuditLog;
 use App\Models\Opportunity;
 use App\Services\CommercialStageTransitionService;
 use App\Services\NextActionService;
@@ -11,7 +12,9 @@ use App\Services\QualificationService;
 use App\Services\RecordArchiveService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class CommercialWorkflowController extends Controller
 {
@@ -46,6 +49,108 @@ class CommercialWorkflowController extends Controller
         $service->transition($opportunity, $request->user(), $data);
 
         return back()->with('success', 'Etapa comercial atualizada.');
+    }
+
+    public function bulkPriority(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'opportunity_ids' => ['required', 'array', 'min:1', 'max:100'],
+            'opportunity_ids.*' => ['required', 'integer', 'distinct', Rule::exists('opportunities', 'id')],
+            'revisions' => ['required', 'array'],
+            'revisions.*' => ['required', 'integer', 'min:0'],
+            'priority' => ['required', Rule::enum(OpportunityPriority::class)],
+        ]);
+        $ids = collect($data['opportunity_ids'])->map(fn ($id): int => (int) $id)->values();
+
+        DB::transaction(function () use ($data, $ids, $request): void {
+            $cases = Opportunity::query()->whereIn('id', $ids)->lockForUpdate()->get()->keyBy('id');
+            if ($cases->count() !== $ids->count() || $cases->contains(fn (Opportunity $case): bool => $case->archived_at !== null)) {
+                throw ValidationException::withMessages(['opportunity_ids' => 'Atualize a lista antes de aplicar uma ação em lote.']);
+            }
+            foreach ($ids as $id) {
+                $case = $cases->get($id);
+                if (! $case || (int) ($data['revisions'][$id] ?? -1) !== (int) $case->commercial_revision) {
+                    throw ValidationException::withMessages(['revisions' => 'Um ou mais casos foram alterados. Atualize a lista antes de aplicar a prioridade.']);
+                }
+            }
+            foreach ($ids as $id) {
+                /** @var Opportunity $case */
+                $case = $cases->get($id);
+                $from = $case->priority instanceof OpportunityPriority ? $case->priority->value : (string) $case->priority;
+                $case->update([
+                    'priority' => $data['priority'],
+                    'commercial_revision' => (int) $case->commercial_revision + 1,
+                ]);
+                AuditLog::create([
+                    'user_id' => $request->user()->id,
+                    'action' => 'opportunity.priority_changed',
+                    'subject_type' => Opportunity::class,
+                    'subject_id' => $case->id,
+                    'metadata' => [
+                        'from' => $from,
+                        'to' => $data['priority'],
+                        'revision' => $case->commercial_revision,
+                        'source' => 'pipeline',
+                    ],
+                ]);
+            }
+        });
+
+        $count = $ids->count();
+
+        return back()->with('success', $count === 1 ? 'Prioridade atualizada.' : "Prioridade atualizada em {$count} casos.");
+    }
+
+    public function undoBulkPriority(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'changes' => ['required', 'array', 'min:1', 'max:100'],
+            'changes.*.id' => ['required', 'integer', 'distinct', Rule::exists('opportunities', 'id')],
+            'changes.*.priority' => ['required', Rule::enum(OpportunityPriority::class)],
+            'changes.*.revision' => ['required', 'integer', 'min:0'],
+        ]);
+        $changes = collect($data['changes'])->keyBy(fn (array $change): int => (int) $change['id']);
+        $ids = $changes->keys()->map(fn ($id): int => (int) $id)->values();
+
+        DB::transaction(function () use ($changes, $ids, $request): void {
+            $cases = Opportunity::query()->whereIn('id', $ids)->lockForUpdate()->get()->keyBy('id');
+            if ($cases->count() !== $ids->count() || $cases->contains(fn (Opportunity $case): bool => $case->archived_at !== null)) {
+                throw ValidationException::withMessages(['changes' => 'Atualize a lista antes de desfazer esta alteração.']);
+            }
+            foreach ($ids as $id) {
+                $case = $cases->get($id);
+                $change = $changes->get($id);
+                if (! $case || ! $change || (int) $change['revision'] !== (int) $case->commercial_revision) {
+                    throw ValidationException::withMessages(['changes' => 'Um ou mais casos foram alterados. A ação não pode mais ser desfeita.']);
+                }
+            }
+            foreach ($ids as $id) {
+                /** @var Opportunity $case */
+                $case = $cases->get($id);
+                $change = $changes->get($id);
+                $from = $case->priority instanceof OpportunityPriority ? $case->priority->value : (string) $case->priority;
+                $case->update([
+                    'priority' => $change['priority'],
+                    'commercial_revision' => (int) $case->commercial_revision + 1,
+                ]);
+                AuditLog::create([
+                    'user_id' => $request->user()->id,
+                    'action' => 'opportunity.priority_changed',
+                    'subject_type' => Opportunity::class,
+                    'subject_id' => $case->id,
+                    'metadata' => [
+                        'from' => $from,
+                        'to' => $change['priority'],
+                        'revision' => $case->commercial_revision,
+                        'source' => 'pipeline.undo',
+                    ],
+                ]);
+            }
+        });
+
+        $count = $ids->count();
+
+        return back()->with('success', $count === 1 ? 'Alteração de prioridade desfeita.' : "Alteração de prioridade desfeita em {$count} casos.");
     }
 
     public function nextAction(Request $request, Opportunity $opportunity, NextActionService $service): RedirectResponse

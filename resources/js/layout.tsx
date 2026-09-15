@@ -171,11 +171,15 @@ export function AppLayout({ children }: PropsWithChildren) {
     useEffect(() => {
         const open = () => setCommandOpen(true);
         const keyboard = (event: KeyboardEvent) => {
-            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+            const target = event.target;
+            const isTyping =
+                target instanceof HTMLElement &&
+                (target.matches('input, textarea, select, [contenteditable="true"]') || target.isContentEditable);
+            if (!isTyping && (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
                 event.preventDefault();
                 setCommandOpen(true);
             }
-            if (event.key === 'Escape') setCommandOpen(false);
+            if (event.key === 'Escape' && (!isTyping || commandOpen)) setCommandOpen(false);
         };
         window.addEventListener('rd:command', open);
         window.addEventListener('keydown', keyboard);
@@ -183,7 +187,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             window.removeEventListener('rd:command', open);
             window.removeEventListener('keydown', keyboard);
         };
-    }, []);
+    }, [commandOpen]);
 
     return (
         <div className="rd-os-shell">

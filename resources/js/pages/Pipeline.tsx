@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowRight, CalendarDays, Check, ChevronDown, List, Search, Workflow, X } from 'lucide-react';
 import {
+    useEffect,
     useMemo,
     useRef,
     useState,
@@ -24,6 +25,7 @@ type Props = {
     origins: OpportunityOrigin[];
 };
 type DragState = { active: boolean; startX: number; scrollLeft: number; moved: boolean };
+type PriorityUndo = { id: number; priority: OpportunityPriority; revision: number };
 
 const stages: { id: CommercialStage; label: string; tone: string }[] = [
     { id: 'lead', label: 'Lead', tone: 'gray' },
@@ -63,6 +65,11 @@ function queryFrom(filters: PipelineFilters, patch: Partial<PipelineFilters> = {
 
 export default function Pipeline({ opportunities, stages: serverStages, filters, owners, origins }: Props) {
     const [selected, setSelected] = useState<Opportunity | null>(null);
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
+    const [bulkPriority, setBulkPriority] = useState<OpportunityPriority | ''>('');
+    const [prioritySaving, setPrioritySaving] = useState(false);
+    const [priorityUndo, setPriorityUndo] = useState<PriorityUndo[] | null>(null);
+    const [undoSaving, setUndoSaving] = useState(false);
     const [draggedId, setDraggedId] = useState<number | null>(null);
     const [dropStage, setDropStage] = useState<CommercialStage | null>(null);
     const [movingId, setMovingId] = useState<number | null>(null);
@@ -70,6 +77,7 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
     const [reasonCategory, setReasonCategory] = useState('data_correction');
     const [reasonNote, setReasonNote] = useState('');
     const boardRef = useRef<HTMLElement | null>(null);
+    const selectAllRef = useRef<HTMLInputElement>(null);
     const dragState = useRef<DragState>({ active: false, startX: 0, scrollLeft: 0, moved: false });
     const suppressClick = useRef(false);
     const boardStages =
@@ -84,8 +92,107 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
             ) as Record<CommercialStage, Opportunity[]>,
         [opportunities],
     );
+    const selectedItems = useMemo(() => opportunities.filter((item) => selectedIds.has(item.id)), [opportunities, selectedIds]);
+    const allVisibleSelected = opportunities.length > 0 && selectedItems.length === opportunities.length;
+    const partiallySelected = selectedItems.length > 0 && !allVisibleSelected;
+
+    useEffect(() => {
+        setSelectedIds((previous) => {
+            const visibleIds = new Set(opportunities.map((item) => item.id));
+            const next = new Set([...previous].filter((id) => visibleIds.has(id)));
+            return next.size === previous.size ? previous : next;
+        });
+    }, [opportunities]);
+
+    useEffect(() => {
+        if (selectAllRef.current) selectAllRef.current.indeterminate = partiallySelected;
+    }, [partiallySelected]);
+
+    useEffect(() => {
+        if (filters.view !== 'list') return;
+        const keyboard = (event: KeyboardEvent) => {
+            const target = event.target;
+            const isTyping =
+                target instanceof HTMLElement &&
+                (target.matches('input, textarea, select, [contenteditable="true"]') || target.isContentEditable);
+            if (isTyping) return;
+            if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'a') {
+                event.preventDefault();
+                setSelectedIds(new Set<number>(opportunities.map((item) => item.id)));
+            }
+            if (event.key === 'Escape') {
+                setSelectedIds(new Set<number>());
+                setBulkPriority('');
+            }
+        };
+        window.addEventListener('keydown', keyboard);
+        return () => window.removeEventListener('keydown', keyboard);
+    }, [filters.view, opportunities]);
+
     const navigate = (patch: Partial<PipelineFilters>) =>
         router.get('/pipeline', queryFrom(filters, patch), { preserveState: true, preserveScroll: true, replace: true });
+
+    const updatePriorities = (items: Opportunity[], priority: OpportunityPriority) => {
+        const changed = items.filter((item) => item.priority !== priority);
+        if (!changed.length || prioritySaving) return;
+        const undo = changed.map((item) => ({
+            id: item.id,
+            priority: item.priority,
+            revision: (item.commercialRevision ?? 0) + 1,
+        }));
+        setPriorityUndo(null);
+        setPrioritySaving(true);
+        router.post(
+            '/pipeline/bulk-priority',
+            {
+                opportunity_ids: changed.map((item) => item.id),
+                revisions: Object.fromEntries(changed.map((item) => [item.id, item.commercialRevision ?? 0])),
+                priority,
+            },
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    setSelectedIds(new Set<number>());
+                    setBulkPriority('');
+                    setPriorityUndo(undo);
+                },
+                onFinish: () => setPrioritySaving(false),
+            },
+        );
+    };
+
+    const undoPriorities = () => {
+        if (!priorityUndo?.length || undoSaving) return;
+        setUndoSaving(true);
+        router.post(
+            '/pipeline/bulk-priority/undo',
+            { changes: priorityUndo },
+            {
+                preserveScroll: true,
+                onSuccess: () => setPriorityUndo(null),
+                onError: () => setPriorityUndo(null),
+                onFinish: () => setUndoSaving(false),
+            },
+        );
+    };
+
+    const toggleSelection = (id: number) => {
+        setSelectedIds((previous) => {
+            const next = new Set(previous);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleAllVisible = () => {
+        setSelectedIds((previous) => {
+            const next = new Set(previous);
+            if (allVisibleSelected) opportunities.forEach((item) => next.delete(item.id));
+            else opportunities.forEach((item) => next.add(item.id));
+            return next;
+        });
+    };
 
     const requestMove = (item: Opportunity, to: CommercialStage) => {
         if (item.commercialStage === to || movingId !== null) return;
@@ -187,6 +294,7 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                             <input
                                 value={filters.q}
                                 onChange={(event) => navigate({ q: event.target.value })}
+                                aria-label="Buscar oportunidade"
                                 placeholder="Buscar oportunidade"
                             />
                         </label>
@@ -270,6 +378,7 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                         <span>Prioridade</span>
                         <select
                             value={filters.priority}
+                            aria-label="Prioridade do pipeline"
                             onChange={(event) => navigate({ priority: event.target.value as OpportunityPriority | '' })}
                         >
                             <option value="">Todas</option>
@@ -325,10 +434,81 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
             </Surface>
             {filters.view === 'list' ? (
                 <Surface className="pipeline-list-surface" padding="none">
+                    {priorityUndo && (
+                        <section className="pipeline-undo" role="region" aria-label="Última alteração de prioridade">
+                            <span>
+                                Prioridade atualizada em {priorityUndo.length} {priorityUndo.length === 1 ? 'caso' : 'casos'}.
+                            </span>
+                            <button className="button button-subtle" type="button" disabled={undoSaving} onClick={undoPriorities}>
+                                {undoSaving ? 'Desfazendo…' : 'Desfazer alteração'}
+                            </button>
+                            <button
+                                className="icon-button"
+                                type="button"
+                                disabled={undoSaving}
+                                aria-label="Dispensar desfazer alteração de prioridade"
+                                onClick={() => setPriorityUndo(null)}
+                            >
+                                <X size={15} />
+                            </button>
+                        </section>
+                    )}
+                    {selectedItems.length > 0 && (
+                        <section className="pipeline-bulk-actions" role="region" aria-label="Ações para casos selecionados">
+                            <strong>
+                                {selectedItems.length} {selectedItems.length === 1 ? 'caso selecionado' : 'casos selecionados'}
+                            </strong>
+                            <label>
+                                <span className="sr-only">Aplicar prioridade aos casos selecionados</span>
+                                <select
+                                    aria-label="Aplicar prioridade aos casos selecionados"
+                                    value={bulkPriority}
+                                    disabled={prioritySaving}
+                                    onChange={(event) => setBulkPriority(event.target.value as OpportunityPriority | '')}
+                                >
+                                    <option value="">Definir prioridade…</option>
+                                    {Object.entries(priorityLabel).map(([value, label]) => (
+                                        <option key={value} value={value}>
+                                            {label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                            <button
+                                className="button button-primary"
+                                type="button"
+                                disabled={!bulkPriority || prioritySaving || !selectedItems.some((item) => item.priority !== bulkPriority)}
+                                onClick={() => bulkPriority && updatePriorities(selectedItems, bulkPriority)}
+                            >
+                                {prioritySaving ? 'Atualizando…' : 'Aplicar prioridade'}
+                            </button>
+                            <button
+                                className="button button-subtle"
+                                type="button"
+                                disabled={prioritySaving}
+                                onClick={() => {
+                                    setSelectedIds(new Set<number>());
+                                    setBulkPriority('');
+                                }}
+                            >
+                                Limpar seleção <kbd>Esc</kbd>
+                            </button>
+                            <small>⌘⇧A seleciona os casos visíveis</small>
+                        </section>
+                    )}
                     <div className="rd-table-wrap">
                         <table className="rd-table">
                             <thead>
                                 <tr>
+                                    <th className="pipeline-selection-cell">
+                                        <input
+                                            ref={selectAllRef}
+                                            type="checkbox"
+                                            checked={allVisibleSelected}
+                                            aria-label="Selecionar todos os casos visíveis"
+                                            onChange={toggleAllVisible}
+                                        />
+                                    </th>
                                     <th>Oportunidade</th>
                                     <th>Estágio</th>
                                     <th>Responsável</th>
@@ -340,6 +520,14 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                             <tbody>
                                 {opportunities.map((item) => (
                                     <tr key={item.id}>
+                                        <td className="pipeline-selection-cell">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(item.id)}
+                                                aria-label={`Selecionar ${item.title}`}
+                                                onChange={() => toggleSelection(item.id)}
+                                            />
+                                        </td>
                                         <td>
                                             <Link href={`/opportunities/${item.id}`}>
                                                 <strong>{item.title}</strong>
@@ -350,7 +538,25 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                                             <span className="status-pill violet">{item.commercialStageLabel}</span>
                                         </td>
                                         <td>{item.ownerName || 'Sem responsável'}</td>
-                                        <td>{priorityLabel[item.priority]}</td>
+                                        <td>
+                                            <label className="pipeline-inline-select">
+                                                <span className="sr-only">Prioridade de {item.title}</span>
+                                                <select
+                                                    aria-label={`Prioridade de ${item.title}`}
+                                                    value={item.priority}
+                                                    disabled={prioritySaving}
+                                                    onChange={(event) =>
+                                                        updatePriorities([item], event.target.value as OpportunityPriority)
+                                                    }
+                                                >
+                                                    {Object.entries(priorityLabel).map(([value, label]) => (
+                                                        <option key={value} value={value}>
+                                                            {label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </label>
+                                        </td>
                                         <td>{item.nextAction || 'Definir próxima ação'}</td>
                                         <td>
                                             <button
