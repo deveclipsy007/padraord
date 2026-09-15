@@ -25,7 +25,15 @@
 .card-meta { gap: 8px; color: var(--rd-muted); font-size: 12px; }
 .next-action { min-height: 34px; margin-top: 12px; color: #566074; border-color: rgba(61,76,99,.08); background: rgba(235,241,248,.62); font-size: 12px; }
 .empty-column { min-height: 94px; color: var(--rd-muted-soft); border-color: rgba(61,76,99,.10); border-radius: 16px; background: rgba(255,255,255,.28); font-size: 12px; }
-.pipeline-lane { flex-basis: 228px; min-width: 228px; border-radius: 18px; }
+.pipeline-lane { flex-basis: 228px; min-width: 228px; border-radius: 18px; animation: none; }
+
+@media (prefers-reduced-motion: no-preference) {
+    .assistance-panel { animation: assistance-panel-enter .2s ease-out; }
+    @keyframes assistance-panel-enter {
+        from { transform: translateY(5px); }
+        to { transform: none; }
+    }
+}
 .pipeline-lane.is-drop-target { border-color: #8e8e93; background: #f1f1f3; }
 .pipeline-card-moving { color: var(--rd-violet-deep); font-size: 12px; }
 .pipeline-summary { width: 100%; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin: 0 0 16px; }
@@ -52,7 +60,7 @@
 .pipeline-card { display: grid; gap: 8px; min-height: 180px; padding: 0; }
 .pipeline-card__open { display: block; min-height: 132px; padding: 14px; color: inherit; border: 0; background: transparent; text-align: left; cursor: pointer; }
 .pipeline-card__open:focus-visible { outline: 3px solid rgba(45,45,50,.24); outline-offset: -3px; border-radius: inherit; }
-.pipeline-card__next { display: block; overflow: hidden; margin-top: 10px; padding-top: 8px; color: var(--rd-green); border-top: 1px solid rgba(36,29,45,.08); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.pipeline-card__next { display: block; overflow: hidden; margin-top: 10px; padding-top: 8px; color: var(--rd-success); border-top: 1px solid rgba(36,29,45,.08); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .pipeline-card__stage { position: relative; display: block; margin: 0 10px 10px; }
 .pipeline-card__stage select { width: 100%; min-height: 34px !important; padding: 6px 26px 6px 9px !important; color: var(--rd-muted); border-radius: 10px !important; background: rgba(244,247,251,.78) !important; font-size: 11px !important; }
 .pipeline-card__stage svg { position: absolute; top: 10px; right: 9px; color: var(--rd-muted); pointer-events: none; }
@@ -149,6 +157,9 @@
 .main-content :is(p, li, td, th, label, input, select, textarea, button, a, small, time, summary) { font-size: max(12px, 1em); }
 .main-content .eyebrow, .main-content .status-pill, .main-content .status-badge { font-size: 12px; }
 .main-content :is(.stage-node, .check-circle, .readiness-item, .fact-row, .timeline-item, .inline-empty, .budget-row, .production-note, .demo-note, .milestone-strip > div, .tour-step, .document-signature, .command-empty, .command-footer, .composer-footer > span, .review-check, .panel-copy, .decision-line, .message-bubble, .conversation-empty) { font-size: 12px; }
+.main-content .inline-empty { color: var(--rd-muted); border-color: var(--rd-line-strong); background: #fafafa; }
+.main-content .empty-state { color: var(--rd-muted); }
+.main-content .empty-state h3 { color: var(--rd-ink); }
 
 @media (max-width: 760px) {
     .metric-grid { grid-template-columns: 1fr; }
@@ -181,7 +192,7 @@
 .decision-list > a:hover { background: rgba(237,242,248,.68); }
 .decision-list__icon { display: grid; place-items: center; width: 32px; height: 32px; color: #9a6418; border-radius: 11px; background: rgba(195,132,37,.11); }
 .decision-list strong, .decision-list small { display: block; }
-.decision-list strong { color: #252832; font-size: 13px; font-weight: 620; }.decision-list small { margin-top: 3px; color: #737d8e; font-size: 12px; }
+.decision-list strong { color: #252832; font-size: 13px; font-weight: 620; }.decision-list small { margin-top: 3px; color: var(--rd-muted); font-size: 12px; }
 .bento-empty { display: grid; place-items: center; min-height: 72px; color: var(--rd-muted); font-size: 13px; text-align: center; }
 .stage-bars { display: grid; gap: 11px; margin-top: 18px; }
 .stage-bars > div { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 5px 12px; align-items: center; }

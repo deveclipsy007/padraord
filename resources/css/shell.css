@@ -157,7 +157,7 @@
 .topbar { align-items: center; gap: 24px; margin-bottom: 28px; }
 .topbar h1 { margin: 6px 0 0; color: var(--rd-ink); font-size: clamp(31px, 3vw, 38px); font-weight: 650; line-height: 1.04; letter-spacing: -.052em; }
 .topbar p { margin-top: 8px; color: var(--rd-muted); font-size: 14px; }
-.eyebrow { color: #707a8c; font-size: 12px; font-weight: 680; letter-spacing: .095em; }
+.eyebrow { color: var(--rd-muted); font-size: 12px; font-weight: 680; letter-spacing: .095em; }
 
 @media (max-width: 1080px) {
     .rd-os-shell:has(.context-rail) { grid-template-columns: 72px minmax(0,1fr); grid-template-rows: auto minmax(0,1fr); }
