@@ -71,7 +71,7 @@
     font-weight: 680;
     line-height: 1.2;
 }
-.status-badge--neutral, .status-pill.gray { color: #687184; background: rgba(104,113,132,.10); }
+.status-badge--neutral, .status-pill.gray { color: #4b4b52; background: #ececef; }
 .status-badge--info, .status-pill.blue { color: #3970b5; background: rgba(111,167,255,.16); }
 .status-badge--success, .status-pill.green { color: #1d7a58; background: rgba(43,154,112,.12); }
 .status-badge--warning, .status-pill.amber { color: #9a6418; background: rgba(195,132,37,.13); }
