@@ -7,15 +7,18 @@ use App\Models\AssistantPreview;
 use App\Models\AuditLog;
 use App\Models\CaseContextEntry;
 use App\Models\Opportunity;
+use App\Models\ProductionTask;
+use App\Models\User;
 use App\Services\AssistancePreparation;
 use App\Services\CaseWorkspaceSummary;
+use App\Services\DecisionQueue;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class OpportunityWorkspaceController extends Controller
 {
-    public function show(Opportunity $opportunity, CaseWorkspaceSummary $workspaceSummary): Response
+    public function show(Opportunity $opportunity, CaseWorkspaceSummary $workspaceSummary, DecisionQueue $decisionQueue): Response
     {
         $opportunity->updateQuietly(['last_viewed_at' => now()]);
 
@@ -31,6 +34,7 @@ class OpportunityWorkspaceController extends Controller
             ['key' => 'budget', 'label' => 'Orçamento revisado', 'complete' => $opportunity->budgets()->where('status', 'approved')->exists()],
         ];
         $summary = $workspaceSummary->for($opportunity);
+        $queue = $decisionQueue->for($opportunity);
         $latestContext = CaseContextEntry::where('opportunity_id', $opportunity->id)->latest('id')->first();
         $contextPreview = $latestContext ? AssistantPreview::find(data_get($latestContext->metadata, 'preview_id')) : null;
 
@@ -81,6 +85,18 @@ class OpportunityWorkspaceController extends Controller
                     'createdAt' => $log->created_at->format('d/m/Y H:i'),
                 ])->values(),
             'moduleStatuses' => $summary['moduleStatuses'],
+            'decisionQueue' => $queue,
+            'nextDecision' => $queue[0] ?? null,
+            'blockerHistory' => $decisionQueue->history($opportunity),
+            'decisionOptions' => [
+                'tasks' => $opportunity->productionTasks()
+                    ->where('status', '!=', 'done')
+                    ->orderBy('sort_order')
+                    ->get(['id', 'title', 'status'])
+                    ->map(fn (ProductionTask $task): array => ['id' => $task->id, 'title' => $task->title, 'status' => $task->status])
+                    ->values(),
+                'users' => User::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            ],
             'contextPreview' => $contextPreview && $contextPreview->status === 'preview' ? ['id' => $contextPreview->id, 'entryId' => $latestContext->id, 'status' => $contextPreview->status, 'actions' => $contextPreview->actions] : null,
         ]);
     }

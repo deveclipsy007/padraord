@@ -33,6 +33,11 @@ class ProductionTask extends Model
         return $this->hasMany(self::class, 'dependency_id');
     }
 
+    public function blockers(): HasMany
+    {
+        return $this->hasMany(CaseBlocker::class, 'production_task_id');
+    }
+
     public function technicalValidation(): BelongsTo
     {
         return $this->belongsTo(TechnicalValidation::class);

@@ -128,6 +128,11 @@ class Opportunity extends Model
         return $this->hasMany(ProductionTask::class);
     }
 
+    public function blockers(): HasMany
+    {
+        return $this->hasMany(CaseBlocker::class);
+    }
+
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);

@@ -14,6 +14,7 @@ use App\Http\Controllers\CommercialWorkflowController;
 use App\Http\Controllers\ContextAudioReviewController;
 use App\Http\Controllers\ContextAudioUploadController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DecisionQueueController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentShareController;
 use App\Http\Controllers\DocumentsHubController;
@@ -160,6 +161,9 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/opportunities/{opportunity}/attachments/{attachment}', [CaseAttachmentController::class, 'download']);
     Route::post('/opportunities/{opportunity}/attachments/{attachment}/archive', [CaseAttachmentController::class, 'archive']);
     Route::post('/opportunities/{opportunity}/attachments/{attachment}/restore', [CaseAttachmentController::class, 'restore']);
+    Route::post('/opportunities/{opportunity}/blockers', [DecisionQueueController::class, 'store']);
+    Route::post('/opportunities/{opportunity}/blockers/{blocker}/resolve', [DecisionQueueController::class, 'resolve']);
+    Route::post('/opportunities/{opportunity}/blockers/{blocker}/reopen', [DecisionQueueController::class, 'reopen']);
     Route::get('/opportunities/{opportunity}/finance', [EventFinanceController::class, 'show']);
     Route::post('/opportunities/{opportunity}/finance/plan', [EventFinanceController::class, 'plan']);
     Route::post('/opportunities/{opportunity}/finance/plan/{plan}/accept', [EventFinanceController::class, 'accept']);
