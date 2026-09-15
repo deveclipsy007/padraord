@@ -25,7 +25,7 @@
 | 3 | Produção operacional | F1–F7 | +16 | 179/282 · 63,5% |
 | 4 | Comparação de cotações | `rd-42a3f939922e` | +3 | 182/282 · 64,5% |
 | 5 | Cadeia de bloqueios e decisões | `rd-4a06da12e862` | +3 | 185/282 · 65,6% |
-| 6 | Consolidação do briefing | A8 | +5 | 190/282 · 67,4% |
+| 6 | Consolidação do briefing | A8 | +5 | 190/282 · 67,3% |
 | 7 | Jornadas decisórias responsivas | `rd-d6834650a575` | +5 | 195/282 · 69,1% |
 | 8 | Edição, lote, filtros e atalhos | `rd-3134fc123695` | +3 | **198/282 · 70,2%** |
 
@@ -149,6 +149,14 @@ Antes da primeira página nova, registrar capturas de Dashboard, oportunidade, d
 1. Auditar migrações e campos legados com fixture representativa; escrever teste de atualização sem perda.
 2. Consolidar dados tipados e revisão sem transportar suposições como requisitos confirmados.
 3. Testar SQLite e MariaDB, concorrência e a jornada completa de briefing.
+
+## Registro da Missão 6 — 15 de setembro
+
+- A auditoria de lacuna confirmou que o briefing tipado já estava implementado, mas ainda não possuía vínculo de evidência no Pulse. A missão não atribuiu pontos por atividade nova: converteu a implementação existente em provas específicas e executáveis.
+- As provas verificam campos tipados de evento em múltiplos dias, preservação do JSON legado, campos críticos antes da aprovação, revisão concorrente, histórico de aprovação/reabertura e importação legada sem autoaprovação.
+- Evidência local: `EventBriefTest` passou com 7 testes e 47 asserções em 499 ms. A jornada Playwright de briefing também passou nas larguras configuradas. A validação automatizada aconteceu no SQLite do snapshot; MariaDB continua sem evidência por não haver servidor local em `127.0.0.1:3306` e não foi tratado como aprovação adicional.
+- O Pulse recebeu a revisão de escopo r11, associando seis cenários específicos de `EventBriefTest.php` ao A8. Critérios, pesos e o denominador de 282 pontos não foram alterados.
+- A auditoria isolada `cf0d0308-2cb1-4b6c-8236-8e2d1c089abd` concluiu em 126,2 s com 61 critérios comprovados, zero falhas e zero avisos. Os 5 pontos do briefing receberam evidência válida: a medição passou para **190/282 pontos** (67,3759% exatos; o painel apresenta 67,3% por truncamento).
 
 ## Missão 7 — jornadas decisórias nos três tamanhos (+5)
 
