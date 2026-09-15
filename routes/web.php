@@ -31,6 +31,7 @@ use App\Http\Controllers\ProductionController;
 use App\Http\Controllers\PrototypeController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierQuoteComparisonController;
 use App\Http\Controllers\SupplierSourcingController;
 use App\Http\Controllers\VenueController;
 use App\Models\Opportunity;
@@ -144,6 +145,8 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/suppliers/{supplier}/inquiries', [SupplierController::class, 'inquiry']);
     Route::patch('/suppliers/{supplier}', [SupplierController::class, 'update']);
     Route::post('/suppliers/{supplier}/quotes', [SupplierController::class, 'quote']);
+    Route::post('/opportunities/{opportunity}/quote-comparisons', [SupplierQuoteComparisonController::class, 'store'])->name('opportunities.quote-comparisons.store');
+    Route::get('/opportunities/{opportunity}/quote-comparisons/{comparison}/export', [SupplierQuoteComparisonController::class, 'export'])->name('opportunities.quote-comparisons.export');
     Route::get('/venues', [VenueController::class, 'index'])->name('venues');
     Route::post('/venues', [VenueController::class, 'store']);
     Route::get('/venues/{venue}', [VenueController::class, 'show'])->name('venues.show');

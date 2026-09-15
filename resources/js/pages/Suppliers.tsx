@@ -26,9 +26,30 @@ export type Quote = {
     quantity: string | null;
     unit: string | null;
     supersedes_id: number | null;
+    is_current_revision?: boolean;
+    is_valid?: boolean;
 };
 type Pagination<T> = { data: T[]; current_page: number; last_page: number; prev_page_url: string | null; next_page_url: string | null };
 const money = (n: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(n / 100);
+const comparableTotal = (quote: Quote) => {
+    if (quote.price_basis === 'total') return quote.unit_cost_cents;
+    const quantity = Number(quote.quantity);
+    return quote.price_basis === 'unit' && Number.isFinite(quantity) ? Math.round(quote.unit_cost_cents * quantity) : null;
+};
+const dateTime = (value: string | null) =>
+    value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '—';
+type Comparison = {
+    id: number;
+    opportunity_id: number;
+    title: string;
+    status: 'draft' | 'decided';
+    scope_difference: string | null;
+    justification: string | null;
+    decision_quote_id: number | null;
+    created_at: string | null;
+    decided_at: string | null;
+    items: { quote_id: number; supplier_name: string; service: string; normalized_total_cents: number | null; can_be_decided: boolean }[];
+};
 export function SupplierForm({ supplier, onSaved }: { supplier?: Supplier; onSaved: () => void }) {
     const f = useForm({
         name: supplier?.name ?? '',
@@ -128,13 +149,14 @@ type Props = {
     suppliers: Pagination<Supplier>;
     quotes: Pagination<Quote>;
     inquiries: { id: number; supplier_id: number; supplier_name: string; opportunity_id: number; service: string }[];
+    comparisons: Comparison[];
     supplierOptions: { id: number; name: string }[];
     opportunities: { id: number; title: string }[];
     services: string[];
     filters: Record<string, string>;
 };
-export default function Suppliers({ suppliers, quotes, inquiries, supplierOptions, opportunities, services, filters }: Props) {
-    const [drawer, setDrawer] = useState<'supplier' | 'quote' | 'inquiry' | null>(null);
+export default function Suppliers({ suppliers, quotes, inquiries, comparisons, supplierOptions, opportunities, services, filters }: Props) {
+    const [drawer, setDrawer] = useState<'supplier' | 'quote' | 'inquiry' | 'comparison' | null>(null);
     const [edit, setEdit] = useState<Supplier>();
     const [selected, setSelected] = useState<number[]>([]);
     const search = useForm({
@@ -160,6 +182,13 @@ export default function Suppliers({ suppliers, quotes, inquiries, supplierOption
         supersedes_id: '',
         inquiry_id: '',
     });
+    const comparison = useForm({
+        title: '',
+        quote_ids: [] as number[],
+        scope_difference: '',
+        decision_quote_id: '',
+        justification: '',
+    });
     const tab = filters.tab ?? 'suppliers';
     function switchTab(tab: string) {
         router.get('/suppliers', { ...filters, tab }, { preserveScroll: true });
@@ -183,6 +212,18 @@ export default function Suppliers({ suppliers, quotes, inquiries, supplierOption
     }
     const compared = quotes.data.filter((q) => selected.includes(q.id));
     const sameCase = new Set(compared.map((q) => q.opportunity_id)).size <= 1;
+    const hasScopeDifference = new Set(compared.map((q) => q.service.trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR'))).size > 1;
+    function registerComparison() {
+        if (!sameCase || compared.length < 2) return;
+        comparison.setData({
+            title: `Alternativas para ${opportunities.find((o) => o.id === compared[0].opportunity_id)?.title ?? 'o caso'}`,
+            quote_ids: compared.map((q) => q.id),
+            scope_difference: '',
+            decision_quote_id: '',
+            justification: '',
+        });
+        setDrawer('comparison');
+    }
     return (
         <AppLayout>
             <Head title="Fornecedores e cotações" />
@@ -382,6 +423,12 @@ export default function Suppliers({ suppliers, quotes, inquiries, supplierOption
                                     {opportunities.find((o) => o.id === q.opportunity_id)?.title} · validade {q.valid_until.slice(0, 10)} ·{' '}
                                     {q.conditions || 'Condições não informadas'}
                                 </p>
+                                {(!q.is_valid || !q.is_current_revision) && (
+                                    <small>
+                                        {!q.is_valid ? 'Cotação vencida' : 'Revisão substituída'}: permanece no histórico, mas não pode
+                                        receber a decisão.
+                                    </small>
+                                )}
                                 <div className="rd-form-actions">
                                     <Link
                                         className="button button-subtle"
@@ -410,7 +457,7 @@ export default function Suppliers({ suppliers, quotes, inquiries, supplierOption
                                             <tr>
                                                 <th>Fornecedor / escopo</th>
                                                 <th>Base / quantidade</th>
-                                                <th>Valor</th>
+                                                <th>Valor comparável</th>
                                                 <th>Condições / evidência</th>
                                             </tr>
                                         </thead>
@@ -427,7 +474,9 @@ export default function Suppliers({ suppliers, quotes, inquiries, supplierOption
                                                             {q.quantity} {q.unit}
                                                         </small>
                                                     </td>
-                                                    <td>{money(q.unit_cost_cents)}</td>
+                                                    <td>
+                                                        {comparableTotal(q) === null ? 'Dados insuficientes' : money(comparableTotal(q)!)}
+                                                    </td>
                                                     <td>
                                                         {q.conditions}
                                                         <small>Validade: {q.valid_until.slice(0, 10)}</small>
@@ -441,10 +490,59 @@ export default function Suppliers({ suppliers, quotes, inquiries, supplierOption
                                         Confira equivalência de escopo antes de escolher. O sistema não presume que o menor preço seja a
                                         melhor opção.
                                     </p>
+                                    <div className="rd-form-actions">
+                                        <button
+                                            className="button button-primary"
+                                            type="button"
+                                            disabled={compared.length < 2}
+                                            onClick={registerComparison}
+                                        >
+                                            Registrar comparação e decisão
+                                        </button>
+                                        {hasScopeDifference && (
+                                            <small>
+                                                As alternativas têm escopos diferentes: a explicação será obrigatória no registro.
+                                            </small>
+                                        )}
+                                    </div>
                                 </div>
                             )}
                         </section>
                     )}
+                    <section className="rd-panel">
+                        <h2>Histórico de comparações</h2>
+                        <p>O registro preserva as condições avaliadas, a decisão e a justificativa. Ele não altera a cotação original.</p>
+                        {!comparisons.length && <p className="rd-empty">Nenhuma comparação registrada neste recorte.</p>}
+                        {comparisons.map((item) => {
+                            const decision = item.items.find((quote) => quote.quote_id === item.decision_quote_id);
+                            return (
+                                <article className="assistance-record" key={item.id}>
+                                    <strong>{item.title}</strong>
+                                    <p>
+                                        {opportunities.find((o) => o.id === item.opportunity_id)?.title ?? 'Caso preservado'} ·{' '}
+                                        {item.status === 'decided' ? 'Decisão registrada' : 'Aguardando decisão'} ·{' '}
+                                        {dateTime(item.decided_at ?? item.created_at)}
+                                    </p>
+                                    {decision && (
+                                        <p>
+                                            Escolhida: {decision.supplier_name} · {decision.service} ·{' '}
+                                            {decision.normalized_total_cents === null
+                                                ? 'valor incompleto'
+                                                : money(decision.normalized_total_cents)}
+                                        </p>
+                                    )}
+                                    {item.scope_difference && <small>Diferença de escopo: {item.scope_difference}</small>}
+                                    {item.justification && <small>Justificativa: {item.justification}</small>}
+                                    <a
+                                        className="button button-subtle"
+                                        href={`/opportunities/${item.opportunity_id}/quote-comparisons/${item.id}/export`}
+                                    >
+                                        Exportar registro
+                                    </a>
+                                </article>
+                            );
+                        })}
+                    </section>
                 </>
             )}
             <Drawer title={edit ? 'Editar fornecedor' : 'Novo fornecedor'} open={drawer === 'supplier'} onClose={() => setDrawer(null)}>
@@ -518,6 +616,83 @@ export default function Suppliers({ suppliers, quotes, inquiries, supplierOption
                     <FormErrors errors={f.errors} />
                     <button className="button button-primary" disabled={f.processing}>
                         Salvar {drawer === 'inquiry' ? 'consulta' : 'cotação'}
+                    </button>
+                </form>
+            </Drawer>
+            <Drawer title="Registrar comparação e decisão" open={drawer === 'comparison'} onClose={() => setDrawer(null)}>
+                <form
+                    className="form-grid"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        const opportunityId = compared[0]?.opportunity_id;
+                        if (!opportunityId) return;
+                        comparison.post(`/opportunities/${opportunityId}/quote-comparisons`, {
+                            preserveScroll: true,
+                            onSuccess: () => {
+                                setSelected([]);
+                                setDrawer(null);
+                            },
+                        });
+                    }}
+                >
+                    <Field label="Título do registro">
+                        <input
+                            required
+                            value={comparison.data.title}
+                            onChange={(event) => comparison.setData('title', event.target.value)}
+                        />
+                    </Field>
+                    <p>
+                        {compared.length} alternativas selecionadas. O valor comparável considera a base e a quantidade registradas em cada
+                        cotação.
+                    </p>
+                    <Field label={hasScopeDifference ? 'Diferença de escopo' : 'Observação de escopo'}>
+                        <textarea
+                            required={hasScopeDifference}
+                            rows={4}
+                            value={comparison.data.scope_difference}
+                            onChange={(event) => comparison.setData('scope_difference', event.target.value)}
+                            placeholder={
+                                hasScopeDifference
+                                    ? 'Explique o que cada alternativa inclui ou deixa de incluir.'
+                                    : 'Opcional: registre uma ressalva de equivalência.'
+                            }
+                        />
+                    </Field>
+                    <Field label="Alternativa escolhida">
+                        <select
+                            value={comparison.data.decision_quote_id}
+                            onChange={(event) => comparison.setData('decision_quote_id', event.target.value)}
+                        >
+                            <option value="">Registrar sem decisão por enquanto</option>
+                            {compared.map((quote) => (
+                                <option
+                                    key={quote.id}
+                                    value={quote.id}
+                                    disabled={!quote.is_valid || !quote.is_current_revision || comparableTotal(quote) === null}
+                                >
+                                    {quote.supplier?.name} · {quote.service}
+                                    {!quote.is_valid ? ' (vencida)' : !quote.is_current_revision ? ' (revisão substituída)' : ''}
+                                </option>
+                            ))}
+                        </select>
+                    </Field>
+                    <Field label="Justificativa da decisão">
+                        <textarea
+                            required={Boolean(comparison.data.decision_quote_id)}
+                            rows={4}
+                            value={comparison.data.justification}
+                            onChange={(event) => comparison.setData('justification', event.target.value)}
+                            placeholder="Por que esta alternativa foi escolhida?"
+                        />
+                    </Field>
+                    <FormErrors errors={comparison.errors} />
+                    <button className="button button-primary" disabled={comparison.processing}>
+                        {comparison.processing
+                            ? 'Registrando…'
+                            : comparison.data.decision_quote_id
+                              ? 'Registrar decisão'
+                              : 'Registrar comparação'}
                     </button>
                 </form>
             </Drawer>
