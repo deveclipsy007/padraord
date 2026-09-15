@@ -98,6 +98,15 @@ Antes da primeira página nova, registrar capturas de Dashboard, oportunidade, d
 3. Trocar qualquer grade ornamental por calendário/linha do tempo legíveis, com estados, dependências e próximo bloqueio claros.
 4. Rodar testes de conflito, recuperação, persistência e as três larguras de viewport; medir a duração da suíte antes de classificar frequência automática.
 
+## Registro da Missão 3 — 15 de setembro
+
+- Implementação integrada em `103a763` (`feat: add verified production operations`): escala com responsáveis e conflito de agenda, cronograma com dependências, checklist de montagem/desmontagem com foto obrigatória quando definida e ordem de serviço congelada com recebimento idempotente.
+- A tela de Produção passou a concentrar agenda, linha do tempo, conferências, fornecedores e anexos privados em uma superfície operacional. A revisão visual foi consolidada em `19d6e79` e `37fb558`: grafite como ação primária, cinzas neutros para estado, sem animação que reduza contraste e com leitura acessível em telas menores.
+- Evidência local: `ProductionDeliveryTest` passou com 5 testes; a suíte PHP completa passou com 263 testes e 1.791 asserções; `npm run quality` passou com 23 testes de interface; acessibilidade passou em desktop, tablet e celular (12 cenários no modo CI); e a navegação operacional passou nos três tamanhos (9 cenários).
+- A migração `2026_09_15_000009_add_production_execution_records.php` passou em SQLite. MariaDB continua sem evidência por indisponibilidade local em `127.0.0.1:3306`; isso não foi usado para promover critérios.
+- O Pulse recebeu as associações específicas dos quatro testes de `ProductionDeliveryTest.php` a F1–F4. A revisão r8 apenas corrigiu o nome de um teste visual renomeado para a linguagem grafite; não alterou critérios, pesos nem o denominador de 282 pontos.
+- A auditoria isolada final `85ff436e-f05e-4c75-b424-f52474d8bb1a` concluiu em 122,3 s com 58 critérios comprovados, zero falhas e zero avisos. Os 16 pontos de Produção receberam evidência válida: a medição passou para **179/282 pontos** (63,475% exatos; o painel apresenta 63,4% sem arredondar para cima).
+
 ## Missão 4 — comparação de cotações (+3)
 
 **Critério:** `rd-42a3f939922e`.
