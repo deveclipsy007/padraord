@@ -42,7 +42,7 @@ export default defineConfig({
     ],
     webServer: {
         // The readiness probe runs before globalSetup on a fresh checkout.
-        command: 'php artisan migrate --force --no-interaction && php artisan serve --host=127.0.0.1 --port=8123',
+        command: 'npm run build && php artisan migrate --force --no-interaction && php artisan serve --host=127.0.0.1 --port=8123',
         cwd: root,
         url: `${appUrl}/login`,
         reuseExistingServer: false,
