@@ -166,6 +166,15 @@ Antes da primeira página nova, registrar capturas de Dashboard, oportunidade, d
 2. Automatizar as jornadas em 1440 px, 1024 px e 390 px, incluindo foco, leitura, overflow e persistência.
 3. Corrigir os problemas de estrutura encontrados; a aprovação visual humana continua separada do teste automatizado.
 
+**Registro executado:**
+
+- Implementação em `0c8c37a` (`feat: keep decision context visible across workflows`): a próxima decisão passou a ser uma região nomeada e persistente no `ContextRail`; no tablet e no celular ela permanece visível acima da navegação contextual. A nova jornada percorre briefing, orçamento, documentos, produção e financeiro, verifica recarga e ausência de overflow nos três tamanhos.
+- A camada final `operational-system.css` substitui superfícies translúcidas e ornamentais por canvas grafite-claro, cartões brancos, bordas discretas e tipografia mais contida. No celular, o atalho do assistente ocupa a quinta posição da barra de navegação, sem cobrir a informação operacional.
+- A primeira auditoria isolada (`2d393f83-d6b9-43ef-abd0-b19c9d7a9cb6`) encontrou contraste insuficiente na nova camada. A correção `e7b8d33` restaura tokens AA para texto auxiliar e faz o Playwright compilar o front atual antes de abrir o navegador; assim, a suíte não aprova ativos estáticos antigos.
+- Evidência local: `npm run quality` passou; a checagem de acessibilidade, a nova jornada e as jornadas de briefing, comercial, produção e financeiro passaram nos três tamanhos depois do build obrigatório.
+- O Pulse recebeu a revisão r12 sem alterar critério, peso ou denominador: cinco testes Playwright cobrem contexto/recarga, briefing tipado, proposta e contrato, decisão de produção e financeiro.
+- A auditoria isolada `8707bb25-43d2-42de-9d01-5e32e41dfecf`, no commit `e7b8d33`, concluiu em 137,0 s com **62 critérios comprovados, zero falhas e zero avisos**. A medição passou para **195/282 pontos** (69,1489% exatos; o painel apresenta 69,1% por truncamento).
+
 ## Missão 8 — edição, lote, filtros e atalhos (+3)
 
 **Critério:** `rd-3134fc123695`.
