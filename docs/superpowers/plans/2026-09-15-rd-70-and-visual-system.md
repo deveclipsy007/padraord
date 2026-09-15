@@ -132,6 +132,16 @@ Antes da primeira página nova, registrar capturas de Dashboard, oportunidade, d
 2. Expor fila ordenada por bloqueador crítico, itens destravados, importância e esforço; separar ganho direto de trabalho desbloqueado.
 3. Testar transições, cadeia circular, prioridade e estado após reinício.
 
+## Registro da Missão 5 — 15 de setembro
+
+- Implementação integrada em `575a47c` (`feat: add ranked blocker decision queue`): bloqueadores persistentes agora preservam responsável, etapa, criticidade, importância, esforço, estado anterior da tarefa, resolução, reabertura e trilha de auditoria.
+- A fila usa uma única fonte de decisão: bloqueadores abertos e a próxima ação explícita da atividade. Ela prioriza bloqueios críticos, impacto do trabalho destravado, importância e esforço; mostra separadamente o ganho direto e o trabalho liberado.
+- Resolver ou reabrir um bloqueador preserva o registro e restaura corretamente a tarefa associada. Dependências circulares legadas recebem aviso explícito e não inflacionam o impacto apresentado.
+- O workspace ganhou a superfície plana “Fila de decisões”, com recomendação, impacto, esforço, responsável e controles para registrar, resolver e reabrir bloqueios. Essa área foi revisada em desktop, tablet e celular; ela aplica a direção grafite e operacional, enquanto a consolidação visual das demais páginas continua nas próximas missões.
+- Evidência local: os testes focados de fila e regressão operacional passaram com 13 testes e 71 asserções; a suíte PHP completa passou com 272 testes e 1.886 asserções; `npm run quality` e `./vendor/bin/pint --dirty --test` passaram; a jornada Playwright passou nos três tamanhos de tela.
+- O Pulse recebeu a revisão de escopo r10, associando seis cenários específicos de `DecisionQueueTest.php` ao critério. Critérios, pesos e o denominador de 282 pontos não foram alterados.
+- A auditoria isolada `e77ceab9-3a2d-424c-9b3f-b5a3e40eb057` concluiu em 127,3 s com 60 critérios comprovados, zero falhas e zero avisos. Os 3 pontos da fila receberam evidência válida: a medição passou para **185/282 pontos** (65,6028% exatos; o painel apresenta 65,6%).
+
 ## Missão 6 — consolidação do briefing (+5)
 
 **Critério:** resultado A8 do escopo aprovado.
