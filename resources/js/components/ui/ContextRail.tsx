@@ -61,20 +61,20 @@ export function ContextRail({
                 ))}
             </nav>
             {nextStep && (
-                <div className="context-rail__next">
+                <section className="context-rail__next" role="region" aria-label="Próxima decisão do caso">
                     <span>
-                        <CheckCircle2 size={14} /> Próximo passo
+                        <CheckCircle2 size={14} /> Próxima decisão
                     </span>
                     <p>{nextStep}</p>
-                </div>
+                </section>
             )}
             {!nextStep && (
-                <div className="context-rail__next context-rail__next--muted">
+                <section className="context-rail__next context-rail__next--muted" role="region" aria-label="Próxima decisão do caso">
                     <span>
-                        <AlertTriangle size={14} /> Próximo passo
+                        <AlertTriangle size={14} /> Próxima decisão
                     </span>
                     <p>Definir a próxima ação do contexto.</p>
-                </div>
+                </section>
             )}
         </aside>
     );

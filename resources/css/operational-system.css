@@ -1,0 +1,304 @@
+/*
+ * Camada final para as superfícies operacionais. Os módulos anteriores ainda
+ * contêm o visual experimental; este arquivo fica por último para manter uma
+ * linguagem única, calma e legível enquanto a interface é consolidada.
+ */
+:root {
+    --rd-canvas: #f5f5f7;
+    --rd-canvas-deep: #ececee;
+    --rd-surface: #ffffff;
+    --rd-surface-glass: #ffffff;
+    --rd-surface-glass-strong: #ffffff;
+    --rd-ink: #1d1d1f;
+    --rd-muted: #606066;
+    --rd-muted-soft: #7a7a81;
+    --rd-line: rgba(29, 29, 31, 0.13);
+    --rd-line-strong: rgba(29, 29, 31, 0.22);
+    --rd-violet: #4b4b52;
+    --rd-violet-deep: #29292e;
+    --rd-violet-soft: #ececef;
+    --rd-radius-control: 9px;
+    --rd-radius-item: 11px;
+    --rd-radius-card: 14px;
+    --rd-radius-feature: 18px;
+    --rd-shadow-sm: 0 1px 2px rgba(29, 29, 31, 0.06);
+    --rd-shadow: 0 8px 20px rgba(29, 29, 31, 0.07);
+}
+
+.rd-os-shell {
+    background: var(--rd-canvas);
+}
+
+.rd-os-shell :is(.glass-surface, .panel, .rd-panel, .metric-card, .continuity-card):not(.glass-surface-dark) {
+    border-color: #dedee3;
+    background: #fff;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.rd-os-shell :is(.glass-surface, .panel, .rd-panel, .metric-card, .continuity-card):not(.glass-surface-dark)::after {
+    display: none;
+}
+
+.rd-os-shell .glass-surface-neutral,
+.rd-os-shell .ui-surface--plain,
+.rd-os-shell .ui-surface--glass {
+    background: #fafafa;
+}
+
+.rd-os-shell .glass-surface-interactive:hover,
+.rd-os-shell .ui-surface.is-interactive:hover {
+    border-color: #bdbdc4;
+    box-shadow: var(--rd-shadow-sm);
+    transform: none;
+}
+
+.page-header-v2 {
+    margin-bottom: 26px;
+}
+
+.page-header-v2__eyebrow,
+.eyebrow {
+    color: #717178;
+    font-weight: 700;
+}
+
+.page-header-v2 h1,
+.case-page-header h1 {
+    font-weight: 640;
+}
+
+.event-brief {
+    margin: 20px 0;
+    padding: clamp(20px, 3vw, 28px);
+    border-color: #dedee3;
+    border-radius: var(--rd-radius-feature);
+    background: #fff;
+    box-shadow: none;
+}
+
+.event-brief__notice {
+    border-color: #ddd9d0;
+    border-radius: var(--rd-radius-item);
+    background: #faf9f5;
+}
+
+.event-brief__card,
+.event-brief__source-record,
+.event-brief__timeline-dot,
+.event-brief .rd-fieldset {
+    border-color: #dedee3;
+    border-radius: var(--rd-radius-item);
+    background: #fafafa;
+}
+
+.event-brief__section > summary {
+    min-height: 42px;
+    color: #303036;
+    font-weight: 650;
+}
+
+.event-brief__score progress {
+    accent-color: #3f3f45;
+}
+
+.budget-ai,
+.context-composer,
+.context-audio-composer,
+.production-note,
+.demo-note,
+.assistance-banner {
+    border-color: #dedee3;
+    background: #fafafa;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.context-composer::before,
+.context-audio-composer::before {
+    display: none;
+}
+
+.document-preview {
+    border-color: #dedee3;
+    border-radius: var(--rd-radius-feature);
+    background: #f7f7f8;
+}
+
+.document-sheet {
+    border: 1px solid #e1e1e5;
+    box-shadow: 0 1px 3px rgba(29, 29, 31, 0.08);
+}
+
+.finance-metrics article,
+.finance-section,
+.finance-plan li,
+.finance-preview {
+    border-color: #dedee3;
+    border-radius: var(--rd-radius-item);
+    background: #fff;
+    box-shadow: none;
+}
+
+.finance-plan li,
+.finance-preview {
+    background: #fafafa;
+}
+
+.rd-os-shell .status-pill.violet,
+.rd-os-shell .status-badge--accent {
+    color: #3f3f45;
+    background: #ececef;
+}
+
+.context-rail__next {
+    border-color: #d8d8dd;
+    border-radius: var(--rd-radius-item);
+    background: #f3f3f5;
+}
+
+.context-rail__next span {
+    color: #303036;
+}
+
+.context-rail__next p {
+    color: #55555d;
+}
+
+@media (max-width: 1080px) {
+    .context-rail {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px 14px;
+        align-items: center;
+    }
+
+    .context-rail__identity {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .context-rail__next {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-column: 2;
+        grid-row: 1;
+        align-items: start;
+        gap: 8px;
+        min-width: min(390px, 43vw);
+        margin: 0;
+        padding: 9px 11px;
+    }
+
+    .context-rail__next span {
+        white-space: nowrap;
+    }
+
+    .context-rail__next p {
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+
+    .context-rail__nav {
+        grid-column: 1 / -1;
+        grid-row: 2;
+    }
+}
+
+@media (max-width: 760px) {
+    .context-rail {
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin: 10px 12px 0;
+        padding: 12px;
+        border-radius: var(--rd-radius-card);
+    }
+
+    .context-rail__identity,
+    .context-rail__next,
+    .context-rail__nav {
+        grid-column: 1;
+        grid-row: auto;
+    }
+
+    .context-rail__identity {
+        padding: 2px 2px 7px;
+    }
+
+    .context-rail h2 {
+        font-size: 16px;
+    }
+
+    .context-rail__next {
+        min-width: 0;
+        padding: 9px 10px;
+    }
+
+    .context-rail__next span,
+    .context-rail__next p {
+        font-size: 12px;
+    }
+
+    .context-rail__nav {
+        padding-top: 2px;
+    }
+
+    .event-brief {
+        margin-top: 16px;
+        padding: 20px;
+    }
+
+    .document-preview,
+    .finance-section {
+        border-radius: var(--rd-radius-card);
+    }
+
+    /* O assistente passa a ocupar a quinta posição da navegação móvel. */
+    .mobile-nav {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .assistant-trigger {
+        right: calc(10vw - 11px);
+        bottom: calc(20px + env(safe-area-inset-bottom));
+        display: grid;
+        width: 54px;
+        min-width: 0;
+        height: 54px;
+        min-height: 54px;
+        padding: 0;
+        color: #55555d;
+        border: 0;
+        border-radius: 16px;
+        background: transparent;
+        box-shadow: none;
+        z-index: 61;
+        place-items: center;
+    }
+
+    .assistant-trigger:hover,
+    .assistant-trigger:focus-visible {
+        color: #1d1d1f;
+        background: #ececef;
+        box-shadow: none;
+    }
+
+    .assistant-trigger > span:last-child {
+        display: none;
+    }
+
+    .assistant-trigger > span:first-child {
+        font-size: 18px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rd-os-shell *,
+    .rd-os-shell *::before,
+    .rd-os-shell *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
