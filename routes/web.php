@@ -207,6 +207,9 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/opportunities/{opportunity}/quotes/{quote}/select', [BudgetController::class, 'selectQuote']);
     Route::post('/opportunities/{opportunity}/budget/approve', [BudgetController::class, 'approve'])->name('opportunities.budget.approve');
     Route::get('/opportunities/{opportunity}/budget', [BudgetController::class, 'show'])->name('opportunities.budget');
+    Route::get('/production', [ProductionController::class, 'index'])->name('production.index');
+    Route::get('/production/events/{opportunity}', [ProductionController::class, 'show'])->name('production.event');
+    Route::get('/production/events/{opportunity}/post-event', [PostEventController::class, 'show'])->name('production.post-event');
     Route::get('/opportunities/{opportunity}/production', [ProductionController::class, 'show'])->name('opportunities.production');
     Route::get('/opportunities/{opportunity}/post-event', [PostEventController::class, 'show'])->name('opportunities.post-event');
     Route::post('/opportunities/{opportunity}/post-event', [PostEventController::class, 'store'])->name('opportunities.post-event.store');

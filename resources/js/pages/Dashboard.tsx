@@ -10,7 +10,6 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { Surface } from '../components/ui/Surface';
 import { Opportunity, PipelineColumn } from '../types';
-import contextCore from '../../images/rd/optimized/context-core.webp';
 
 type Props = {
     todayQueue: QueueTask[];
@@ -100,17 +99,47 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                 primaryAction={<PrimaryButton onClick={() => setShowForm(true)}>Nova oportunidade</PrimaryButton>}
             />
 
+            <nav className="workspace-portals" aria-label="Áreas de trabalho">
+                <Link href="/projects">
+                    <span>01 / PLANEJAR</span>
+                    <strong>Projetos</strong>
+                    <small>Escopo, briefing e decisões</small>
+                    <ArrowUpRight size={20} />
+                </Link>
+                <Link href="/production">
+                    <span>02 / EXECUTAR</span>
+                    <strong>Produção</strong>
+                    <small>Equipe, tarefas e pós-evento</small>
+                    <ArrowUpRight size={20} />
+                </Link>
+                <Link href="/agenda">
+                    <span>03 / ACOMPANHAR</span>
+                    <strong>Agenda</strong>
+                    <small>Responsáveis e próximos passos</small>
+                    <ArrowUpRight size={20} />
+                </Link>
+            </nav>
             <BentoGrid className="dashboard-bento" aria-label="Resumo operacional de hoje">
                 <BentoItem colSpan={2} rowSpan={2}>
                     <Surface tone="elevated" padding="lg" className="operation-hero">
                         <div className="operation-hero__top">
                             <div>
                                 <span className="eyebrow">OPERAÇÃO HOJE</span>
-                                <h2>{todayQueue.length ? `${todayQueue.length} itens pedem ação.` : 'Tudo sob controle.'}</h2>
+                                <h2>
+                                    {todayQueue.length
+                                        ? `${todayQueue.length} itens pedem ação.`
+                                        : metrics.nextActions
+                                          ? `${metrics.nextActions} próximas ações.`
+                                          : 'Sua operação em perspectiva.'}
+                                </h2>
                                 <p>Continue pela decisão mais importante sem reconstruir o contexto.</p>
                             </div>
-                            <StatusBadge tone={todayQueue.length ? 'warning' : 'success'}>
-                                {todayQueue.length ? 'Atenção necessária' : 'Fluxo em dia'}
+                            <StatusBadge
+                                tone={todayQueue.length || metrics.pendingBriefings || metrics.nextActions ? 'warning' : 'neutral'}
+                            >
+                                {todayQueue.length || metrics.pendingBriefings || metrics.nextActions
+                                    ? 'Pendências para revisar'
+                                    : 'Visão da operação'}
                             </StatusBadge>
                         </div>
                         <div className="operation-orbits" aria-label="Indicadores principais">
@@ -130,7 +159,7 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                         <button
                             className="button button-primary"
                             type="button"
-                            onClick={() => router.visit(todayQueue.length ? '/agenda' : '/pipeline')}
+                            onClick={() => router.visit(todayQueue.length || metrics.nextActions ? '/agenda' : '/pipeline')}
                         >
                             Abrir próxima ação <ArrowRight size={15} />
                         </button>
@@ -205,18 +234,28 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                 </BentoItem>
 
                 <BentoItem>
-                    <Surface tone="accent" className="ai-bento-card">
+                    <Surface className="rd-agent-home">
                         <div className="ai-bento-card__copy">
                             <span>
-                                <Sparkles size={14} /> ASSISTENTE
+                                <Sparkles size={14} /> AGENTE RD
                             </span>
-                            <h2>{aiMode === 'manual' ? 'Modo manual' : aiMode === 'demo' ? 'Demonstração' : 'OpenAI ativa'}</h2>
-                            <p>Contexto preparado para revisão humana.</p>
+                            <h2>Clareza para decidir.</h2>
+                            <p>
+                                {aiMode === 'manual'
+                                    ? 'Organize o trabalho com os controles manuais. A IA está desativada.'
+                                    : aiMode === 'demo'
+                                      ? 'Explore sugestões de demonstração, sem uso de IA externa.'
+                                      : 'Reúna contexto e revise as sugestões antes de aplicar.'}
+                            </p>
                             <button type="button" onClick={() => router.visit('/settings/ai')}>
                                 Ver configuração <ArrowUpRight size={14} />
                             </button>
                         </div>
-                        <img src={contextCore} width="152" height="152" alt="Núcleo visual do assistente" />
+                        <div className="agent-orbit" aria-hidden="true">
+                            <Sparkles size={30} />
+                            <i />
+                            <i />
+                        </div>
                     </Surface>
                 </BentoItem>
 
@@ -247,21 +286,24 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                             </Link>
                         </div>
                         <div className="pipeline-mini">
-                            {columns.slice(0, 4).map((column) => (
-                                <div key={column.id}>
-                                    <header>
-                                        <span className={`status-dot ${stageColors[column.id] ?? 'gray'}`} />
-                                        {column.label}
-                                        <b>{column.count}</b>
-                                    </header>
-                                    {(grouped[column.id] ?? []).slice(0, 2).map((opportunity) => (
-                                        <Link key={opportunity.id} href={`/opportunities/${opportunity.id}`}>
-                                            <strong>{opportunity.title}</strong>
-                                            <span>{opportunity.clientName}</span>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ))}
+                            {columns
+                                .filter((column) => column.count > 0)
+                                .slice(0, 4)
+                                .map((column) => (
+                                    <div key={column.id}>
+                                        <header>
+                                            <span className={`status-dot ${stageColors[column.id] ?? 'gray'}`} />
+                                            {column.label}
+                                            <b>{column.count}</b>
+                                        </header>
+                                        {(grouped[column.id] ?? []).slice(0, 2).map((opportunity) => (
+                                            <Link key={opportunity.id} href={`/opportunities/${opportunity.id}`}>
+                                                <strong>{opportunity.title}</strong>
+                                                <span>{opportunity.clientName}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                ))}
                         </div>
                     </Surface>
                 </BentoItem>

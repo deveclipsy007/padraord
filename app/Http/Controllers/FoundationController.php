@@ -157,7 +157,7 @@ class FoundationController extends Controller
     public function userStore(Request $request)
     {
         Gate::authorize(Ability::ManageTeam->value);
-        $data = $request->validate(['name' => 'required|string|max:160', 'email' => 'required|email|max:160|unique:users,email', 'password' => 'required|string|min:12|max:128', 'role' => ['required', Rule::in(['admin', 'producer'])]]);
+        $data = $request->validate(['name' => 'required|string|max:160', 'email' => 'required|email|max:160|unique:users,email', 'password' => 'required|string|min:12|max:128', 'job_title' => ['sometimes', 'nullable', 'string', 'max:100'], 'role' => ['required', Rule::in(['admin', 'producer'])]]);
         $user = User::create([...$data, 'is_active' => true, 'can_approve_commercial' => false]);
         $this->audit($request, 'user.created', $user);
 
@@ -167,7 +167,7 @@ class FoundationController extends Controller
     public function userUpdate(Request $request, User $user)
     {
         Gate::authorize(Ability::ManageTeam->value);
-        $data = $request->validate(['name' => 'required|string|max:160', 'email' => ['required', 'email', 'max:160', Rule::unique('users')->ignore($user->id)], 'role' => ['required', Rule::in(['admin', 'producer'])], 'is_active' => 'required|boolean']);
+        $data = $request->validate(['name' => 'required|string|max:160', 'email' => ['required', 'email', 'max:160', Rule::unique('users')->ignore($user->id)], 'job_title' => ['sometimes', 'nullable', 'string', 'max:100'], 'role' => ['required', Rule::in(['admin', 'producer'])], 'is_active' => 'required|boolean']);
         if ($user->id === $request->user()->id && (! $data['is_active'] || $data['role'] !== 'admin')) {
             return back()->withErrors(['is_active' => 'Não é permitido retirar seu próprio acesso administrativo.']);
         }

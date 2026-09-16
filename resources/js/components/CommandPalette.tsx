@@ -6,6 +6,7 @@ type Result = { id?: number | string; title: string; subtitle: string; href: str
 type ApiPayload = { groups?: { type: string; label: string; items: Result[] }[]; actions?: Result[] };
 const fallback: Result[] = [
     { id: 'today', title: 'Hoje', subtitle: 'Dashboard operacional', href: '/' },
+    { id: 'production', title: 'Central de Produção', subtitle: 'Execução e pós-evento', href: '/production' },
     { id: 'projects', title: 'Projetos', subtitle: 'Casos e laboratório de demonstração', href: '/projects' },
     { id: 'suppliers', title: 'Fornecedores', subtitle: 'Cadastros e cotações', href: '/suppliers' },
     { id: 'pipeline', title: 'Pipeline', subtitle: 'Fluxo comercial', href: '/pipeline' },

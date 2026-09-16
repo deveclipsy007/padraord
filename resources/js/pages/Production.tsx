@@ -1,4 +1,4 @@
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import {
     CalendarDays,
     CalendarClock,
@@ -181,7 +181,7 @@ export default function Production({
                 id={opportunity.id}
                 eyebrow="Produção"
                 title="Controle de execução"
-                client={opportunity.clientName}
+                client={`${opportunity.title} · ${opportunity.clientName}`}
                 status={`evento em ${opportunity.eventDate || 'data a definir'}`}
                 actions={
                     <span className="status-pill gray">
@@ -189,6 +189,29 @@ export default function Production({
                     </span>
                 }
             />
+            <section className="execution-summary" aria-label="Situação da execução">
+                <div>
+                    <span>Em andamento</span>
+                    <strong>{tasks.filter((task) => task.status === 'in_progress').length}</strong>
+                </div>
+                <div>
+                    <span>Bloqueadas</span>
+                    <strong>{tasks.filter((task) => task.status === 'blocked').length}</strong>
+                </div>
+                <div>
+                    <span>Concluídas</span>
+                    <strong>
+                        {tasks.filter((task) => task.status === 'done').length}
+                        <small> / {tasks.length}</small>
+                    </strong>
+                </div>
+                <Link href={`/production/events/${opportunity.id}/post-event`}>
+                    <Check size={20} />
+                    <span>
+                        Encerramento<strong>Abrir pós-evento →</strong>
+                    </span>
+                </Link>
+            </section>
             <SegmentedControl
                 value={view}
                 onChange={setView}

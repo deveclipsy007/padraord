@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bot,
+    Clapperboard,
     Building2,
     CalendarDays,
     CircleHelp,
@@ -59,6 +60,7 @@ const navigation: NavigationItem[] = [
     { label: 'Hoje', href: '/', icon: LayoutDashboard },
     { label: 'Comercial', href: '/pipeline', icon: Workflow },
     { label: 'Projetos', href: '/projects', icon: FolderKanban },
+    { label: 'Produção', href: '/production', icon: Clapperboard },
     { label: 'Tarefas e agenda', href: '/agenda', icon: CalendarDays },
     { label: 'Clientes', href: '/clients', icon: Users },
     { label: 'Fornecedores', href: '/suppliers', icon: Building2 },
@@ -73,6 +75,21 @@ function createContext(
     pathname: string,
     props: SharedPage,
 ): { title: string; status?: string; owner?: string; progress?: number; nextStep?: string; items: ContextRailItem[] } | null {
+    const productionMatch =
+        pathname.match(/^\/production\/events\/(\d+)/) || pathname.match(/^\/opportunities\/(\d+)\/(?:production|post-event)/);
+    if (productionMatch) {
+        const id = productionMatch[1];
+        return {
+            title: props.caseShell?.title || props.opportunity?.title || `Evento #${id}`,
+            status: 'Central de Produção',
+            items: [
+                { label: 'Todos os eventos', href: '/production' },
+                { label: 'Produção', href: `/production/events/${id}`, active: !pathname.endsWith('/post-event') },
+                { label: 'Pós-evento', href: `/production/events/${id}/post-event`, active: pathname.endsWith('/post-event') },
+                { label: 'Consultar projeto comercial', href: `/opportunities/${id}` },
+            ],
+        };
+    }
     const opportunityMatch = pathname.match(/^\/opportunities\/(\d+)/);
     if (opportunityMatch) {
         const id = opportunityMatch[1];
@@ -85,8 +102,6 @@ function createContext(
             ['Orçamento', '/budget'],
             ['Financeiro', '/finance'],
             ['Documentos', '/documents'],
-            ['Produção', '/production'],
-            ['Pós-evento', '/post-event'],
             ['Histórico', '/history'],
         ] as const;
         const opportunity = props.opportunity;
@@ -208,6 +223,7 @@ export function AppLayout({ children }: PropsWithChildren) {
                             aria-label={label}
                             aria-current={isActive(pathname, href) ? 'page' : undefined}
                             data-tooltip={label}
+                            title={label}
                         >
                             <Icon size={19} strokeWidth={1.75} />
                             <span>{label}</span>

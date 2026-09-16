@@ -20,6 +20,20 @@ use Inertia\Response;
 
 class ProductionController extends Controller
 {
+    public function index(): Response
+    {
+        $events = Opportunity::query()->whereNull('archived_at')->with('owner:id,name')
+            ->withCount(['productionTasks', 'productionTasks as completed_tasks_count' => fn ($q) => $q->where('status', 'done'), 'productionTasks as blocked_tasks_count' => fn ($q) => $q->where('status', 'blocked')])
+            ->orderByRaw('event_date IS NULL')->orderBy('event_date')->get()->map(fn (Opportunity $event) => [
+                'id' => $event->id, 'title' => $event->title, 'client' => $event->client_name,
+                'date' => $event->event_date?->format('d/m/Y'), 'owner' => $event->owner?->name,
+                'stage' => $event->stage->value, 'tasks' => $event->production_tasks_count,
+                'completed' => $event->completed_tasks_count, 'blocked' => $event->blocked_tasks_count,
+            ]);
+
+        return Inertia::render('ProductionHub', ['events' => $events]);
+    }
+
     public function show(Opportunity $opportunity, ProductionOperations $operations, CaseAttachments $attachments): Response
     {
         return Inertia::render('Production', [

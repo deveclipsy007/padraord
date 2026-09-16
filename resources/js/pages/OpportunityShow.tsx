@@ -108,8 +108,6 @@ const moduleLinks = (id: number) => [
     { key: 'finance', label: 'Financeiro', href: `/opportunities/${id}/finance`, icon: WalletCards, desc: 'parcelas, baixas e margem' },
     { key: 'budget', label: 'Orçamento', href: `/opportunities/${id}/budget`, icon: WalletCards, desc: 'custos e memória' },
     { key: 'documents', label: 'Documentos', href: `/opportunities/${id}/documents`, icon: FileText, desc: 'propostas e contrato' },
-    { key: 'production', label: 'Produção', href: `/opportunities/${id}/production`, icon: ListChecks, desc: 'tarefas e marcos' },
-    { key: 'post-event', label: 'Pós-evento', href: `/opportunities/${id}/post-event`, icon: Sparkles, desc: 'memória e aprendizados' },
     { key: 'history', label: 'Histórico', href: `/opportunities/${id}/history`, icon: Clock3, desc: 'decisões e fontes' },
 ];
 
@@ -218,6 +216,17 @@ export default function OpportunityShow({
                     </div>
                 }
             />
+            <Link className="production-handoff" href={`/production/events/${opportunity.id}`}>
+                <span className="production-handoff__icon">
+                    <ListChecks size={24} />
+                </span>
+                <div>
+                    <span className="eyebrow">ÁREA DE EXECUÇÃO</span>
+                    <strong>Abrir Central de Produção</strong>
+                    <small>Tarefas, equipe, montagem e pós-evento em um espaço próprio.</small>
+                </div>
+                <ArrowRight size={19} />
+            </Link>
             <NextStep
                 id={opportunity.id}
                 revision={briefingRevision}

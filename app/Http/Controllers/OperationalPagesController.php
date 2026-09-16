@@ -276,7 +276,7 @@ class OperationalPagesController extends Controller
     {
         Gate::authorize(Ability::ManageTeam->value);
 
-        return Inertia::render('Team', ['users' => User::query()->orderBy('name')->get()->map(fn ($user) => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role, 'active' => $user->is_active, 'canApproveCommercial' => $user->can_approve_commercial])->values()]);
+        return Inertia::render('Team', ['users' => User::query()->orderBy('name')->get()->map(fn ($user) => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'role' => $user->role, 'jobTitle' => $user->job_title, 'active' => $user->is_active, 'canApproveCommercial' => $user->can_approve_commercial])->values()]);
     }
 
     public function help(): Response

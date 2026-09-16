@@ -18,12 +18,15 @@ export function CasePageHeader({
     status?: ReactNode;
     actions?: ReactNode;
 }) {
+    const production =
+        typeof window !== 'undefined' &&
+        (/^\/production/.test(window.location.pathname) || /\/(production|post-event)$/.test(window.location.pathname));
     return (
         <div className="case-dossier-header">
             <PageHeader
                 breadcrumbs={
-                    <Link className="case-back" href={`/opportunities/${id}`}>
-                        <ArrowLeft size={14} /> Visão geral
+                    <Link className="case-back" href={production ? '/production' : `/opportunities/${id}`}>
+                        <ArrowLeft size={14} /> {production ? 'Central de Produção' : 'Visão geral'}
                     </Link>
                 }
                 eyebrow={eyebrow}

@@ -1,15 +1,35 @@
 import { Head, useForm } from '@inertiajs/react';
 import { AppLayout } from '../layout';
 import { FormErrors } from '../components/FormErrors';
-import { GlassSurface } from '../components/GlassSurface';
+import { Crown, BriefcaseBusiness, Clapperboard, WalletCards, Wrench, Users, ShieldCheck, Plus } from 'lucide-react';
+import { useState } from 'react';
+import { Drawer } from '../components/FormControls';
+import { PageHeader } from '../components/ui/PageHeader';
+const jobs = [
+    { label: 'Direção', icon: Crown },
+    { label: 'Comercial', icon: BriefcaseBusiness },
+    { label: 'Produção', icon: Clapperboard },
+    { label: 'Financeiro', icon: WalletCards },
+    { label: 'Técnica', icon: Wrench },
+    { label: 'Coordenação', icon: Users },
+];
 
-type User = { id: number; name: string; email: string; role: string; active: boolean; canApproveCommercial: boolean };
+type User = {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    jobTitle: string | null;
+    active: boolean;
+    canApproveCommercial: boolean;
+};
 
-function Member({ user }: { user?: User }) {
+function Member({ user, onSaved }: { user?: User; onSaved?: () => void }) {
     const form = useForm({
         name: user?.name || '',
         email: user?.email || '',
         role: user?.role || 'producer',
+        job_title: user?.jobTitle || '',
         is_active: user?.active ?? true,
         password: '',
     });
@@ -22,7 +42,14 @@ function Member({ user }: { user?: User }) {
                 className="form-grid"
                 onSubmit={(e) => {
                     e.preventDefault();
-                    user ? form.patch(`/team/${user.id}`) : form.post('/team', { onSuccess: () => form.reset() });
+                    user
+                        ? form.patch(`/team/${user.id}`, { onSuccess: onSaved })
+                        : form.post('/team', {
+                              onSuccess: () => {
+                                  form.reset();
+                                  onSaved?.();
+                              },
+                          });
                 }}
             >
                 <label>
@@ -33,10 +60,35 @@ function Member({ user }: { user?: User }) {
                     E-mail
                     <input required type="email" value={form.data.email} onChange={(e) => form.setData('email', e.target.value)} />
                 </label>
+                <fieldset className="team-job-picker">
+                    <legend>Cargo na operação</legend>
+                    <div>
+                        {jobs.map(({ label, icon: Icon }) => (
+                            <button
+                                type="button"
+                                key={label}
+                                aria-pressed={form.data.job_title === label}
+                                onClick={() => form.setData('job_title', label)}
+                            >
+                                <Icon size={19} />
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                </fieldset>
                 <label>
-                    Papel
+                    Cargo personalizado
+                    <input
+                        maxLength={100}
+                        placeholder="Ex.: Direção executiva"
+                        value={form.data.job_title}
+                        onChange={(e) => form.setData('job_title', e.target.value)}
+                    />
+                </label>
+                <label>
+                    Permissão de acesso
                     <select value={form.data.role} onChange={(e) => form.setData('role', e.target.value)}>
-                        <option value="producer">Produtor</option>
+                        <option value="producer">Operação — sem administração</option>
                         <option value="admin">Administrador técnico</option>
                     </select>
                 </label>
@@ -141,40 +193,89 @@ function Member({ user }: { user?: User }) {
 }
 
 export default function Team({ users }: { users: User[] }) {
+    const [creating, setCreating] = useState(false);
+    const [editing, setEditing] = useState<User | null>(null);
     return (
         <AppLayout>
             <Head title="Equipe" />
-            <header className="topbar">
+            <PageHeader
+                eyebrow="ADMINISTRAÇÃO / PESSOAS"
+                title="Equipe e responsabilidades"
+                description="As pessoas certas, cada uma com seu papel na operação."
+                primaryAction={
+                    <button className="button button-primary" onClick={() => setCreating(true)}>
+                        <Plus size={17} />
+                        Adicionar pessoa
+                    </button>
+                }
+            />
+            <section className="team-intro">
                 <div>
-                    <span className="eyebrow">ADMINISTRAÇÃO</span>
-                    <h1>Equipe.</h1>
-                    <p>Administração técnica não concede aprovação comercial. A atribuição depende da validação das regras da Padrão RD.</p>
+                    <Crown size={30} strokeWidth={1.3} />
+                    <h2>Uma equipe. Muitos talentos.</h2>
+                    <p>Defina cargos, organize os responsáveis e gerencie o acesso de cada pessoa.</p>
                 </div>
-            </header>
-            <section className="workspace-grid">
-                <GlassSurface>
-                    <h2>Membros</h2>
-                    {users.map((user) => (
-                        <details key={user.id}>
-                            <summary className="client-row">
-                                <div>
-                                    <strong>{user.name}</strong>
-                                    <small>{user.email}</small>
-                                </div>
-                                <span className="status-pill gray">
-                                    {user.active ? 'Ativo' : 'Desativado'} ·{' '}
-                                    {user.canApproveCommercial ? 'Aprovador comercial' : 'Sem aprovação comercial'}
-                                </span>
-                            </summary>
-                            <Member user={user} />
-                        </details>
-                    ))}
-                </GlassSurface>
-                <GlassSurface>
-                    <h2>Novo usuário</h2>
-                    <Member />
-                </GlassSurface>
+                <dl>
+                    <div>
+                        <dt>Pessoas ativas</dt>
+                        <dd>{users.filter((u) => u.active).length}</dd>
+                    </div>
+                    <div>
+                        <dt>Administradores</dt>
+                        <dd>{users.filter((u) => u.active && ['admin', 'administrator'].includes(u.role)).length}</dd>
+                    </div>
+                </dl>
             </section>
+            <section className="team-role-legend" aria-label="Papéis da operação">
+                {jobs.map(({ label, icon: Icon }) => (
+                    <div key={label}>
+                        <Icon size={20} />
+                        <span>{label}</span>
+                    </div>
+                ))}
+            </section>
+            <section className="team-member-grid" aria-label="Pessoas da equipe">
+                {users.map((user) => {
+                    const Icon = jobs.find((job) => job.label === user.jobTitle)?.icon || Users;
+                    return (
+                        <article className="team-member-card" key={user.id}>
+                            <header>
+                                <span className="team-role-icon">
+                                    <Icon size={24} />
+                                </span>
+                                <span className="status-pill gray">{user.active ? 'Ativo' : 'Desativado'}</span>
+                            </header>
+                            <span className="eyebrow">{user.jobTitle || 'Cargo a definir'}</span>
+                            <h2>{user.name}</h2>
+                            <p>{user.email}</p>
+                            <div className="team-permissions">
+                                <span>
+                                    <ShieldCheck size={14} />
+                                    {['admin', 'administrator'].includes(user.role) ? 'Administração técnica' : 'Acesso à operação'}
+                                </span>
+                                <span>{user.canApproveCommercial ? 'Aprovador comercial' : 'Sem aprovação comercial'}</span>
+                            </div>
+                            <button className="button button-subtle" onClick={() => setEditing(user)}>
+                                Gerenciar {user.name}
+                            </button>
+                        </article>
+                    );
+                })}
+            </section>
+            <p className="team-access-note">
+                O cargo identifica a responsabilidade na equipe. Permissões administrativas e aprovação comercial são configuradas
+                separadamente.
+            </p>
+            <Drawer title="Adicionar pessoa" open={creating} onClose={() => setCreating(false)}>
+                <Member onSaved={() => setCreating(false)} />
+            </Drawer>
+            <Drawer
+                title={editing ? `Gerenciar ${editing.name}` : 'Gerenciar pessoa'}
+                open={Boolean(editing)}
+                onClose={() => setEditing(null)}
+            >
+                {editing && <Member key={editing.id} user={editing} onSaved={() => setEditing(null)} />}
+            </Drawer>
         </AppLayout>
     );
 }
