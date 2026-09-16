@@ -11,6 +11,7 @@ import '../css/responsive-workspace.css';
 import '../css/chat-and-dialogs.css';
 import '../css/charts.css';
 import '../css/operational-system.css';
+import '../css/editorial-workspace.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';

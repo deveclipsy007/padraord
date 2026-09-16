@@ -1,5 +1,19 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowRight, CalendarDays, Check, ChevronDown, List, Search, Workflow, X, Maximize2, Minimize2 } from 'lucide-react';
+import {
+    ArrowRight,
+    CalendarDays,
+    Check,
+    ChevronDown,
+    List,
+    Search,
+    Workflow,
+    X,
+    Maximize2,
+    Minimize2,
+    GripVertical,
+    Flag,
+    UserRound,
+} from 'lucide-react';
 import {
     useEffect,
     useMemo,
@@ -741,7 +755,7 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                                             >
                                                 <div className="card-top">
                                                     <span className="card-client">{item.clientName}</span>
-                                                    <ArrowRight size={14} />
+                                                    <GripVertical size={15} aria-hidden="true" />
                                                 </div>
                                                 <h3>{item.title}</h3>
                                                 <div className="card-meta">
@@ -750,7 +764,22 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                                                     </span>
                                                     <span>{money(item.estimatedValueCents)}</span>
                                                 </div>
-                                                {item.nextAction && <span className="pipeline-card__next">Próximo: {item.nextAction}</span>}
+                                                {item.nextAction && (
+                                                    <span className="pipeline-card__next">
+                                                        <span className="pipeline-card__next-label">PRÓXIMA AÇÃO</span>
+                                                        {item.nextAction}
+                                                    </span>
+                                                )}
+                                                <span className="pipeline-card__people">
+                                                    <span>
+                                                        <UserRound size={13} /> {item.ownerName || 'Sem responsável'}
+                                                    </span>
+                                                    {item.priority === 'high' && (
+                                                        <span className="pipeline-card__priority">
+                                                            <Flag size={12} /> Alta
+                                                        </span>
+                                                    )}
+                                                </span>
                                                 {movingId === item.id && <span className="pipeline-card-moving">Atualizando etapa…</span>}
                                             </button>
                                             <label className="pipeline-card__stage">

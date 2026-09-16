@@ -152,6 +152,8 @@ class OperationalPagesController extends Controller
             'name' => $client->name,
             'industry' => $client->industry,
             'opportunitiesCount' => $client->opportunities_count,
+            'coverTheme' => $client->cover_theme ?? ['iris', 'mist', 'dune', 'rose'][$client->id % 4],
+            'coverUrl' => $client->cover_path ? '/clients/'.$client->id.'/cover?v='.$client->updated_at->getTimestamp() : null,
             'archived' => (bool) $client->archived_at,
         ]);
 

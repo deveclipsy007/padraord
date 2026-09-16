@@ -9,6 +9,7 @@ test('directory, kanban and assistant stay within their content boundaries', asy
         await expect(page.locator('.assistant-trigger')).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBeTruthy();
         if (route === 'clients') {
+            await page.getByRole('group', { name: 'Visualização de clientes' }).getByRole('button', { name: 'Lista', exact: true }).click();
             const rows = page.locator('.client-directory__row');
             expect(await rows.count()).toBeGreaterThan(0);
             expect(await rows.evaluateAll(elements => elements.every(row => {

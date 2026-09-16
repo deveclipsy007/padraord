@@ -90,6 +90,8 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/opportunities/{opportunity}', [OpportunityController::class, 'update'])->name('opportunities.update');
     Route::get('/opportunities/{opportunity}/edit', [OpportunityController::class, 'edit'])->name('opportunities.edit');
     Route::post('/clients', [FoundationController::class, 'clientStore']);
+    Route::get('/clients/{client}/cover', [\App\Http\Controllers\ClientCoverController::class, 'show']);
+    Route::post('/clients/{client}/cover', [\App\Http\Controllers\ClientCoverController::class, 'store']);
     Route::get('/clients/{client}', [FoundationController::class, 'clientShow']);
     Route::patch('/clients/{client}', [FoundationController::class, 'clientUpdate']);
     Route::post('/clients/{client}/archive', [FoundationController::class, 'clientArchive']);

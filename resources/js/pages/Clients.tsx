@@ -1,12 +1,34 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Archive, ArrowUpRight, Building2, ChevronLeft, ChevronRight, Plus, Search, UsersRound, X } from 'lucide-react';
+import {
+    Archive,
+    ArrowUpRight,
+    Building2,
+    ChevronLeft,
+    ChevronRight,
+    Plus,
+    Search,
+    UsersRound,
+    X,
+    Palette,
+    FolderOpen,
+    List,
+} from 'lucide-react';
 import { FormEvent, useState } from 'react';
 import { Drawer, Field, FormErrors } from '../components/FormControls';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Surface } from '../components/ui/Surface';
 import { AppLayout } from '../layout';
+import { ClientCoverEditor } from '../components/ClientCoverEditor';
 
-type ClientSummary = { id: number; name: string; industry?: string | null; opportunitiesCount: number; archived?: boolean };
+type ClientSummary = {
+    id: number;
+    name: string;
+    industry?: string | null;
+    opportunitiesCount: number;
+    archived?: boolean;
+    coverTheme?: string;
+    coverUrl?: string | null;
+};
 type PaginatorLink = { url?: string | null; label?: string; active?: boolean };
 type Paginator = {
     data: ClientSummary[];
@@ -29,6 +51,8 @@ export default function Clients({ clients: payload, filters = {} }: Props) {
     const [query, setQuery] = useState(filters.q ?? '');
     const [status, setStatus] = useState(filters.status ?? 'active');
     const [creating, setCreating] = useState(false);
+    const [view, setView] = useState<'folders' | 'list'>('folders');
+    const [coverClient, setCoverClient] = useState<ClientSummary | null>(null);
     const [archiveTarget, setArchiveTarget] = useState<ClientSummary | null>(null);
     const [archiveReason, setArchiveReason] = useState('');
     const form = useForm({ name: '', industry: '', notes: '' });
@@ -87,7 +111,21 @@ export default function Clients({ clients: payload, filters = {} }: Props) {
                     </button>
                 }
             />
-            <Surface className="client-directory" padding="none">
+            <div className="editorial-intro client-intro">
+                <span className="editorial-kicker">RELAÇÕES QUE CONSTROEM</span>
+                <h2>
+                    Cada cliente,
+                    <br />
+                    <em>um universo.</em>
+                </h2>
+                <p>
+                    Abra uma pasta. Encontre o contexto.
+                    <br />
+                    Continue a próxima conversa.
+                </p>
+                <FolderOpen size={72} strokeWidth={0.8} aria-hidden="true" />
+            </div>
+            <Surface className={`client-directory ${view === 'folders' ? 'client-directory--folders' : ''}`} padding="none">
                 <div className="client-directory__toolbar">
                     <div className="client-directory__title">
                         <span className="client-directory__icon">
@@ -127,11 +165,29 @@ export default function Clients({ clients: payload, filters = {} }: Props) {
                         </select>
                     </label>
                     <span className="filter-hint">Cadastros arquivados permanecem disponíveis no histórico.</span>
+                    <div className="directory-view-toggle" role="group" aria-label="Visualização de clientes">
+                        <button type="button" aria-pressed={view === 'folders'} onClick={() => setView('folders')}>
+                            <FolderOpen size={16} /> Pastas
+                        </button>
+                        <button type="button" aria-pressed={view === 'list'} onClick={() => setView('list')}>
+                            <List size={16} /> Lista
+                        </button>
+                    </div>
                 </div>
                 <div className="client-directory__list">
                     {clients.map((client) => (
-                        <div className={`client-directory__row${client.archived ? ' is-archived' : ''}`} key={client.id}>
+                        <div
+                            className={`client-directory__row${view === 'folders' ? ' client-folder' : ''}${client.archived ? ' is-archived' : ''}`}
+                            data-cover={client.coverTheme ?? 'iris'}
+                            key={client.id}
+                        >
                             <Link className="client-directory__row-link" href={`/clients/${client.id}`} viewTransition>
+                                {view === 'folders' && (
+                                    <span className="folder-cover" data-cover={client.coverTheme ?? 'iris'} aria-hidden="true">
+                                        {client.coverUrl && <img src={client.coverUrl} alt="" loading="lazy" />}
+                                        <FolderOpen size={26} strokeWidth={1.2} />
+                                    </span>
+                                )}
                                 <span className="client-directory__avatar">{initials(client.name)}</span>
                                 <span className="client-directory__identity">
                                     <strong>{client.name}</strong>
@@ -145,6 +201,14 @@ export default function Clients({ clients: payload, filters = {} }: Props) {
                                 </span>
                             </Link>
                             <span className="client-directory__actions">
+                                <button
+                                    className="icon-button"
+                                    type="button"
+                                    aria-label={`Personalizar capa de ${client.name}`}
+                                    onClick={() => setCoverClient(client)}
+                                >
+                                    <Palette size={16} />
+                                </button>
                                 {client.archived ? (
                                     <button
                                         className="icon-button"
@@ -221,6 +285,7 @@ export default function Clients({ clients: payload, filters = {} }: Props) {
                     </div>
                 )}
             </Surface>
+            {coverClient && <ClientCoverEditor key={coverClient.id} client={coverClient} onClose={() => setCoverClient(null)} />}
             <Drawer title="Novo cliente" open={creating} onClose={() => setCreating(false)}>
                 <p className="drawer-intro">
                     Comece apenas com o essencial. O contexto pode ser ampliado depois, manualmente ou pelo assistente.
