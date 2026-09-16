@@ -26,7 +26,7 @@ test('decision context stays visible across the operational journey at every sup
     await page.reload();
     await expect(page.getByRole('region', { name: 'Próxima decisão do caso' })).toBeVisible();
 
-    const assistant = page.getByRole('button', { name: 'Abrir assistente' });
+    const assistant = page.getByRole('button', { name: 'Abrir Agente RD' });
     await expect(assistant).toBeVisible();
     if (testInfo.project.name === 'mobile') {
         const [assistantBox, navigationBox] = await Promise.all([

@@ -314,43 +314,37 @@ export default function Suppliers({ suppliers, quotes, inquiries, comparisons, s
             </form>
             {tab === 'suppliers' ? (
                 <section className="rd-panel">
-                    <div className="rd-table-wrap">
-                        <table className="rd-table">
-                            <thead>
-                                <tr>
-                                    <th>Fornecedor</th>
-                                    <th>Contato</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {suppliers.data.map((s) => (
-                                    <tr key={s.id}>
-                                        <td>
-                                            <Link href={'/suppliers/' + s.id}>{s.name}</Link>
-                                            <small>
-                                                {s.service ?? 'Serviço a definir'} · {s.status === 'active' ? 'Ativo' : 'Inativo'}
-                                            </small>
-                                        </td>
-                                        <td>
-                                            {s.email || '—'}
-                                            <small>{s.phone}</small>
-                                        </td>
-                                        <td>
-                                            <button
-                                                className="button button-subtle"
-                                                onClick={() => {
-                                                    setEdit(s);
-                                                    setDrawer('supplier');
-                                                }}
-                                            >
-                                                Editar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="partner-library">
+                        {suppliers.data.map((s) => (
+                            <article className="partner-card" key={s.id}>
+                                <div className="partner-card__top">
+                                    <span className="partner-monogram" aria-hidden="true">
+                                        {s.name.slice(0, 2).toLocaleUpperCase('pt-BR')}
+                                    </span>
+                                    <span className="status-pill gray">{s.status === 'active' ? 'Ativo' : 'Inativo'}</span>
+                                </div>
+                                <span className="eyebrow">{s.service ?? 'Serviço a definir'}</span>
+                                <h2>
+                                    <Link href={'/suppliers/' + s.id}>{s.name}</Link>
+                                </h2>
+                                <div className="partner-contact">
+                                    <span>{s.email || 'E-mail não informado'}</span>
+                                    <span>{s.phone || 'Telefone não informado'}</span>
+                                </div>
+                                <footer>
+                                    <Link href={'/suppliers/' + s.id}>Abrir parceiro ↗</Link>
+                                    <button
+                                        className="button button-subtle"
+                                        onClick={() => {
+                                            setEdit(s);
+                                            setDrawer('supplier');
+                                        }}
+                                    >
+                                        Editar
+                                    </button>
+                                </footer>
+                            </article>
+                        ))}
                     </div>
                     {!suppliers.data.length && <p className="rd-empty">Nenhum fornecedor neste filtro.</p>}
                     <Pages page={suppliers} />

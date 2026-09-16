@@ -220,11 +220,15 @@ export function AssistantPanel({ path, mode }: { path: string; mode: string }) {
     const activeMode = settings?.mode || mode;
     return (
         <>
-            <button type="button" aria-label="Abrir assistente" className="button assistant-trigger" onClick={show}>
-                <span aria-hidden="true">✦</span>
-                <span>Assistente</span>
+            <button type="button" aria-label="Abrir Agente RD" className="button assistant-trigger" onClick={show}>
+                <span className="agent-signal" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
+                </span>
+                <span>Agente RD</span>
             </button>
-            <Drawer title="Assistente Padrão RD" open={open} onClose={() => setOpen(false)} className="assistant-chat">
+            <Drawer title="Agente RD" open={open} onClose={() => setOpen(false)} className="assistant-chat">
                 <div className="chat-status">
                     <span>
                         {activeMode === 'openai'
@@ -278,7 +282,7 @@ export function AssistantPanel({ path, mode }: { path: string; mode: string }) {
                         </select>
                     </Field>
                 </details>
-                <div className="chat-log" ref={log} role="log" aria-label="Conversa com o assistente" aria-live="polite">
+                <div className="chat-log" ref={log} role="log" aria-label="Conversa com o Agente RD" aria-live="polite">
                     {!turns.length && (
                         <div className="chat-welcome">
                             <span className="chat-mark" aria-hidden="true">

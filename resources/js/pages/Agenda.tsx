@@ -164,6 +164,23 @@ export default function Agenda({ activities, users, opportunities, tasks, events
                     </button>
                 }
             />
+            <section className="agenda-editorial" aria-label="Resumo da agenda">
+                <div>
+                    <span className="eyebrow">ORGANIZE O PRÓXIMO MOVIMENTO</span>
+                    <h2>Um passo de cada vez.</h2>
+                    <p>Ações e checkpoints do filtro atual, conectados à sua operação.</p>
+                </div>
+                <dl>
+                    <div>
+                        <dt>Atividades</dt>
+                        <dd>{rows.length}</dd>
+                    </div>
+                    <div>
+                        <dt>Checkpoints</dt>
+                        <dd>{visibleTasks.length}</dd>
+                    </div>
+                </dl>
+            </section>
             <Surface className="agenda-filter-surface" padding="sm">
                 <FilterBar>
                     <Field label="Responsável">

@@ -1,5 +1,6 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { Layers3, ArrowUpRight } from 'lucide-react';
 import { AppLayout } from '../layout';
 type Props = {
     cases: {
@@ -54,9 +55,15 @@ export default function Projects({ cases, opportunities }: Props) {
             <section className="project-portfolio" aria-label="Casos existentes da equipe">
                 {visible.map((record) => (
                     <Link className="project-portfolio__card" key={record.id} href={'/opportunities/' + record.id}>
+                        <div className="project-dossier__cover" aria-hidden="true">
+                            <Layers3 size={34} strokeWidth={1.2} />
+                            <span>RD / {String(record.id).padStart(3, '0')}</span>
+                            <i />
+                            <i />
+                        </div>
                         <div className="project-portfolio__top">
                             <span>{record.client}</span>
-                            <span aria-hidden="true">↗</span>
+                            <ArrowUpRight size={17} aria-hidden="true" />
                         </div>
                         <h2>{record.title}</h2>
                         <span className="project-portfolio__stage">{record.stage}</span>

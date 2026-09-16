@@ -78,46 +78,38 @@ export default function Venues({ venues, filters, types }: Props) {
                     description="Cadastre depois da primeira visita técnica: as medidas passam a valer para todo evento futuro no mesmo espaço."
                 />
             ) : (
-                <Surface padding="none">
-                    <div className="rd-table-wrap">
-                        <table className="rd-table">
-                            <thead>
-                                <tr>
-                                    <th>Local</th>
-                                    <th>Cidade</th>
-                                    <th>Capacidade</th>
-                                    <th>Eventos</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {venues.data.map((venue) => (
-                                    <tr key={venue.id}>
-                                        <td>
-                                            <Link href={`/venues/${venue.id}`}>{venue.name}</Link>
-                                            <small>{venueTypeLabels[venue.venue_type] ?? venue.venue_type}</small>
-                                        </td>
-                                        <td>
-                                            {venue.city ? (
-                                                <>
-                                                    <MapPin size={13} /> {venue.city}
-                                                    {venue.state ? `/${venue.state}` : ''}
-                                                </>
-                                            ) : (
-                                                'A informar'
-                                            )}
-                                        </td>
-                                        <td>
-                                            {venue.capacity_seated || venue.capacity_standing
-                                                ? `${venue.capacity_seated ?? '—'} sentados · ${venue.capacity_standing ?? '—'} em pé`
-                                                : 'Não medida'}
-                                        </td>
-                                        <td>{venue.opportunities_count}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </Surface>
+                <section className="venue-atlas" aria-label="Locais cadastrados">
+                    {venues.data.map((venue) => (
+                        <Link className="venue-atlas__card" href={`/venues/${venue.id}`} key={venue.id}>
+                            <div className="venue-atlas__map" aria-hidden="true">
+                                <MapPin size={32} strokeWidth={1.3} />
+                                <span>{venue.state || 'RD'}</span>
+                            </div>
+                            <div className="venue-atlas__body">
+                                <span className="eyebrow">{venueTypeLabels[venue.venue_type] ?? venue.venue_type}</span>
+                                <h2>{venue.name}</h2>
+                                <p>
+                                    {venue.city || 'Cidade a informar'}
+                                    {venue.state ? ` / ${venue.state}` : ''}
+                                </p>
+                                <dl>
+                                    <div>
+                                        <dt>Capacidade sentada</dt>
+                                        <dd>{venue.capacity_seated ?? 'Não medida'}</dd>
+                                    </div>
+                                    <div>
+                                        <dt>Em pé</dt>
+                                        <dd>{venue.capacity_standing ?? 'Não medida'}</dd>
+                                    </div>
+                                </dl>
+                                <footer>
+                                    <span>{venue.opportunities_count} eventos</span>
+                                    <strong>Explorar local ↗</strong>
+                                </footer>
+                            </div>
+                        </Link>
+                    ))}
+                </section>
             )}
 
             <Drawer title="Novo local" open={creating} onClose={() => setCreating(false)}>

@@ -19,21 +19,23 @@ export function CasePageHeader({
     actions?: ReactNode;
 }) {
     return (
-        <PageHeader
-            breadcrumbs={
-                <Link className="case-back" href={`/opportunities/${id}`}>
-                    <ArrowLeft size={14} /> Visão geral
-                </Link>
-            }
-            eyebrow={eyebrow}
-            title={title}
-            description={
-                <span className="case-header-meta">
-                    {client}
-                    {status && <> · {status}</>}
-                </span>
-            }
-            primaryAction={actions}
-        />
+        <div className="case-dossier-header">
+            <PageHeader
+                breadcrumbs={
+                    <Link className="case-back" href={`/opportunities/${id}`}>
+                        <ArrowLeft size={14} /> Visão geral
+                    </Link>
+                }
+                eyebrow={eyebrow}
+                title={title}
+                description={
+                    <span className="case-header-meta">
+                        {client}
+                        {status && <> · {status}</>}
+                    </span>
+                }
+                primaryAction={actions}
+            />
+        </div>
     );
 }

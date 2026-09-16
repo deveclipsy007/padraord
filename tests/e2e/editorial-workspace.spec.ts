@@ -21,7 +21,7 @@ test('client folders keep chosen covers after reload and preserve directory acti
     await expect(editor).not.toBeVisible();
     await page.reload();
     await expect(folder.locator('.folder-cover img')).toBeVisible();
-    expect(await folder.locator('.folder-cover img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    await expect.poll(() => folder.locator('.folder-cover img').evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
     await folder.getByRole('button', { name: /Personalizar capa/ }).click();
     await editor.getByRole('button', { name: 'Duna', exact: true }).click();
     await editor.getByRole('button', { name: 'Salvar capa' }).click();

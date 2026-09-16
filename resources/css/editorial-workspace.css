@@ -144,3 +144,92 @@
     .rd-os-shell :is(.pipeline-card,.client-folder,.button) { transition: none; }
     .rd-os-shell :is(.pipeline-card,.client-folder,.button):hover { transform: none; }
 }
+
+/* Project dossiers: a bound cover, distinct from client folders. */
+.project-portfolio__card { padding:24px; border-radius:20px; overflow:visible; border:1px solid #dedbe7; background:#fff; box-shadow:0 5px 18px #38304706; }
+.project-portfolio__card:before { display:none; }
+.project-dossier__cover { height:136px; margin:-24px -24px 22px; border-radius:20px 20px 5px 5px; background:linear-gradient(120deg,#ece8f5,#d7cfe8); position:relative; overflow:hidden; padding:25px 30px; color:#655783; display:flex; align-items:flex-start; justify-content:space-between; border-left:10px solid #b6a6ce; }
+.project-dossier__cover>span { font-size:11px; letter-spacing:.15em; }
+.project-dossier__cover i { position:absolute; width:160px; height:180px; border:1px solid #fff9; background:#ffffff30; transform:rotate(-24deg); border-radius:12px; right:35px; top:62px; }
+.project-dossier__cover i+i { right:63px; top:75px; }
+.project-portfolio__card:nth-child(3n+2) .project-dossier__cover { background:linear-gradient(120deg,#e8eef0,#cddfe3); border-color:#9fbec5; color:#466b75; }
+.project-portfolio__card:nth-child(3n) .project-dossier__cover { background:linear-gradient(120deg,#f3ece1,#e8d9c5); border-color:#cbb491; color:#80694a; }
+.project-portfolio__card:hover { transform:translateY(-4px); box-shadow:0 14px 30px #3b2d5510; }
+.project-portfolio__card h2 { line-height:1.18; margin-top:13px; }
+.project-portfolio__next { background:#f7f5fa; border-radius:12px; padding:14px; margin:20px 0; }
+/* One contextual identity across every real project module. */
+.case-dossier-header { position:relative; border:1px solid #dfdbe8; border-left:5px solid #b5a3cf; border-radius:6px 22px 22px 6px; padding:24px 28px; margin:10px 0 28px; background:radial-gradient(ellipse at 100% 0,#ded8ec88,transparent 65%),#fcfbfd; }
+.case-dossier-header:before { content:''; position:absolute; top:-9px; left:18px; width:88px; height:9px; background:#b5a3cf; border-radius:8px 8px 0 0; }
+.case-dossier-header .page-header-v2 { margin:0; padding:0; border:0; background:none; }
+.case-dossier-header h1 { font-family:var(--rd-editorial); font-weight:400; letter-spacing:-.04em; }
+.rd-os-shell .module-grid-v2 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:20px 14px; padding-top:12px; }
+.rd-os-shell .module-grid-v2 .module-card { position:relative; display:flex; flex-wrap:wrap; align-items:flex-start; gap:12px; min-height:150px; padding:20px 17px 15px; border-radius:0 15px 15px 15px; border:1px solid #ddd6e9; background:linear-gradient(145deg,#f1edf8,#fff); box-shadow:0 3px 10px #43315204; transition:transform .2s,box-shadow .2s; }
+.module-grid-v2 .module-card:before { content:''; position:absolute; left:-1px; top:-8px; height:8px; width:45%; background:#e5dff0; border:1px solid #ddd6e9; border-bottom:0; border-radius:8px 10px 0 0; }
+.module-grid-v2 .module-card>div { flex:1; min-width:70%; }
+.module-grid-v2 .module-card strong { font-family:var(--rd-editorial); font-size:22px; font-weight:400; }
+.module-grid-v2 .module-card small { display:block; margin-top:5px; line-height:1.5; }
+.module-grid-v2 .module-card>.status-badge { margin-top:auto; }
+.module-grid-v2 .module-card>svg:last-child { margin-left:auto; }
+.module-grid-v2 .module-card:hover { transform:translateY(-3px); box-shadow:0 10px 20px #4331520d; }
+.module-grid-v2 .module-icon { background:#e7e0f2; color:#6d588c; border-radius:10px; }
+.case-cycle-map { gap:18px; }
+.case-cycle { border-radius:18px; padding:24px; background:linear-gradient(135deg,#faf9fc,#f1eef6); border:1px solid #e3ddeb; }
+.case-cycle.is-active { background:linear-gradient(135deg,#e9e2f5,#f8f5fc); border-color:#c0afd9; box-shadow:0 8px 24px #66508210; }
+.case-cycle h2,.assistance-panel h2,.workspace-grid .panel-heading h2,.budget-grid h2 { font-family:var(--rd-editorial); font-weight:400; letter-spacing:-.025em; font-size:26px; }
+.assistance-grid .assistance-panel { border-radius:18px; border:1px solid #e0dbe7; background:#fefdfd; }
+.assistance-record,.assistance-diff { border-radius:12px; border-color:#e6e0ee; }
+/* Directories use contact files and location cards, not generic tables. */
+.partner-library,.venue-atlas { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr)); gap:20px; }
+.partner-card { padding:24px; border:1px solid #e1dce8; border-radius:5px 20px 20px 20px; background:linear-gradient(145deg,#f4f0f8,#fff 65%); min-width:0; }
+.partner-card__top { display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; }
+.partner-monogram { display:grid; place-items:center; width:48px; height:52px; border-radius:9px; border:1px solid #d5c9e4; background:#e7ddf0; color:#705d88; font-family:var(--rd-editorial); font-size:23px; transform:rotate(-5deg); }
+.partner-card h2,.venue-atlas h2 { font-family:var(--rd-editorial); font-size:27px; font-weight:400; line-height:1.18; margin:10px 0 18px; overflow-wrap:anywhere; }
+.partner-contact { display:grid; gap:6px; font-size:12px; color:var(--rd-muted); overflow-wrap:anywhere; }
+.partner-card footer,.venue-atlas footer { display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px solid #e5dfeb; margin-top:24px; padding-top:15px; font-size:12px; }
+.venue-atlas__card { border-radius:20px; overflow:hidden; background:#fff; border:1px solid #dce2e5; transition:transform .2s; }
+.venue-atlas__card:hover { transform:translateY(-3px); }
+.venue-atlas__map { position:relative; height:128px; display:flex; justify-content:space-between; align-items:center; padding:30px; color:#547985; background:repeating-linear-gradient(25deg,transparent 0 29px,#ffffff70 30px 32px),repeating-linear-gradient(115deg,#dce8eb 0 45px,#edf3f4 46px 49px); }
+.venue-atlas__map>svg { padding:12px; box-sizing:content-box; border-radius:50%; background:#f8fcfbe0; box-shadow:0 6px 20px #385c6720; }
+.venue-atlas__map>span { font-family:var(--rd-editorial); font-size:34px; }
+.venue-atlas__body { padding:22px; }
+.venue-atlas dl { display:flex; gap:24px; margin-top:22px; }
+.venue-atlas dt { font-size:11px; color:var(--rd-muted); }
+.venue-atlas dd { margin:6px 0 0; font-size:15px; }
+/* Agenda and history: readable rhythm, distinct working surfaces. */
+.agenda-editorial { display:flex; justify-content:space-between; gap:24px; align-items:center; padding:28px 32px; margin:0 0 24px; border-radius:20px; border:1px solid #ded8e9; background:radial-gradient(ellipse at 100% 0,#cfc2e577,transparent 65%),#f3eff9; }
+.agenda-editorial h2 { font-family:var(--rd-editorial); font-size:clamp(29px,3vw,42px); font-weight:400; letter-spacing:-.035em; margin:8px 0; }
+.agenda-editorial p { color:var(--rd-muted); font-size:13px; }
+.agenda-editorial dl { display:flex; gap:28px; margin:0; }
+.agenda-editorial dt { font-size:11px; color:var(--rd-muted); }
+.agenda-editorial dd { font-family:var(--rd-editorial); font-size:40px; margin:8px 0 0; }
+.agenda-activity-row,.agenda-task-row { border:1px solid #e5dfeb; border-radius:13px; padding:16px; margin:10px 0; background:linear-gradient(105deg,#f9f7fc,#fff); }
+.agenda-workspace h2,.human-history h2 { font-family:var(--rd-editorial); font-weight:400; font-size:26px; }
+.event-dates-card { background:linear-gradient(155deg,#eae3f3,#faf9fc); border:1px solid #dfd5eb; border-radius:20px; }
+.human-history__item { margin:14px 0 14px 8px; border:1px solid #e3ddea; border-left:3px solid #cab9dc; border-radius:0 14px 14px 0; background:#fdfcfe; }
+.human-history__item summary { padding:19px 18px; gap:16px; }
+.human-history__item[open] { background:#f6f2fa; border-left-color:#8872ac; }
+.human-history__item summary strong { font-size:14px; line-height:1.6; }
+.human-history__item summary small { display:block; margin-top:6px; }
+/* Agente RD: quiet signal lines instead of a decorative sparkle. */
+.assistant-trigger { overflow:hidden; gap:10px; border-radius:16px; }
+.agent-signal { display:flex; align-items:center; gap:3px; height:22px; width:23px; }
+.agent-signal i { width:3px; height:10px; border-radius:5px; background:currentColor; animation:rd-signal 3s ease-in-out infinite; }
+.agent-signal i:nth-child(2) { height:20px; animation-delay:.2s; }
+.agent-signal i:nth-child(3) { height:14px; animation-delay:.4s; }
+@keyframes rd-signal { 0%,70%,100% { transform:scaleY(.65); opacity:.65; } 30% { transform:scaleY(1); opacity:1; } }
+.assistant-chat .chat-welcome { background:radial-gradient(ellipse at top,#ece5f5,transparent 75%); border-radius:20px; padding:25px 18px; }
+.assistant-chat .chat-welcome h3 { font-family:var(--rd-editorial); font-weight:400; font-size:30px; }
+@media(max-width:1100px) { .rd-os-shell .module-grid-v2 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media(max-width:600px) { .case-dossier-header { padding:20px 17px; } .agenda-editorial { align-items:flex-start; flex-direction:column; padding:23px; } .agenda-editorial dl { width:100%; gap:40px; } .human-history__item summary { flex-wrap:wrap; padding:15px 12px; } .project-portfolio__card { margin-top:4px; } }
+@media(prefers-reduced-motion:reduce) { .agent-signal i { animation:none; } .project-portfolio__card:hover,.module-grid-v2 .module-card:hover,.venue-atlas__card:hover { transform:none; } }
+.rd-os-shell .assistance-steps { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin-bottom:22px; overflow:visible; }
+.rd-os-shell .assistance-steps li { border:1px solid #e0d9e9; background:#faf8fc; border-radius:10px; min-width:0; padding:12px 14px; color:#696172; font-size:12px; }
+.rd-os-shell .assistance-steps .current { background:#e5dcf1; color:#55416f; border-color:#c8b7df; box-shadow:inset 3px 0 #947caf; }
+.rd-os-shell .assistance-banner { border-radius:18px; background:linear-gradient(120deg,#eee7f6,#fcfbfd); border:1px solid #dfd3ec; }
+.rd-os-shell .assistance-banner h2 { font-family:var(--rd-editorial); font-size:28px; font-weight:400; }
+@media (min-width:701px) and (max-width:1279px) { .rd-os-shell .context-rail__nav { display:flex; flex-wrap:wrap; overflow:visible; gap:6px; padding:10px 0 0; } .rd-os-shell .context-rail__nav a { flex:0 1 auto; } }
+@media(max-width:600px) { .rd-os-shell .assistance-steps { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.agenda-activity-main strong,.agenda-activity-main small,.agenda-activity-main span { white-space:normal; overflow-wrap:anywhere; text-overflow:clip; }
+.partner-monogram { color:#493656; }
+.rd-os-shell .venue-atlas__card,.rd-os-shell .partner-card h2 a { text-decoration:none; color:inherit; }
+.rd-os-shell .venue-atlas__card:hover h2,.rd-os-shell .partner-card h2 a:hover { color:var(--rd-accent); }

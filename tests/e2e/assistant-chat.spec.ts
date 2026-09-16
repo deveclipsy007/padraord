@@ -3,8 +3,8 @@ import { loginAs } from './helpers';
 
 test('assistant opens as a rounded conversation and retains messages', async ({ page }, testInfo) => {
     await loginAs(page);
-    await page.getByRole('button', { name: 'Abrir assistente' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Assistente Padrão RD' });
+    await page.getByRole('button', { name: 'Abrir Agente RD' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Agente RD' });
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveCSS('opacity', '1');
     expect(await dialog.evaluate(e => parseFloat(getComputedStyle(e).borderTopLeftRadius))).toBeGreaterThanOrEqual(20);
@@ -14,7 +14,7 @@ test('assistant opens as a rounded conversation and retains messages', async ({ 
     await expect(dialog.getByText(/Nenhuma alteração foi realizada|Demonstração: posso orientar/).last()).toBeVisible();
     await page.keyboard.press('Escape');
     await page.reload();
-    await page.getByRole('button', { name: 'Abrir assistente' }).click();
+    await page.getByRole('button', { name: 'Abrir Agente RD' }).click();
     await expect(dialog.getByText('Como organizar meu próximo evento?', { exact: true }).last()).toBeVisible();
     await expect(dialog).toHaveCSS('opacity', '1');
     const box = await dialog.boundingBox();

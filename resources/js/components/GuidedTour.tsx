@@ -7,7 +7,7 @@ const steps = [
     ['Briefing', 'Cole uma transcrição ou escreva como conversa; a IA devolve uma sugestão revisável.'],
     ['Orçamento', 'Custos, margem e fornecedores ficam ligados ao mesmo evento.'],
     ['Produção', 'Transforme decisões em tarefas, prazos e responsáveis.'],
-    ['Assistente', 'Abra o assistente, converse sobre o trabalho e confira as alterações antes de confirmar.'],
+    ['Agente RD', 'Abra o Agente RD, converse sobre o trabalho e confira as alterações antes de confirmar.'],
 ];
 
 export function GuidedTour({ onClose }: { onClose: () => void }) {
