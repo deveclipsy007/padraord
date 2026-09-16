@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowRight, CalendarDays, Check, ChevronDown, List, Search, Workflow, X } from 'lucide-react';
+import { ArrowRight, CalendarDays, Check, ChevronDown, List, Search, Workflow, X, Maximize2, Minimize2 } from 'lucide-react';
 import {
     useEffect,
     useMemo,
@@ -65,6 +65,9 @@ function queryFrom(filters: PipelineFilters, patch: Partial<PipelineFilters> = {
 
 export default function Pipeline({ opportunities, stages: serverStages, filters, owners, origins }: Props) {
     const [selected, setSelected] = useState<Opportunity | null>(null);
+    const [expanded, setExpanded] = useState(false);
+    const detailRef = useRef<HTMLDivElement>(null);
+    const reasonRef = useRef<HTMLDivElement>(null);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
     const [bulkPriority, setBulkPriority] = useState<OpportunityPriority | ''>('');
     const [prioritySaving, setPrioritySaving] = useState(false);
@@ -95,6 +98,57 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
     const selectedItems = useMemo(() => opportunities.filter((item) => selectedIds.has(item.id)), [opportunities, selectedIds]);
     const allVisibleSelected = opportunities.length > 0 && selectedItems.length === opportunities.length;
     const partiallySelected = selectedItems.length > 0 && !allVisibleSelected;
+
+    useEffect(() => {
+        const dialog = reasonOpen ? reasonRef.current : selected ? detailRef.current : null;
+        if (!dialog) return;
+        const origin = document.activeElement as HTMLElement | null;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        const elements = () =>
+            Array.from(
+                dialog.querySelectorAll<HTMLElement>(
+                    'button:not(:disabled), a[href], select:not(:disabled), textarea:not(:disabled), input:not(:disabled)',
+                ),
+            );
+        elements()[0]?.focus();
+        const keyboard = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                if (reasonOpen) {
+                    if (movingId === null) setReasonOpen(null);
+                } else setSelected(null);
+            }
+            if (event.key === 'Tab') {
+                const controls = elements();
+                const first = controls[0];
+                const last = controls[controls.length - 1];
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault();
+                    last?.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    first?.focus();
+                }
+            }
+        };
+        window.addEventListener('keydown', keyboard, true);
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener('keydown', keyboard, true);
+            if (origin?.isConnected) origin.focus();
+        };
+    }, [selected, reasonOpen, movingId]);
+
+    useEffect(() => {
+        if (!expanded) return;
+        const keyboard = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !selected && !reasonOpen) setExpanded(false);
+        };
+        window.addEventListener('keydown', keyboard);
+        return () => window.removeEventListener('keydown', keyboard);
+    }, [expanded, selected, reasonOpen]);
 
     useEffect(() => {
         setSelectedIds((previous) => {
@@ -231,10 +285,8 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
             },
             {
                 preserveScroll: true,
-                onFinish: () => {
-                    setMovingId(null);
-                    setReasonOpen(null);
-                },
+                onSuccess: () => setReasonOpen(null),
+                onFinish: () => setMovingId(null),
             },
         );
     };
@@ -284,8 +336,8 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
             <Head title="Pipeline comercial" />
             <PageHeader
                 eyebrow="Comercial"
-                title="Pipeline vivo"
-                description="Uma linha contínua para conduzir cada lead até a Viabilidade contratada."
+                title="Comercial"
+                description="Cada oportunidade. A próxima decisão. Todo o caminho até a contratação."
                 primaryAction={
                     <div className="pipeline-header-actions">
                         <label className="search-field">
@@ -351,86 +403,106 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                         <span>{filters.status === 'active' ? 'Ativos' : filters.status === 'archived' ? 'Arquivados' : 'Todos'}</span>
                     </div>
                 </div>
-                <div className="pipeline-filters">
-                    <label>
-                        <span>Estágio</span>
-                        <select value={filters.stage} onChange={(event) => navigate({ stage: event.target.value as CommercialStage | '' })}>
-                            <option value="">Todos os estágios</option>
-                            {[...stages, ...terminalStages].map((stage) => (
-                                <option key={stage.id} value={stage.id}>
-                                    {stage.label}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        <span>Responsável</span>
-                        <select value={filters.owner} onChange={(event) => navigate({ owner: event.target.value })}>
-                            <option value="">Todos</option>
-                            {owners.map((owner) => (
-                                <option key={owner.id} value={owner.id}>
-                                    {owner.name}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        <span>Prioridade</span>
-                        <select
-                            value={filters.priority}
-                            aria-label="Prioridade do pipeline"
-                            onChange={(event) => navigate({ priority: event.target.value as OpportunityPriority | '' })}
-                        >
-                            <option value="">Todas</option>
-                            {Object.entries(priorityLabel).map(([key, label]) => (
-                                <option key={key} value={key}>
-                                    {label}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label>
-                        <span>Origem</span>
-                        <select
-                            value={filters.origin}
-                            onChange={(event) => navigate({ origin: event.target.value as OpportunityOrigin | '' })}
-                        >
-                            <option value="">Todas</option>
-                            {origins.map((origin) => (
-                                <option key={origin} value={origin}>
-                                    {originLabel[origin]}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-                    <label className="pipeline-check">
-                        <input
-                            type="checkbox"
-                            checked={filters.overdue}
-                            onChange={(event) => navigate({ overdue: event.target.checked })}
-                        />
-                        <span>Atrasadas</span>
-                    </label>
-                    <label className="pipeline-check">
-                        <input
-                            type="checkbox"
-                            checked={filters.unassigned}
-                            onChange={(event) => navigate({ unassigned: event.target.checked })}
-                        />
-                        <span>Sem responsável</span>
-                    </label>
-                    <label>
-                        <span>Situação</span>
-                        <select
-                            value={filters.status}
-                            onChange={(event) => navigate({ status: event.target.value as PipelineFilters['status'] })}
-                        >
-                            <option value="active">Ativos</option>
-                            <option value="archived">Arquivados</option>
-                            <option value="all">Todos</option>
-                        </select>
-                    </label>
-                </div>
+                <details
+                    className="pipeline-filter-disclosure"
+                    open={
+                        filters.view === 'list' ||
+                        !!(
+                            filters.stage ||
+                            filters.owner ||
+                            filters.priority ||
+                            filters.origin ||
+                            filters.overdue ||
+                            filters.unassigned ||
+                            filters.status !== 'active'
+                        )
+                    }
+                >
+                    <summary>Filtros avançados</summary>
+                    <div className="pipeline-filters">
+                        <label>
+                            <span>Estágio</span>
+                            <select
+                                value={filters.stage}
+                                onChange={(event) => navigate({ stage: event.target.value as CommercialStage | '' })}
+                            >
+                                <option value="">Todos os estágios</option>
+                                {[...stages, ...terminalStages].map((stage) => (
+                                    <option key={stage.id} value={stage.id}>
+                                        {stage.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            <span>Responsável</span>
+                            <select value={filters.owner} onChange={(event) => navigate({ owner: event.target.value })}>
+                                <option value="">Todos</option>
+                                {owners.map((owner) => (
+                                    <option key={owner.id} value={owner.id}>
+                                        {owner.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            <span>Prioridade</span>
+                            <select
+                                value={filters.priority}
+                                aria-label="Prioridade do pipeline"
+                                onChange={(event) => navigate({ priority: event.target.value as OpportunityPriority | '' })}
+                            >
+                                <option value="">Todas</option>
+                                {Object.entries(priorityLabel).map(([key, label]) => (
+                                    <option key={key} value={key}>
+                                        {label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label>
+                            <span>Origem</span>
+                            <select
+                                value={filters.origin}
+                                onChange={(event) => navigate({ origin: event.target.value as OpportunityOrigin | '' })}
+                            >
+                                <option value="">Todas</option>
+                                {origins.map((origin) => (
+                                    <option key={origin} value={origin}>
+                                        {originLabel[origin]}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="pipeline-check">
+                            <input
+                                type="checkbox"
+                                checked={filters.overdue}
+                                onChange={(event) => navigate({ overdue: event.target.checked })}
+                            />
+                            <span>Atrasadas</span>
+                        </label>
+                        <label className="pipeline-check">
+                            <input
+                                type="checkbox"
+                                checked={filters.unassigned}
+                                onChange={(event) => navigate({ unassigned: event.target.checked })}
+                            />
+                            <span>Sem responsável</span>
+                        </label>
+                        <label>
+                            <span>Situação</span>
+                            <select
+                                value={filters.status}
+                                onChange={(event) => navigate({ status: event.target.value as PipelineFilters['status'] })}
+                            >
+                                <option value="active">Ativos</option>
+                                <option value="archived">Arquivados</option>
+                                <option value="all">Todos</option>
+                            </select>
+                        </label>
+                    </div>
+                </details>
             </Surface>
             {filters.view === 'list' ? (
                 <Surface className="pipeline-list-surface" padding="none">
@@ -582,14 +654,41 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                     </div>
                 </Surface>
             ) : (
-                <Surface className="pipeline-board-shell" padding="sm">
+                <Surface className={`pipeline-board-shell${expanded ? ' is-expanded' : ''}`} padding="sm">
                     <div className="pipeline-board-shell__heading">
                         <div>
                             <span className="eyebrow">KANBAN COMERCIAL</span>
-                            <strong>Todos os estágios, em uma única linha</strong>
+                            <strong>Da primeira conversa à contratação</strong>
                         </div>
-                        <small>Arraste os cards entre as etapas ou use o seletor no detalhe do card.</small>
+                        <button
+                            className="button button-subtle"
+                            type="button"
+                            aria-pressed={expanded}
+                            onClick={() => setExpanded(!expanded)}
+                        >
+                            {expanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                            {expanded ? 'Recolher Kanban' : 'Ampliar Kanban'}
+                        </button>
                     </div>
+                    <nav className="pipeline-stage-nav" aria-label="Navegar pelas etapas">
+                        {boardStages.map((stage) => (
+                            <button
+                                key={stage.id}
+                                type="button"
+                                aria-label={`Ir para ${stage.label}`}
+                                onClick={() => {
+                                    const lane = boardRef.current?.querySelector<HTMLElement>(`[data-stage="${stage.id}"]`);
+                                    if (lane && boardRef.current)
+                                        boardRef.current.scrollTo({
+                                            left: lane.offsetLeft - boardRef.current.offsetLeft,
+                                            behavior: 'instant',
+                                        });
+                                }}
+                            >
+                                {stage.label} <span>{groups[stage.id]?.length ?? 0}</span>
+                            </button>
+                        ))}
+                    </nav>
                     <section
                         ref={boardRef}
                         className={`pipeline-full${draggedId !== null ? ' is-card-dragging' : ''}`}
@@ -608,6 +707,7 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                                 <div
                                     className={`pipeline-lane${dropStage === stage.id ? ' is-drop-target' : ''}`}
                                     key={stage.id}
+                                    data-stage={stage.id}
                                     onDragOver={(event) => {
                                         event.preventDefault();
                                         setDropStage(stage.id);
@@ -673,7 +773,7 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                                             </label>
                                         </article>
                                     ))}
-                                    {!items.length && <div className="empty-column">Livre por enquanto</div>}
+                                    {!items.length && <div className="empty-column">Nenhuma oportunidade nesta etapa</div>}
                                 </div>
                             );
                         })}
@@ -688,7 +788,13 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                         if (event.target === event.currentTarget) setSelected(null);
                     }}
                 >
-                    <div className="modal pipeline-drawer" role="dialog" aria-modal="true" aria-labelledby="pipeline-detail-title">
+                    <div
+                        ref={detailRef}
+                        className="modal pipeline-drawer"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="pipeline-detail-title"
+                    >
                         <div className="modal-heading">
                             <div>
                                 <span className="eyebrow">DETALHE DO CASO</span>
@@ -741,7 +847,7 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
             )}
             {reasonOpen && (
                 <div className="modal-backdrop" role="presentation">
-                    <div className="modal" role="dialog" aria-modal="true" aria-labelledby="transition-title">
+                    <div ref={reasonRef} className="modal" role="dialog" aria-modal="true" aria-labelledby="transition-title">
                         <div className="modal-heading">
                             <div>
                                 <span className="eyebrow">REVISÃO DE ETAPA</span>

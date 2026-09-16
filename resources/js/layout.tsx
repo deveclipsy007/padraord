@@ -194,7 +194,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             <aside className="sidebar app-rail">
                 <Link className="brand-lockup" href="/">
                     <div className="brand-mark" aria-hidden="true">
-                        ✦
+                        RD
                     </div>
                     <span className="sr-only">Padrão RD</span>
                 </Link>
@@ -206,6 +206,7 @@ export function AppLayout({ children }: PropsWithChildren) {
                             key={label}
                             viewTransition
                             aria-label={label}
+                            aria-current={isActive(pathname, href) ? 'page' : undefined}
                             data-tooltip={label}
                         >
                             <Icon size={19} strokeWidth={1.75} />

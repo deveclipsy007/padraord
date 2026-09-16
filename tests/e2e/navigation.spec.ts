@@ -5,8 +5,8 @@ test('core operational destinations open after a direct refresh', async ({ page 
     await loginAs(page);
 
     const destinations = [
-        ['/pipeline', 'Pipeline vivo'],
-        ['/projects', 'Do contexto à entrega.'],
+        ['/pipeline', 'Comercial'],
+        ['/projects', 'Projetos'],
         ['/agenda', 'Agenda'],
         ['/clients', 'Clientes'],
         ['/suppliers', 'Fornecedores e cotações'],
