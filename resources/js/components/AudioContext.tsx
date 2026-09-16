@@ -1,3 +1,4 @@
+import { Mic2, FileAudio, ArrowRight } from 'lucide-react';
 import { router, useForm } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
 export type TranscriptSegment = { speaker: string; start: number; end: number; text: string };
@@ -22,15 +23,31 @@ export function AudioContext({ base, audio }: { base: string; audio: AudioContex
         return () => window.clearInterval(timer);
     }, [audio.files.map((a) => a.status).join(',')]);
     return (
-        <details>
-            <summary>Ou enviar áudio da reunião</summary>
-            <p>MP3, WAV ou M4A · até {(audio.maxKb / 1024).toFixed(1)} MB e 60 minutos por arquivo. Sem perfil permanente de voz.</p>
-            {!audio.enabled && (
-                <p>
-                    Transcrição real aguardando configuração e validação da hospedagem. Você pode preservar o áudio e colar o texto para
-                    continuar.
-                </p>
-            )}
+        <section
+            className={`audio-studio${form.processing || audio.files.some((file) => ['queued', 'transcribing'].includes(file.status)) ? ' is-processing' : ''}`}
+            aria-label="Áudio do briefing"
+        >
+            <header className="audio-studio__intro">
+                <span className="audio-studio__symbol">
+                    <Mic2 size={25} />
+                </span>
+                <div>
+                    <span className="eyebrow">COMECE PELA CONVERSA</span>
+                    <h3>
+                        Sua voz.<em> Um briefing mais claro.</em>
+                    </h3>
+                    <p>Envie a gravação. Confira o entendimento. Decida o que entra no projeto.</p>
+                </div>
+            </header>
+            <div className="audio-wave" aria-hidden="true">
+                {[9, 17, 24, 13, 31, 21, 37, 16, 28, 36, 18, 26, 12, 22, 9].map((height, index) => (
+                    <i key={index} style={{ height }} />
+                ))}
+            </div>
+            <p className="audio-studio__formats">
+                MP3, WAV ou M4A · até {(audio.maxKb / 1024).toFixed(1)} MB e 60 minutos por arquivo. Sem perfil permanente de voz.
+            </p>
+            {!audio.enabled && <p>A transcrição está desativada. Você pode guardar a gravação aqui ou colar o texto para continuar.</p>}
             <form
                 className="form-grid"
                 onSubmit={(e) => {
@@ -45,19 +62,35 @@ export function AudioContext({ base, audio }: { base: string; audio: AudioContex
                     });
                 }}
             >
-                <label>
-                    Arquivo de áudio
+                <label className="audio-file-choice">
+                    <FileAudio size={23} />
+                    <span>
+                        <strong>{form.data.audio?.name || 'Escolher áudio da reunião'}</strong>
+                        <small>
+                            {form.data.audio
+                                ? `${(form.data.audio.size / 1024 / 1024).toFixed(1)} MB · pronto para enviar`
+                                : 'Selecione uma gravação do seu dispositivo'}
+                        </small>
+                    </span>
+                    <span className="sr-only">Arquivo de áudio</span>
                     <input
                         ref={input}
+                        aria-label="Arquivo de áudio"
+                        disabled={form.processing}
                         type="file"
                         accept=".mp3,.wav,.m4a"
                         onChange={(e) => form.setData('audio', e.target.files?.[0] ?? null)}
                     />
                 </label>
-                {form.progress && <progress max={100} value={form.progress.percentage} />}
+                {form.progress && (
+                    <div role="status">
+                        <span>Enviando {form.progress.percentage ?? 0}%</span>
+                        <progress aria-label="Progresso do envio" max={100} value={form.progress.percentage} />
+                    </div>
+                )}
                 <p role="alert">{form.errors.audio}</p>
-                <button className="button button-subtle" disabled={form.processing || !form.data.audio}>
-                    Preservar áudio privado
+                <button className="button button-primary" disabled={form.processing || !form.data.audio}>
+                    {form.processing ? 'Enviando áudio…' : 'Preservar áudio privado'} <ArrowRight size={16} />
                 </button>
             </form>
             {audio.files.map((file) => (
@@ -69,7 +102,7 @@ export function AudioContext({ base, audio }: { base: string; audio: AudioContex
                     price={audio.priceMicros}
                 />
             ))}
-        </details>
+        </section>
     );
 }
 function AudioRecord({ file, base, enabled, price }: { file: AudioEntry; base: string; enabled: boolean; price: number }) {

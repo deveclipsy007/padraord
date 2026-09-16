@@ -27,6 +27,9 @@ async function json(response: Response) {
 
 export function ContextUploadComposer({ caseId, config, onClose }: { caseId: number; config: ContextAudioConfig; onClose: () => void }) {
     const input = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        input.current?.focus();
+    }, []);
     const mounted = useRef(true);
     const polling = useRef(0);
     const [file, setFile] = useState<File | null>(null);
@@ -228,11 +231,15 @@ export function ContextUploadComposer({ caseId, config, onClose }: { caseId: num
     }
 
     return (
-        <div className="context-audio-composer">
+        <div
+            className={`context-audio-composer audio-studio${['uploading', 'preparing', 'queued', 'prepared', 'transcribing', 'transcribed', 'extracting'].includes(state.status) ? ' is-processing' : ''}`}
+        >
             <div className="context-audio-composer__head">
                 <div>
                     <span className="eyebrow">ÁUDIO DA REUNIÃO</span>
-                    <h3>Enviar e organizar</h3>
+                    <h3>
+                        Da voz ao <em>próximo passo.</em>
+                    </h3>
                 </div>
                 <button type="button" className="icon-button" aria-label="Fechar envio de áudio" onClick={onClose}>
                     <X size={17} />
@@ -260,7 +267,7 @@ export function ContextUploadComposer({ caseId, config, onClose }: { caseId: num
             </p>
             {!config.enabled && (
                 <div className="context-audio-notice">
-                    A chave, a política e os limites da IA precisam estar prontos para processar. O arquivo continuará privado e preservado.
+                    A transcrição ainda não está disponível. Sua gravação fica privada; você pode continuar pelo texto.
                 </div>
             )}
             <label className="context-audio-drop">
@@ -275,6 +282,8 @@ export function ContextUploadComposer({ caseId, config, onClose }: { caseId: num
                 </span>
                 <input
                     ref={input}
+                    aria-label="Gravação da reunião"
+                    disabled={['uploading', 'preparing'].includes(state.status)}
                     type="file"
                     accept=".mp3,.wav,.m4a,.mp4"
                     onChange={(event) => setFile(event.target.files?.[0] ?? null)}

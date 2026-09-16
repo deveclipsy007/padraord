@@ -124,6 +124,7 @@ export default function Production({
     attachmentLinks,
     attachmentQuota,
 }: Props) {
+    const [area, setArea] = useState('tasks');
     const [view, setView] = useState<'list' | 'timeline' | 'calendar'>('list');
     const [confirmingValidation, setConfirmingValidation] = useState<number | null>(null);
     const taskForm = useForm({
@@ -212,358 +213,389 @@ export default function Production({
                     </span>
                 </Link>
             </section>
-            <SegmentedControl
-                value={view}
-                onChange={setView}
-                label="Visualização da produção"
-                segments={[
-                    { value: 'list', label: 'Lista' },
-                    { value: 'timeline', label: 'Linha do tempo' },
-                    { value: 'calendar', label: 'Agenda' },
-                ]}
-            />
-            <section className={`production-grid production-grid--${view}`}>
-                <GlassSurface className="tasks-panel">
-                    <div className="panel-heading">
-                        <div>
-                            <span className="eyebrow">
-                                {view === 'list'
-                                    ? 'CHECKLIST OPERACIONAL'
-                                    : view === 'timeline'
-                                      ? 'MARCOS E DEPENDÊNCIAS'
-                                      : 'PRAZOS DO EVENTO'}
+            <nav className="production-area-switcher" aria-label="Áreas da produção">
+                {[
+                    ['tasks', '01', 'Tarefas', 'Lista, prazos e andamento'],
+                    ['technical', '02', 'Preparação', 'Escopo e validação técnica'],
+                    ['delivery', '03', 'Operação', 'Escalas, checklists e fornecedores'],
+                    ['files', '04', 'Arquivos', 'Documentos e evidências'],
+                ].map(([key, index, label, desc]) => (
+                    <button
+                        key={key}
+                        type="button"
+                        aria-pressed={area === key}
+                        aria-controls={`production-area-${key}`}
+                        onClick={() => setArea(key)}
+                    >
+                        <span>{index}</span>
+                        <strong>{label}</strong>
+                        <small>{desc}</small>
+                    </button>
+                ))}
+            </nav>
+            <div id="production-area-tasks" hidden={area !== 'tasks'}>
+                <SegmentedControl
+                    value={view}
+                    onChange={setView}
+                    label="Visualização da produção"
+                    segments={[
+                        { value: 'list', label: 'Lista' },
+                        { value: 'timeline', label: 'Linha do tempo' },
+                        { value: 'calendar', label: 'Agenda' },
+                    ]}
+                />
+                <section className={`production-grid production-grid--${view}`}>
+                    <GlassSurface className="tasks-panel">
+                        <div className="panel-heading">
+                            <div>
+                                <span className="eyebrow">
+                                    {view === 'list'
+                                        ? 'CHECKLIST OPERACIONAL'
+                                        : view === 'timeline'
+                                          ? 'MARCOS E DEPENDÊNCIAS'
+                                          : 'PRAZOS DO EVENTO'}
+                                </span>
+                                <h2>
+                                    {view === 'list' ? 'Tarefas do evento' : view === 'timeline' ? 'Linha do tempo' : 'Agenda de produção'}
+                                </h2>
+                            </div>
+                            <ListChecks size={17} className="muted-icon" />
+                        </div>
+                        {tasks.length === 0 ? (
+                            <div className="empty-state">
+                                <ListChecks size={25} />
+                                <h3>A produção começa aqui.</h3>
+                                <p>Converta o escopo aprovado em uma prévia ou crie a primeira tarefa manualmente.</p>
+                            </div>
+                        ) : (
+                            <div className="task-list">
+                                {tasks.map((task) => (
+                                    <div className={`task-row ${task.status}`} key={task.id}>
+                                        <button
+                                            className="task-check"
+                                            type="button"
+                                            aria-label={`${task.status === 'done' ? 'Reabrir' : 'Concluir'} ${task.title}`}
+                                            onClick={() =>
+                                                router.patch(
+                                                    `/production/tasks/${task.id}`,
+                                                    { status: task.status === 'done' ? 'todo' : 'done' },
+                                                    { preserveScroll: true },
+                                                )
+                                            }
+                                        >
+                                            <Check size={13} />
+                                        </button>
+                                        <div className="task-copy">
+                                            <strong>{task.title}</strong>
+                                            <small>
+                                                {phaseLabels[task.phase || 'preparation']} · {task.description || 'Sem descrição'} ·{' '}
+                                                {task.dueDate ? `prazo ${task.dueDate}` : 'sem prazo'}
+                                            </small>
+                                            {task.dependencyTitle && <small>Depende de: {task.dependencyTitle}</small>}
+                                            {task.technicalValidation && (
+                                                <small>
+                                                    Validação técnica: {task.technicalValidation.reference} ·{' '}
+                                                    {task.technicalValidation.status === 'confirmed' ? 'reconfirmada' : 'pendente'}
+                                                </small>
+                                            )}
+                                            {task.blockedReason && (
+                                                <small className="task-blocked-reason">Bloqueio: {task.blockedReason}</small>
+                                            )}
+                                        </div>
+                                        <span
+                                            className={`status-pill ${task.priority === 'high' ? 'amber' : task.status === 'done' ? 'green' : task.status === 'blocked' ? 'red' : 'gray'}`}
+                                        >
+                                            {task.priority === 'high' ? 'Prioridade alta' : labels[task.status]}
+                                        </span>
+                                        <UserRound size={14} className="muted-icon" />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </GlassSurface>
+                    <GlassSurface className="task-form-card">
+                        <div className="panel-heading">
+                            <div>
+                                <span className="eyebrow">NOVO MARCO</span>
+                                <h2>Adicionar tarefa</h2>
+                            </div>
+                            <Plus size={17} className="muted-icon" />
+                        </div>
+                        <form className="form-grid compact-form" onSubmit={submitTask}>
+                            <label>
+                                Título
+                                <input
+                                    value={taskForm.data.title}
+                                    onChange={(event) => taskForm.setData('title', event.target.value)}
+                                    placeholder="Ex.: confirmar fornecedor final"
+                                    required
+                                />
+                            </label>
+                            <label>
+                                Descrição
+                                <textarea
+                                    rows={3}
+                                    value={taskForm.data.description}
+                                    onChange={(event) => taskForm.setData('description', event.target.value)}
+                                    placeholder="Contexto para quem vai executar"
+                                />
+                            </label>
+                            <div className="two-fields">
+                                <label>
+                                    Fase
+                                    <select value={taskForm.data.phase} onChange={(event) => taskForm.setData('phase', event.target.value)}>
+                                        <option value="preparation">Preparação</option>
+                                        <option value="setup">Montagem</option>
+                                        <option value="event">Evento</option>
+                                        <option value="teardown">Desmontagem</option>
+                                    </select>
+                                </label>
+                                <label>
+                                    Prioridade
+                                    <select
+                                        value={taskForm.data.priority}
+                                        onChange={(event) => taskForm.setData('priority', event.target.value)}
+                                    >
+                                        <option value="normal">Normal</option>
+                                        <option value="high">Alta</option>
+                                        <option value="low">Baixa</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div className="two-fields">
+                                <label>
+                                    Prazo
+                                    <input
+                                        type="date"
+                                        value={taskForm.data.due_date}
+                                        onChange={(event) => taskForm.setData('due_date', event.target.value)}
+                                    />
+                                </label>
+                                <label>
+                                    Depende de
+                                    <select
+                                        value={taskForm.data.dependency_id}
+                                        onChange={(event) => taskForm.setData('dependency_id', event.target.value)}
+                                    >
+                                        <option value="">Nenhuma</option>
+                                        {tasks.map((task) => (
+                                            <option key={task.id} value={task.id}>
+                                                {task.title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </div>
+                            {validations.length > 0 && (
+                                <label>
+                                    Validação técnica relacionada
+                                    <select
+                                        value={taskForm.data.technical_validation_id}
+                                        onChange={(event) => taskForm.setData('technical_validation_id', event.target.value)}
+                                    >
+                                        <option value="">Nenhuma</option>
+                                        {validations.map((validation) => (
+                                            <option key={validation.id} value={validation.id}>
+                                                {validation.reference}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            )}
+                            <button className="button button-primary" type="submit" disabled={taskForm.processing}>
+                                <Plus size={15} /> Criar tarefa
+                            </button>
+                        </form>
+                        <div className="production-note">
+                            <CircleAlert size={14} />
+                            <span>
+                                Dependências e reconfirmações técnicas bloqueiam uma liberação prematura. O histórico mantém cada decisão.
                             </span>
-                            <h2>{view === 'list' ? 'Tarefas do evento' : view === 'timeline' ? 'Linha do tempo' : 'Agenda de produção'}</h2>
                         </div>
-                        <ListChecks size={17} className="muted-icon" />
-                    </div>
-                    {tasks.length === 0 ? (
-                        <div className="empty-state">
-                            <ListChecks size={25} />
-                            <h3>A produção começa aqui.</h3>
-                            <p>Converta o escopo aprovado em uma prévia ou crie a primeira tarefa manualmente.</p>
+                    </GlassSurface>
+                </section>
+            </div>
+            <div id="production-area-technical" hidden={area !== 'technical'}>
+                <section className="production-support-grid">
+                    <GlassSurface>
+                        <div className="panel-heading">
+                            <div>
+                                <span className="eyebrow">ESCOPO CONTRATADO</span>
+                                <h2>Preparar tarefas</h2>
+                            </div>
+                            <FileCheck2 size={18} className="muted-icon" />
                         </div>
-                    ) : (
-                        <div className="task-list">
-                            {tasks.map((task) => (
-                                <div className={`task-row ${task.status}`} key={task.id}>
+                        <p>
+                            Use o orçamento aprovado como ponto de partida. A conversão cria uma prévia editável e só grava tarefas depois
+                            da confirmação.
+                        </p>
+                        {scopePreview ? (
+                            <>
+                                <div className="assistance-record">
+                                    <strong>{scopePreview.items.length} item(ns) preparados</strong>
+                                    <small>
+                                        {scopePreview.status === 'confirmed'
+                                            ? 'Prévia confirmada · tarefas preservadas'
+                                            : 'Aguardando confirmação humana'}
+                                    </small>
+                                </div>
+                                {scopePreview.status !== 'confirmed' && (
                                     <button
-                                        className="task-check"
+                                        className="button button-primary"
                                         type="button"
-                                        aria-label={`${task.status === 'done' ? 'Reabrir' : 'Concluir'} ${task.title}`}
                                         onClick={() =>
-                                            router.patch(
-                                                `/production/tasks/${task.id}`,
-                                                { status: task.status === 'done' ? 'todo' : 'done' },
+                                            router.post(
+                                                `/opportunities/${opportunity.id}/production/previews/${scopePreview.id}/confirm`,
+                                                {},
                                                 { preserveScroll: true },
                                             )
                                         }
                                     >
-                                        <Check size={13} />
+                                        <Check size={15} /> Confirmar tarefas
                                     </button>
-                                    <div className="task-copy">
-                                        <strong>{task.title}</strong>
-                                        <small>
-                                            {phaseLabels[task.phase || 'preparation']} · {task.description || 'Sem descrição'} ·{' '}
-                                            {task.dueDate ? `prazo ${task.dueDate}` : 'sem prazo'}
-                                        </small>
-                                        {task.dependencyTitle && <small>Depende de: {task.dependencyTitle}</small>}
-                                        {task.technicalValidation && (
-                                            <small>
-                                                Validação técnica: {task.technicalValidation.reference} ·{' '}
-                                                {task.technicalValidation.status === 'confirmed' ? 'reconfirmada' : 'pendente'}
-                                            </small>
-                                        )}
-                                        {task.blockedReason && (
-                                            <small className="task-blocked-reason">Bloqueio: {task.blockedReason}</small>
-                                        )}
-                                    </div>
-                                    <span
-                                        className={`status-pill ${task.priority === 'high' ? 'amber' : task.status === 'done' ? 'green' : task.status === 'blocked' ? 'red' : 'gray'}`}
-                                    >
-                                        {task.priority === 'high' ? 'Prioridade alta' : labels[task.status]}
-                                    </span>
-                                    <UserRound size={14} className="muted-icon" />
-                                </div>
-                            ))}
+                                )}
+                            </>
+                        ) : (
+                            <button
+                                className="button button-subtle"
+                                type="button"
+                                onClick={() =>
+                                    router.post(`/opportunities/${opportunity.id}/production/prepare`, {}, { preserveScroll: true })
+                                }
+                            >
+                                <RefreshCw size={15} /> Preparar prévia do escopo
+                            </button>
+                        )}
+                    </GlassSurface>
+                    <GlassSurface>
+                        <div className="panel-heading">
+                            <div>
+                                <span className="eyebrow">VALIDAÇÃO TÉCNICA</span>
+                                <h2>Visita e reconfirmação</h2>
+                            </div>
+                            <ShieldCheck size={18} className="muted-icon" />
                         </div>
-                    )}
-                </GlassSurface>
-                <GlassSurface className="task-form-card">
-                    <div className="panel-heading">
-                        <div>
-                            <span className="eyebrow">NOVO MARCO</span>
-                            <h2>Adicionar tarefa</h2>
-                        </div>
-                        <Plus size={17} className="muted-icon" />
-                    </div>
-                    <form className="form-grid compact-form" onSubmit={submitTask}>
-                        <label>
-                            Título
-                            <input
-                                value={taskForm.data.title}
-                                onChange={(event) => taskForm.setData('title', event.target.value)}
-                                placeholder="Ex.: confirmar fornecedor final"
-                                required
-                            />
-                        </label>
-                        <label>
-                            Descrição
-                            <textarea
-                                rows={3}
-                                value={taskForm.data.description}
-                                onChange={(event) => taskForm.setData('description', event.target.value)}
-                                placeholder="Contexto para quem vai executar"
-                            />
-                        </label>
-                        <div className="two-fields">
+                        <p>Registre medidas, desenhos e evidências. Qualquer alteração invalida a confirmação anterior.</p>
+                        <form className="form-grid compact-form" onSubmit={submitValidation}>
                             <label>
-                                Fase
-                                <select value={taskForm.data.phase} onChange={(event) => taskForm.setData('phase', event.target.value)}>
-                                    <option value="preparation">Preparação</option>
-                                    <option value="setup">Montagem</option>
-                                    <option value="event">Evento</option>
-                                    <option value="teardown">Desmontagem</option>
-                                </select>
-                            </label>
-                            <label>
-                                Prioridade
-                                <select
-                                    value={taskForm.data.priority}
-                                    onChange={(event) => taskForm.setData('priority', event.target.value)}
-                                >
-                                    <option value="normal">Normal</option>
-                                    <option value="high">Alta</option>
-                                    <option value="low">Baixa</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div className="two-fields">
-                            <label>
-                                Prazo
+                                Referência
                                 <input
-                                    type="date"
-                                    value={taskForm.data.due_date}
-                                    onChange={(event) => taskForm.setData('due_date', event.target.value)}
+                                    required
+                                    value={validationForm.data.reference}
+                                    onChange={(event) => validationForm.setData('reference', event.target.value)}
+                                    placeholder="Ex.: Planta do palco"
                                 />
                             </label>
                             <label>
-                                Depende de
-                                <select
-                                    value={taskForm.data.dependency_id}
-                                    onChange={(event) => taskForm.setData('dependency_id', event.target.value)}
-                                >
-                                    <option value="">Nenhuma</option>
-                                    {tasks.map((task) => (
-                                        <option key={task.id} value={task.id}>
-                                            {task.title}
-                                        </option>
-                                    ))}
-                                </select>
+                                Medidas (uma por linha)
+                                <textarea
+                                    rows={3}
+                                    value={validationForm.data.measurements}
+                                    onChange={(event) => validationForm.setData('measurements', event.target.value)}
+                                    placeholder="largura: 8m\nprofundidade: 4m"
+                                />
                             </label>
-                        </div>
-                        {validations.length > 0 && (
                             <label>
-                                Validação técnica relacionada
-                                <select
-                                    value={taskForm.data.technical_validation_id}
-                                    onChange={(event) => taskForm.setData('technical_validation_id', event.target.value)}
-                                >
-                                    <option value="">Nenhuma</option>
-                                    {validations.map((validation) => (
-                                        <option key={validation.id} value={validation.id}>
-                                            {validation.reference}
-                                        </option>
-                                    ))}
-                                </select>
+                                Fornecedor relacionado
+                                <input
+                                    value={validationForm.data.supplier_name}
+                                    onChange={(event) => validationForm.setData('supplier_name', event.target.value)}
+                                    placeholder="Nome para reconfirmar"
+                                />
                             </label>
-                        )}
-                        <button className="button button-primary" type="submit" disabled={taskForm.processing}>
-                            <Plus size={15} /> Criar tarefa
-                        </button>
-                    </form>
-                    <div className="production-note">
-                        <CircleAlert size={14} />
-                        <span>
-                            Dependências e reconfirmações técnicas bloqueiam uma liberação prematura. O histórico mantém cada decisão.
-                        </span>
-                    </div>
-                </GlassSurface>
-            </section>
-
-            <section className="production-support-grid">
-                <GlassSurface>
-                    <div className="panel-heading">
-                        <div>
-                            <span className="eyebrow">ESCOPO CONTRATADO</span>
-                            <h2>Preparar tarefas</h2>
-                        </div>
-                        <FileCheck2 size={18} className="muted-icon" />
-                    </div>
-                    <p>
-                        Use o orçamento aprovado como ponto de partida. A conversão cria uma prévia editável e só grava tarefas depois da
-                        confirmação.
-                    </p>
-                    {scopePreview ? (
-                        <>
-                            <div className="assistance-record">
-                                <strong>{scopePreview.items.length} item(ns) preparados</strong>
-                                <small>
-                                    {scopePreview.status === 'confirmed'
-                                        ? 'Prévia confirmada · tarefas preservadas'
-                                        : 'Aguardando confirmação humana'}
-                                </small>
-                            </div>
-                            {scopePreview.status !== 'confirmed' && (
-                                <button
-                                    className="button button-primary"
-                                    type="button"
-                                    onClick={() =>
-                                        router.post(
-                                            `/opportunities/${opportunity.id}/production/previews/${scopePreview.id}/confirm`,
-                                            {},
-                                            { preserveScroll: true },
-                                        )
-                                    }
-                                >
-                                    <Check size={15} /> Confirmar tarefas
-                                </button>
-                            )}
-                        </>
-                    ) : (
-                        <button
-                            className="button button-subtle"
-                            type="button"
-                            onClick={() => router.post(`/opportunities/${opportunity.id}/production/prepare`, {}, { preserveScroll: true })}
-                        >
-                            <RefreshCw size={15} /> Preparar prévia do escopo
-                        </button>
-                    )}
-                </GlassSurface>
-                <GlassSurface>
-                    <div className="panel-heading">
-                        <div>
-                            <span className="eyebrow">VALIDAÇÃO TÉCNICA</span>
-                            <h2>Visita e reconfirmação</h2>
-                        </div>
-                        <ShieldCheck size={18} className="muted-icon" />
-                    </div>
-                    <p>Registre medidas, desenhos e evidências. Qualquer alteração invalida a confirmação anterior.</p>
-                    <form className="form-grid compact-form" onSubmit={submitValidation}>
-                        <label>
-                            Referência
-                            <input
-                                required
-                                value={validationForm.data.reference}
-                                onChange={(event) => validationForm.setData('reference', event.target.value)}
-                                placeholder="Ex.: Planta do palco"
-                            />
-                        </label>
-                        <label>
-                            Medidas (uma por linha)
-                            <textarea
-                                rows={3}
-                                value={validationForm.data.measurements}
-                                onChange={(event) => validationForm.setData('measurements', event.target.value)}
-                                placeholder="largura: 8m\nprofundidade: 4m"
-                            />
-                        </label>
-                        <label>
-                            Fornecedor relacionado
-                            <input
-                                value={validationForm.data.supplier_name}
-                                onChange={(event) => validationForm.setData('supplier_name', event.target.value)}
-                                placeholder="Nome para reconfirmar"
-                            />
-                        </label>
-                        <label>
-                            Evidência da visita
-                            <textarea
-                                rows={2}
-                                value={validationForm.data.evidence}
-                                onChange={(event) => validationForm.setData('evidence', event.target.value)}
-                                placeholder="Link, documento ou observação verificável"
-                            />
-                        </label>
-                        <button className="button button-subtle" type="submit" disabled={validationForm.processing}>
-                            <Plus size={15} /> Salvar validação
-                        </button>
-                    </form>
-                    {validations.length > 0 && (
-                        <div className="validation-list">
-                            {validations.map((validation) => (
-                                <article className="assistance-record" key={validation.id}>
-                                    <div>
-                                        <strong>{validation.reference}</strong>
-                                        <small>
-                                            {validation.supplierName || 'Fornecedor não informado'} ·{' '}
-                                            {validation.status === 'confirmed' ? 'Reconfirmada' : 'Pendente'}
-                                        </small>
-                                        {validation.confirmationEvidence && <small>Evidência: {validation.confirmationEvidence}</small>}
-                                    </div>
-                                    {validation.status !== 'confirmed' &&
-                                        (confirmingValidation === validation.id ? (
-                                            <form className="inline-form" onSubmit={(event) => confirmValidation(event, validation)}>
-                                                <input
-                                                    required
-                                                    value={confirmationForm.data.evidence}
-                                                    onChange={(event) => confirmationForm.setData('evidence', event.target.value)}
-                                                    placeholder="Evidência da reconfirmação"
-                                                />
+                            <label>
+                                Evidência da visita
+                                <textarea
+                                    rows={2}
+                                    value={validationForm.data.evidence}
+                                    onChange={(event) => validationForm.setData('evidence', event.target.value)}
+                                    placeholder="Link, documento ou observação verificável"
+                                />
+                            </label>
+                            <button className="button button-subtle" type="submit" disabled={validationForm.processing}>
+                                <Plus size={15} /> Salvar validação
+                            </button>
+                        </form>
+                        {validations.length > 0 && (
+                            <div className="validation-list">
+                                {validations.map((validation) => (
+                                    <article className="assistance-record" key={validation.id}>
+                                        <div>
+                                            <strong>{validation.reference}</strong>
+                                            <small>
+                                                {validation.supplierName || 'Fornecedor não informado'} ·{' '}
+                                                {validation.status === 'confirmed' ? 'Reconfirmada' : 'Pendente'}
+                                            </small>
+                                            {validation.confirmationEvidence && <small>Evidência: {validation.confirmationEvidence}</small>}
+                                        </div>
+                                        {validation.status !== 'confirmed' &&
+                                            (confirmingValidation === validation.id ? (
+                                                <form className="inline-form" onSubmit={(event) => confirmValidation(event, validation)}>
+                                                    <input
+                                                        required
+                                                        value={confirmationForm.data.evidence}
+                                                        onChange={(event) => confirmationForm.setData('evidence', event.target.value)}
+                                                        placeholder="Evidência da reconfirmação"
+                                                    />
+                                                    <button
+                                                        className="button button-primary"
+                                                        type="submit"
+                                                        disabled={confirmationForm.processing}
+                                                    >
+                                                        Confirmar
+                                                    </button>
+                                                </form>
+                                            ) : (
                                                 <button
-                                                    className="button button-primary"
-                                                    type="submit"
-                                                    disabled={confirmationForm.processing}
+                                                    className="button button-subtle"
+                                                    type="button"
+                                                    onClick={() => {
+                                                        confirmationForm.setData('revision', validation.revision);
+                                                        setConfirmingValidation(validation.id);
+                                                    }}
                                                 >
-                                                    Confirmar
+                                                    Reconfirmar
                                                 </button>
-                                            </form>
-                                        ) : (
-                                            <button
-                                                className="button button-subtle"
-                                                type="button"
-                                                onClick={() => {
-                                                    confirmationForm.setData('revision', validation.revision);
-                                                    setConfirmingValidation(validation.id);
-                                                }}
-                                            >
-                                                Reconfirmar
-                                            </button>
-                                        ))}
-                                </article>
-                            ))}
-                        </div>
-                    )}
-                </GlassSurface>
-            </section>
-            <section className="milestone-strip">
-                <div>
-                    <CalendarDays size={16} />
-                    <span>Próximo marco</span>
-                    <strong>{opportunity.eventDate || 'Defina a data do evento'}</strong>
-                </div>
-                <div>
-                    <Check size={16} />
-                    <span>Modo de validação</span>
-                    <strong>Checklist manual com histórico</strong>
-                </div>
-            </section>
-            <ProductionDeliveryConsole
-                opportunity={opportunity}
-                tasks={tasks}
-                timeline={timeline}
-                teamMembers={teamMembers}
-                checklists={checklists}
-                serviceOrders={serviceOrders}
-                supplierQuotes={supplierQuotes}
-                attachments={attachments}
-            />
-            <CaseAttachmentsPanel
-                opportunityId={opportunity.id}
-                attachments={attachments}
-                attachmentLinks={attachmentLinks}
-                attachmentQuota={attachmentQuota}
-            />
+                                            ))}
+                                    </article>
+                                ))}
+                            </div>
+                        )}
+                    </GlassSurface>
+                </section>
+            </div>
+            <div id="production-area-delivery" hidden={area !== 'delivery'}>
+                <section className="milestone-strip">
+                    <div>
+                        <CalendarDays size={16} />
+                        <span>Próximo marco</span>
+                        <strong>{opportunity.eventDate || 'Defina a data do evento'}</strong>
+                    </div>
+                    <div>
+                        <Check size={16} />
+                        <span>Modo de validação</span>
+                        <strong>Checklist manual com histórico</strong>
+                    </div>
+                </section>
+                <ProductionDeliveryConsole
+                    opportunity={opportunity}
+                    tasks={tasks}
+                    timeline={timeline}
+                    teamMembers={teamMembers}
+                    checklists={checklists}
+                    serviceOrders={serviceOrders}
+                    supplierQuotes={supplierQuotes}
+                    attachments={attachments}
+                />
+            </div>
+            <div id="production-area-files" hidden={area !== 'files'}>
+                <CaseAttachmentsPanel
+                    opportunityId={opportunity.id}
+                    attachments={attachments}
+                    attachmentLinks={attachmentLinks}
+                    attachmentQuota={attachmentQuota}
+                />
+            </div>
         </AppLayout>
     );
 }
@@ -583,6 +615,7 @@ function ProductionDeliveryConsole({
     supplierQuotes,
     attachments,
 }: DeliveryConsoleProps) {
+    const [desk, setDesk] = useState('schedule');
     const [photoSelections, setPhotoSelections] = useState<Record<number, string>>({});
     const [receiptSelections, setReceiptSelections] = useState<Record<number, string>>({});
     const scheduleForm = useForm({
@@ -670,6 +703,17 @@ function ProductionDeliveryConsole({
                 <UsersRound size={19} aria-hidden="true" />
             </header>
 
+            <div className="production-desk-switcher" aria-label="Ferramentas da operação">
+                {[
+                    ['schedule', 'Escalas'],
+                    ['checklists', 'Checklists'],
+                    ['orders', 'Fornecedores e ordens'],
+                ].map(([key, label]) => (
+                    <button type="button" key={key} aria-pressed={desk === key} onClick={() => setDesk(key)}>
+                        {label}
+                    </button>
+                ))}
+            </div>
             <div className="production-delivery-console__metrics">
                 <Metric value={`${doneCount}/${tasks.length}`} label="tarefas concluídas" />
                 <Metric value={`${scheduledCount}`} label="com escala" />
@@ -681,7 +725,7 @@ function ProductionDeliveryConsole({
             </div>
 
             <div className="production-delivery-console__grid">
-                <Surface as="section" tone="plain" className="production-delivery-console__timeline">
+                <Surface as="section" tone="plain" className="production-delivery-console__timeline" hidden={desk !== 'schedule'}>
                     <div className="production-delivery-console__heading">
                         <div>
                             <span className="eyebrow">CRONOGRAMA</span>
@@ -724,7 +768,7 @@ function ProductionDeliveryConsole({
                     )}
                 </Surface>
 
-                <Surface as="section" tone="plain" className="production-delivery-console__schedule">
+                <Surface as="section" tone="plain" className="production-delivery-console__schedule" hidden={desk !== 'schedule'}>
                     <div className="production-delivery-console__heading">
                         <div>
                             <span className="eyebrow">ESCALA</span>
@@ -802,7 +846,7 @@ function ProductionDeliveryConsole({
             </div>
 
             <div className="production-delivery-console__grid production-delivery-console__grid--wide">
-                <Surface as="section" tone="plain" className="production-delivery-console__checklists">
+                <Surface as="section" tone="plain" className="production-delivery-console__checklists" hidden={desk !== 'checklists'}>
                     <div className="production-delivery-console__heading">
                         <div>
                             <span className="eyebrow">CONFERÊNCIAS</span>
@@ -879,7 +923,7 @@ function ProductionDeliveryConsole({
                     )}
                 </Surface>
 
-                <Surface as="section" tone="plain" className="production-delivery-console__form">
+                <Surface as="section" tone="plain" className="production-delivery-console__form" hidden={desk !== 'checklists'}>
                     <div className="production-delivery-console__heading">
                         <div>
                             <span className="eyebrow">NOVO ROTEIRO</span>
@@ -946,7 +990,7 @@ function ProductionDeliveryConsole({
             </div>
 
             <div className="production-delivery-console__grid production-delivery-console__grid--wide">
-                <Surface as="section" tone="plain" className="production-delivery-console__orders">
+                <Surface as="section" tone="plain" className="production-delivery-console__orders" hidden={desk !== 'orders'}>
                     <div className="production-delivery-console__heading">
                         <div>
                             <span className="eyebrow">FORNECEDORES</span>
@@ -1039,7 +1083,7 @@ function ProductionDeliveryConsole({
                     )}
                 </Surface>
 
-                <Surface as="section" tone="plain" className="production-delivery-console__form">
+                <Surface as="section" tone="plain" className="production-delivery-console__form" hidden={desk !== 'orders'}>
                     <div className="production-delivery-console__heading">
                         <div>
                             <span className="eyebrow">NOVA ORDEM</span>

@@ -2,6 +2,7 @@ import { Head, Link } from '@inertiajs/react';
 import { CalendarDays, Clapperboard, ArrowUpRight, CircleAlert, CheckCheck, Search } from 'lucide-react';
 import { useState } from 'react';
 import { AppLayout } from '../layout';
+import { ProductionArtwork } from '../components/ProductionArtwork';
 import { PageHeader } from '../components/ui/PageHeader';
 
 type Event = {
@@ -41,10 +42,21 @@ export default function ProductionHub({ events }: { events: Event[] }) {
             />
             <section className="production-command" aria-label="Resumo da produção">
                 <div>
-                    <Clapperboard size={32} strokeWidth={1.3} />
-                    <h2>Do plano ao acontecimento.</h2>
-                    <p>O comercial define o combinado. Aqui, a equipe acompanha a entrega.</p>
+                    <span className="eyebrow">CADA DETALHE, NO SEU LUGAR</span>
+                    <h2>
+                        Grandes encontros,
+                        <br />
+                        <em>bem produzidos.</em>
+                    </h2>
+                    <p>
+                        Abra uma pasta. Organize a equipe.
+                        <br />
+                        Acompanhe o que transforma o plano em entrega.
+                    </p>
                 </div>
+                <ProductionArtwork />
+            </section>
+            <section className="production-library-stats" aria-label="Indicadores da produção">
                 <dl>
                     <div>
                         <dt>Eventos em operação</dt>
@@ -86,7 +98,10 @@ export default function ProductionHub({ events }: { events: Event[] }) {
             </div>
             <section className="production-event-grid" aria-label="Eventos de produção">
                 {visible.map((event) => (
-                    <article className="production-event" key={event.id}>
+                    <article className="production-event production-folder" key={event.id}>
+                        <div className="production-folder__tab" aria-hidden="true">
+                            RD / {String(event.id).padStart(3, '0')}
+                        </div>
                         <header>
                             <span className="eyebrow">{event.client}</span>
                             <span className="status-pill gray">

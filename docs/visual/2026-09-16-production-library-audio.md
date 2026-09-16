@@ -1,0 +1,9 @@
+# Biblioteca de produção e entrada de áudio
+
+A referência aprovada de Clientes orienta o hero editorial lavanda/creme, ilustração SVG original de pasta com folhas animadas, superfícies translúcidas e pastas dos eventos. Não usa imagens externas ou novas dependências. Indicadores continuam derivados das tarefas reais. Operação hoje perdeu a ocupação de duas linhas do grid e teve altura/tipografia/espaçamento compactados.
+
+Produção dividida em Tarefas, Preparação, Operação e Arquivos, com conteúdo não selecionado oculto mantendo os componentes montados para preservar rascunhos. Operação possui Escalas, Checklists e Fornecedores e ordens. Todos os controles e endpoints existentes permanecem. Testes de navegação atualizados para selecionar a área correspondente.
+
+Áudio: acesso destacado no contexto do projeto, seleção focada ao abrir e foco devolvido ao fechar. Briefing apresenta upload sempre visível, nome/tamanho do arquivo, botão condicionado à seleção e progresso real. Luz suave de destaque; animação de processamento acompanha o estado. Transcrição indisponível comunicada claramente, sem ativar serviços nem prometer aplicação automática. Preservados custos, autorizações e revisão humana existentes. Movimentos desativados com prefers-reduced-motion.
+
+Verificação: quality aprovado (23 testes de UI, TypeScript, formatação, build). Rodada de navegação, áudio e briefing: 18 aprovados e três falhas de contraste na nota antiga de produção; cor corrigida. Rodada final produção/áudio: 6/6 nas três resoluções, incluindo contraste, overflow e preservação do rascunho. Nas rodadas iniciais também foram corrigidos contraste do índice das pastas e expectativas de navegação que pressupunham todos os painéis simultaneamente visíveis. Inspeção visual no localhost e screenshots automatizados. Sem mudanças no backend ou porcentagens do Pulse.

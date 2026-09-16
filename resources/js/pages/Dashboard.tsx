@@ -120,7 +120,7 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                 </Link>
             </nav>
             <BentoGrid className="dashboard-bento" aria-label="Resumo operacional de hoje">
-                <BentoItem colSpan={2} rowSpan={2}>
+                <BentoItem colSpan={2}>
                     <Surface tone="elevated" padding="lg" className="operation-hero">
                         <div className="operation-hero__top">
                             <div>

@@ -39,11 +39,15 @@ test('production and post-event keep their manual operational controls available
     await page.goto('/opportunities/1/production');
     await expect(page.getByRole('heading', { name: 'Controle de execução' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Adicionar tarefa' })).toBeVisible();
+    await page.getByRole('button', { name: /02 Preparação/ }).click();
     await expect(page.getByLabel('Referência')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Salvar validação' })).toBeVisible();
+    await page.getByRole('button', { name: /03 Operação/ }).click();
     await expect(page.getByRole('heading', { name: 'Agenda, conferências e fornecedores' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Reservar responsável' })).toBeVisible();
+    await page.getByRole('button', { name: 'Checklists', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Criar checklist' })).toBeVisible();
+    await page.getByRole('button', { name: 'Fornecedores e ordens', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Gerar rascunho' })).toBeVisible();
 
     await page.goto('/opportunities/1/post-event');

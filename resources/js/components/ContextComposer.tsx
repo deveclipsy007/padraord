@@ -1,6 +1,6 @@
 import { useForm, usePage } from '@inertiajs/react';
 import { Check, Mic2, Send, Sparkles } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ContextAudioConfig, ContextUploadComposer } from './context/ContextUploadComposer';
 
 type Change = {
@@ -41,6 +41,7 @@ export function ContextComposer({ caseId, preview, audio }: { caseId: number; pr
     const modules = [...new Set((preview?.actions ?? []).map((change) => change.module))];
     const [selected, setSelected] = useState<number[]>(() => (preview?.actions ?? []).map((_, index) => index));
     const confirm = useForm({ modules, changes: selected });
+    const audioTrigger = useRef<HTMLButtonElement>(null);
     const [audioOpen, setAudioOpen] = useState(false);
     useEffect(() => setSelected((preview?.actions ?? []).map((_, index) => index)), [preview?.id]);
     return (
@@ -51,6 +52,24 @@ export function ContextComposer({ caseId, preview, audio }: { caseId: number; pr
                 </span>
                 <small>O sistema organiza; você confirma.</small>
             </div>
+            <button
+                ref={audioTrigger}
+                className="audio-entry-trigger"
+                type="button"
+                aria-label="Enviar áudio"
+                aria-expanded={audioOpen}
+                aria-controls={`case-audio-${caseId}`}
+                onClick={() => setAudioOpen((current) => !current)}
+            >
+                <span className="audio-studio__symbol">
+                    <Mic2 size={24} />
+                </span>
+                <span>
+                    <strong>Da conversa ao projeto.</strong>
+                    <small>Enviar áudio e preparar uma revisão do briefing</small>
+                </span>
+                <span aria-hidden="true">↗</span>
+            </button>
             <form
                 onSubmit={(event) => {
                     event.preventDefault();
@@ -69,9 +88,6 @@ export function ContextComposer({ caseId, preview, audio }: { caseId: number; pr
                         <option value="production">Produção</option>
                         <option value="post_event">Pós-evento</option>
                     </select>
-                    <button type="button" className="button button-subtle" onClick={() => setAudioOpen((current) => !current)}>
-                        <Mic2 size={17} /> Enviar áudio
-                    </button>
                 </div>
                 <textarea
                     rows={4}
@@ -88,7 +104,18 @@ export function ContextComposer({ caseId, preview, audio }: { caseId: number; pr
                     <Send size={15} /> {entry.processing ? 'Organizando…' : 'Preparar revisão'}
                 </button>
             </form>
-            {audioOpen && <ContextUploadComposer caseId={caseId} config={audioConfig} onClose={() => setAudioOpen(false)} />}
+            {audioOpen && (
+                <div id={`case-audio-${caseId}`}>
+                    <ContextUploadComposer
+                        caseId={caseId}
+                        config={audioConfig}
+                        onClose={() => {
+                            setAudioOpen(false);
+                            audioTrigger.current?.focus();
+                        }}
+                    />
+                </div>
+            )}
             {preview?.status === 'preview' && (
                 <div className="consolidated-review">
                     <div className="consolidated-review__heading">
