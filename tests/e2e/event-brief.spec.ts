@@ -3,7 +3,8 @@ import { loginAs } from './helpers';
 
 test('confirmed field source opens the recording at the selected instant', async ({ page }) => {
     await loginAs(page);
-    await page.goto('/opportunities/1/briefing');
+    await page.goto('/opportunities/1/briefing#briefing-estruturado');
+    await page.getByRole('navigation', { name: 'Etapas do briefing' }).getByRole('button', { name: /Completar e aprovar/ }).click();
     const editor = page.getByRole('region', { name: 'Briefing do evento' });
     await editor.getByRole('button', { name: 'Vincular trecho da reunião' }).first().click();
     const dialog = page.getByRole('dialog');
@@ -28,6 +29,7 @@ test('typed event briefing, program and uncertain requirements work through the 
     await dialog.getByRole('button', { name: 'Criar oportunidade' }).click();
     await expect(page).toHaveURL(/\/$/);
     await page.getByRole('link', { name: `Evento verificado ${testInfo.project.name} Briefing precisa de revisão` }).click();
+    await page.getByRole('navigation', { name: 'Etapas do briefing' }).getByRole('button', { name: /Completar e aprovar/ }).click();
     const editor = page.getByRole('region', { name: 'Briefing do evento' });
     await editor.getByRole('combobox', { name: 'Tipo de evento', exact: true }).selectOption('congresso');
     await editor.getByLabel('Início do evento', { exact: true }).fill('2026-10-10T09:00');
