@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { AppLayout } from '../layout';
 import { CasePageHeader } from '../components/CasePageHeader';
 import { Drawer } from '../components/FormControls';
+import { simulateMargin } from '../components/financial-scenario';
 
 type Installment = {
     id?: number;
@@ -120,6 +121,21 @@ export default function EventFinance({
     const base = `/opportunities/${opportunity.id}/finance`;
     const [active, setActive] = useState<'plan' | 'payable' | 'settle' | 'cancel' | 'cost' | 'due' | null>(null);
     const [entry, setEntry] = useState<{ ledger: string; row: Entry } | null>(null);
+    const [scenarioRevenue, setScenarioRevenue] = useState('0');
+    const [scenarioCost, setScenarioCost] = useState('0');
+    const scenarioNumber = (value: string) => {
+        const parsed = Number(value.replace(',', '.'));
+        return Number.isFinite(parsed) ? Math.round(parsed * 100) : 0;
+    };
+    const scenarioBaseRevenue = p.contracted_revenue_cents || p.budget_revenue_cents;
+    const scenarioBaseCost = p.actual_cost_cents || p.planned_cost_cents;
+    const scenarioReady = scenarioBaseRevenue > 0 || scenarioBaseCost > 0;
+    const scenario = simulateMargin(
+        { revenueCents: scenarioBaseRevenue, costCents: scenarioBaseCost },
+        scenarioNumber(scenarioRevenue),
+        scenarioNumber(scenarioCost),
+    );
+    const scenarioValid = scenario.revenueCents >= 0 && scenario.costCents >= 0;
     const draft = useForm({
         revision: plan?.revision ?? 0,
         total: plan ? String(plan.total_cents / 100) : '',
@@ -297,6 +313,65 @@ export default function EventFinance({
                     Recebido: {money(p.received_cents)} · Margem prevista: {money(p.planned_margin_cents)}. Baixas registram comprovantes;
                     não movimentam contas bancárias.
                 </p>
+                <section className="finance-scenario" aria-labelledby="finance-scenario-title">
+                    <div>
+                        <span className="eyebrow">SIMULAR DECISÃO</span>
+                        <h2 id="finance-scenario-title">Quanto muda a margem?</h2>
+                        <p>
+                            Teste desconto ou novo custo antes de registrar qualquer alteração. Valores em reais; use negativo para reduzir.
+                        </p>
+                    </div>
+                    {!scenarioReady ? (
+                        <p className="finance-scenario__empty">
+                            Registre uma receita ou um custo no orçamento para simular o efeito das decisões.{' '}
+                            <Link href={`/opportunities/${opportunity.id}/budget`}>Abrir orçamento →</Link>
+                        </p>
+                    ) : (
+                        <>
+                            <div className="finance-scenario__controls">
+                                <label>
+                                    Alteração na receita (R$)
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={scenarioRevenue}
+                                        onChange={(event) => setScenarioRevenue(event.target.value)}
+                                    />
+                                </label>
+                                <label>
+                                    Alteração no custo (R$)
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        value={scenarioCost}
+                                        onChange={(event) => setScenarioCost(event.target.value)}
+                                    />
+                                </label>
+                            </div>
+                            <div className="finance-scenario__result" aria-live="polite">
+                                {!scenarioValid && <p role="alert">Receita e custo finais precisam ser iguais ou maiores que zero.</p>}
+                                {scenarioValid && (
+                                    <>
+                                        <span>
+                                            Margem simulada <strong>{money(scenario.marginCents)}</strong>
+                                        </span>
+                                        <span>
+                                            Variação{' '}
+                                            <strong>
+                                                {scenario.deltaCents >= 0 ? '+' : '−'}
+                                                {money(Math.abs(scenario.deltaCents))}
+                                            </strong>
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+                            <small>
+                                Simulação local. Base: {p.contracted_revenue_cents ? 'receita contratada' : 'receita orçada'} e{' '}
+                                {p.actual_cost_cents ? 'custo realizado' : 'custo previsto'}; o resultado atual pode ser provisório.
+                            </small>
+                        </>
+                    )}
+                </section>
                 <section className="finance-section">
                     <header>
                         <div>

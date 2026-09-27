@@ -267,6 +267,7 @@ export function EventBriefEditor(props: EventBriefEditorProps) {
                                 {group.fields.map((f) => (
                                     <div
                                         key={f.key}
+                                        data-brief-field={f.key}
                                         className={f.type === 'textarea' || f.type === 'lines' ? 'event-brief__wide' : undefined}
                                     >
                                         <Field label={f.label} error={(form.errors as Record<string, string>)[`fields.${f.key}`]}>

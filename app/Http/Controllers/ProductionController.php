@@ -15,6 +15,7 @@ use App\Services\CaseAttachments;
 use App\Services\ProductionOperations;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -59,6 +60,13 @@ class ProductionController extends Controller
                 'id' => $validation->id, 'reference' => $validation->reference, 'measurements' => $validation->measurements, 'evidence' => $validation->evidence, 'supplierName' => $validation->supplier_name, 'status' => $validation->status, 'revision' => $validation->revision, 'confirmationEvidence' => $validation->confirmation_evidence,
             ])->values(),
             'scopePreview' => ProductionTaskPreview::where('opportunity_id', $opportunity->id)->latest()->first()?->only(['id', 'source', 'items', 'status', 'result']),
+            'templates' => DB::table('production_task_templates')->orderByDesc('created_at')->get()->map(fn ($template): array => [
+                'id' => $template->id,
+                'name' => $template->name,
+                'items' => json_decode($template->items, true) ?: [],
+                'budgetCategories' => json_decode($template->budget_categories ?? '[]', true) ?: [],
+                'applied' => DB::table('production_template_applications')->where('production_task_template_id', $template->id)->where('opportunity_id', $opportunity->id)->exists(),
+            ])->values(),
             'attachments' => $attachments->list($opportunity),
             'attachmentLinks' => $attachments->links($opportunity),
             'attachmentQuota' => config('attachments.case_quota_bytes'),

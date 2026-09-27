@@ -1,9 +1,9 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { FormEvent } from 'react';
+import { FormEvent, useState } from 'react';
 import { AppLayout } from '../layout';
 import { GlassSurface } from '../components/GlassSurface';
 import { CasePageHeader } from '../components/CasePageHeader';
-import { ArrowRight, BriefcaseBusiness, Check, CircleDollarSign, Layers3 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 type Journey = {
     revision: number;
@@ -17,9 +17,30 @@ type Journey = {
     evidence: { action: string; reference: string; at: string; mode: string }[] | null;
 };
 type Props = {
-    opportunity: { id: number; title: string; client_name: string };
+    opportunity: { id: number; title: string; client_name: string; next_action: string | null };
     journey: Journey | null;
     deliverables: Record<string, string>;
+    moduleStatuses: { key: string; label: string; status: string; pending: number }[];
+};
+const moduleLabels: Record<string, string> = {
+    empty: 'Ainda não iniciado',
+    draft: 'Em construção',
+    needs_review: 'Precisa de revisão',
+    approved: 'Aprovado',
+    complete: 'Concluído',
+    blocked: 'Bloqueado',
+    stale: 'Revalidar',
+};
+const modulePath: Record<string, string> = {
+    journey: 'journey',
+    briefing: 'briefing',
+    viability: 'feasibility',
+    budget: 'budget',
+    documents: 'documents',
+    contract: 'contract',
+    finance: 'finance',
+    production: 'production',
+    'post-event': 'post-event',
 };
 const labels: Record<string, string> = {
     commercial: 'Comercial',
@@ -37,7 +58,14 @@ const labels: Record<string, string> = {
     contract_management: 'Registrar contratação da Gestão',
 };
 
-export default function CaseJourney({ opportunity, journey, deliverables }: Props) {
+export default function CaseJourney({ opportunity, journey, deliverables, moduleStatuses }: Props) {
+    const [selectedModule, setSelectedModule] = useState<string | null>(
+        moduleStatuses.find((module) => ['blocked', 'needs_review', 'stale'].includes(module.status))?.key ??
+            moduleStatuses.find((module) => !['approved', 'complete'].includes(module.status))?.key ??
+            moduleStatuses[0]?.key ??
+            null,
+    );
+    const selected = moduleStatuses.find((module) => module.key === selectedModule);
     const form = useForm({
         action: 'configure',
         revision: journey?.revision ?? 0,
@@ -64,13 +92,12 @@ export default function CaseJourney({ opportunity, journey, deliverables }: Prop
         form.transform((data) => ({ ...data, action, revision: journey?.revision ?? 0 }));
         form.post('/opportunities/' + opportunity.id + '/journey', { preserveScroll: true, onSuccess: () => form.reset('evidence') });
     }
-    const icons = [BriefcaseBusiness, Layers3, CircleDollarSign];
     return (
         <AppLayout>
             <Head title={'Jornada · ' + opportunity.title} />
             <CasePageHeader
                 id={opportunity.id}
-                eyebrow="Mapa dos ciclos"
+                eyebrow="Jornada do projeto"
                 title="Da oportunidade à entrega"
                 client={opportunity.client_name}
                 status={journey?.mode === 'real' ? 'Operação real' : 'Demonstração'}
@@ -80,34 +107,51 @@ export default function CaseJourney({ opportunity, journey, deliverables }: Prop
                     </Link>
                 }
             />
-            <section className="case-cycle-map">
-                {['commercial', 'viability', 'management'].map((cycle, index) => {
-                    const Icon = icons[index];
-                    const active = journey?.cycle === cycle;
-                    const completed =
-                        cycle === 'commercial'
-                            ? journey?.viability_status !== 'not_contracted'
-                            : cycle === 'viability'
-                              ? ['accepted', 'closed'].includes(journey?.viability_status ?? '') || !!journey?.outcome
-                              : journey?.management_status === 'planning';
-                    return (
-                        <article className={`case-cycle${active ? ' is-active' : ''}${completed ? ' is-complete' : ''}`} key={cycle}>
-                            <div className="case-cycle__icon">{completed ? <Check size={17} /> : <Icon size={17} />}</div>
-                            <span>CICLO {index + 1}</span>
-                            <h2>{labels[cycle]}</h2>
-                            <p>
-                                {active
-                                    ? 'Ciclo atual · confira a próxima decisão'
-                                    : cycle === 'management'
-                                      ? 'Contratação opcional após aceite da Viabilidade'
-                                      : completed
-                                        ? 'Marco preservado no histórico'
-                                        : 'Aguardando ciclo anterior'}
-                            </p>
-                            {index < 2 && <ArrowRight className="case-cycle__arrow" size={18} />}
-                        </article>
-                    );
-                })}
+            <section className="journey-workspace" aria-label="Mapa do projeto">
+                <header>
+                    <span className="eyebrow">MAPA DO PROJETO</span>
+                    <h2>Uma jornada, decisões claras.</h2>
+                    <p>Ciclo atual: {labels[journey?.cycle ?? 'commercial']}. Selecione uma etapa para ver o que precisa acontecer.</p>
+                </header>
+                <div className="journey-workspace__layout">
+                    <div className="journey-workspace__track" role="group" aria-label="Etapas do projeto">
+                        {moduleStatuses.map((module, index) => (
+                            <button
+                                type="button"
+                                key={module.key}
+                                className={`journey-workspace__node ${selectedModule === module.key ? 'is-selected' : ''}`}
+                                aria-pressed={selectedModule === module.key}
+                                onClick={() => setSelectedModule(module.key)}
+                            >
+                                <span>0{index + 1}</span>
+                                <strong>{module.label}</strong>
+                                <small>
+                                    {moduleLabels[module.status] ?? module.status}
+                                    {module.pending > 0 ? ` · ${module.pending} pendência${module.pending === 1 ? '' : 's'}` : ''}
+                                </small>
+                            </button>
+                        ))}
+                    </div>
+                    {selected && (
+                        <aside className="journey-workspace__detail" aria-live="polite">
+                            <span className="eyebrow">ETAPA SELECIONADA</span>
+                            <h3>{selected.label}</h3>
+                            <p>{moduleLabels[selected.status] ?? selected.status}</p>
+                            <strong>
+                                {selected.pending > 0
+                                    ? `${selected.pending} ${selected.pending === 1 ? 'ponto pede atenção' : 'pontos pedem atenção'}`
+                                    : 'Nenhuma pendência registrada nesta etapa'}
+                            </strong>
+                            {opportunity.next_action && <p>Próxima ação do projeto: {opportunity.next_action}</p>}
+                            <Link
+                                className="button button-primary"
+                                href={`/opportunities/${opportunity.id}/${modulePath[selected.key] ?? 'journey'}`}
+                            >
+                                Abrir {selected.label} <ArrowRight size={15} />
+                            </Link>
+                        </aside>
+                    )}
+                </div>
             </section>
             <section className="budget-grid">
                 <GlassSurface className="budget-items">

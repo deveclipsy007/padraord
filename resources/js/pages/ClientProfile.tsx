@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowRight, BriefcaseBusiness, Building2, CircleAlert, Mail, Pencil, Phone, Plus, UserRound, UsersRound } from 'lucide-react';
+import { ArrowRight, CircleAlert, Mail, Pencil, Phone, Plus, UserRound } from 'lucide-react';
 import { useState } from 'react';
 import { Drawer, Field, FormErrors } from '../components/FormControls';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -46,10 +46,22 @@ type Client = {
     segment: string | null;
     tier: string | null;
     contacts: Contact[];
-    opportunities: { id: number; title: string; stage: string }[];
+    opportunities: {
+        id: number;
+        title: string;
+        stage: string;
+        event_date?: string | null;
+        next_action?: string | null;
+        updated_at?: string | null;
+    }[];
 };
 type Props = {
     client: Client;
+    relationship: {
+        proposals: number;
+        receivedCents: number;
+        recentActions: { title: string; caseId: number; caseTitle: string | null; at: string | null }[];
+    };
     contractReadiness: { ready: boolean; missing: string[] };
     duplicates?: { id: number; name: string; legal_name: string | null }[];
 };
@@ -136,7 +148,7 @@ function ContactForm({ clientId, contact, onSaved }: { clientId: number; contact
     );
 }
 
-export default function ClientProfile({ client, contractReadiness, duplicates = [] }: Props) {
+export default function ClientProfile({ client, relationship, contractReadiness, duplicates = [] }: Props) {
     const [editingClient, setEditingClient] = useState(false);
     const [editingContact, setEditingContact] = useState<Contact | null | undefined>(undefined);
     const [creatingOpportunity, setCreatingOpportunity] = useState(false);
@@ -218,29 +230,63 @@ export default function ClientProfile({ client, contractReadiness, duplicates = 
                 </Surface>
             )}
 
-            <section className="client-profile-metrics">
-                <Surface>
-                    <UsersRound size={17} />
+            <section className="client-dossier" aria-label="Panorama do relacionamento">
+                <div>
+                    <span className="eyebrow">PASTA DO RELACIONAMENTO</span>
+                    <h2>{client.tier === 'prospect' ? 'Em aproximação' : 'Uma relação em movimento.'}</h2>
+                    <p>
+                        Este cadastro guarda as pessoas. Cada caso abaixo reúne uma negociação ou evento; a produção nasce quando o trabalho
+                        avança.
+                    </p>
+                </div>
+                <div className="client-dossier__counts">
                     <span>
-                        <strong>{client.contacts.length}</strong>
-                        <small>{client.contacts.length === 1 ? 'contato' : 'contatos'}</small>
+                        <strong>{client.contacts.length}</strong> {client.contacts.length === 1 ? 'contato' : 'contatos'}
                     </span>
-                </Surface>
-                <Surface>
-                    <BriefcaseBusiness size={17} />
                     <span>
-                        <strong>{client.opportunities.length}</strong>
-                        <small>{client.opportunities.length === 1 ? 'caso relacionado' : 'casos relacionados'}</small>
+                        <strong>{client.opportunities.length}</strong> {client.opportunities.length === 1 ? 'caso' : 'casos'}
                     </span>
-                </Surface>
-                <Surface>
-                    <Building2 size={17} />
                     <span>
-                        <strong>{client.industry || 'A definir'}</strong>
-                        <small>segmento</small>
+                        <strong>
+                            {client.opportunities.filter((item) => !['lost', 'cancelled', 'closed'].includes(item.stage)).length}
+                        </strong>{' '}
+                        em andamento
                     </span>
-                </Surface>
+                    <span>
+                        <strong>{client.opportunities.filter((item) => ['closed'].includes(item.stage)).length}</strong> concluídos
+                    </span>
+                    <span>
+                        <strong>{relationship.proposals}</strong> propostas enviadas
+                    </span>
+                    <span>
+                        <strong>
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(
+                                relationship.receivedCents / 100,
+                            )}
+                        </strong>{' '}
+                        recebido
+                    </span>
+                </div>
             </section>
+            {relationship.recentActions.length > 0 && (
+                <section className="client-activity" aria-label="Últimos movimentos deste cliente">
+                    <div>
+                        <span className="eyebrow">HISTÓRICO RECENTE</span>
+                        <h2>O relacionamento continua aqui.</h2>
+                    </div>
+                    <div>
+                        {relationship.recentActions.map((action, index) => (
+                            <Link key={`${action.caseId}-${index}`} href={`/opportunities/${action.caseId}`}>
+                                <strong>{action.title}</strong>
+                                <span>
+                                    {action.caseTitle} · {action.at || 'Data não registrada'}
+                                </span>
+                                <ArrowRight size={15} />
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             <section className="client-profile-grid">
                 <div className="client-profile-main">
@@ -319,7 +365,12 @@ export default function ClientProfile({ client, contractReadiness, duplicates = 
                                 <Link href={`/opportunities/${item.id}`} key={item.id} viewTransition>
                                     <span>
                                         <strong>{item.title}</strong>
-                                        <small>Abra o workspace para continuar o próximo movimento.</small>
+                                        <small>
+                                            {item.next_action ? `Próximo passo: ${item.next_action}` : 'Próximo passo ainda não definido'}
+                                            {item.event_date
+                                                ? ` · Evento ${item.event_date.slice(0, 10).split('-').reverse().join('/')}`
+                                                : ''}
+                                        </small>
                                     </span>
                                     <StatusBadge tone="neutral">{item.stage}</StatusBadge>
                                     <ArrowRight size={16} />

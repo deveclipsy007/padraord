@@ -3,6 +3,7 @@ import { ArrowRight, ArrowUpRight, CalendarDays, CheckCircle2, CircleAlert, Cloc
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { AppLayout, PrimaryButton } from '../layout';
 import { TodayQueue, type QueueTask } from '../components/TodayQueue';
+import { rankTodayActions } from '../components/operational-decisions';
 import { BarSeries } from '../components/charts/BarSeries';
 import { formatCurrencyFromCents } from '../components/charts/chart-utils';
 import { BentoGrid, BentoItem } from '../components/ui/BentoGrid';
@@ -57,6 +58,30 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
         [columns, opportunities],
     );
     const demoOpportunityId = opportunities[0]?.id;
+    const focusActions = useMemo(() => {
+        const caseActions: QueueTask[] = opportunities
+            .filter(
+                (item) =>
+                    !item.archived &&
+                    !['lost', 'cancelled', 'closed'].includes(item.stage) &&
+                    (item.nextAction || item.briefingStatus === 'awaiting_review'),
+            )
+            .map((item) => ({
+                id: item.id,
+                kind: item.briefingStatus === 'awaiting_review' ? 'review' : 'case',
+                title: item.briefingStatus === 'awaiting_review' ? `Revisar briefing · ${item.title}` : item.nextAction!,
+                context: item.title,
+                href: item.briefingStatus === 'awaiting_review' ? `/opportunities/${item.id}/briefing` : `/opportunities/${item.id}`,
+                owner: item.ownerName,
+                ownerId: item.ownerId,
+                dueAt: item.nextActionAt ?? null,
+                priority: item.priority,
+                status: item.commercialStage,
+                overdue: item.nextActionOverdue ?? false,
+                availableActions: ['open'],
+            }));
+        return rankTodayActions([...todayQueue, ...caseActions]);
+    }, [todayQueue, opportunities]);
     const pendingDecisions = opportunities.filter((item) => item.briefingStatus !== 'complete').slice(0, 3);
     const activeStages = columns
         .filter((column) => column.count > 0)
@@ -119,6 +144,38 @@ export default function Dashboard({ opportunities, columns, metrics, todayQueue,
                     <ArrowUpRight size={20} />
                 </Link>
             </nav>
+            <section className="today-focus" aria-labelledby="today-focus-title">
+                <div className="today-focus__heading">
+                    <div>
+                        <span className="eyebrow">SUA ATENÇÃO HOJE</span>
+                        <h2 id="today-focus-title">Três movimentos para avançar.</h2>
+                    </div>
+                    <Link href="/agenda">
+                        Ver toda a fila <ArrowUpRight size={15} />
+                    </Link>
+                </div>
+                {focusActions.length ? (
+                    <div className="today-focus__grid">
+                        {focusActions.map((item, index) => (
+                            <Link href={item.href} className="today-focus__item" key={`${item.kind}-${item.id}`}>
+                                <span className="today-focus__index">0{index + 1}</span>
+                                <div>
+                                    <small>{item.context}</small>
+                                    <strong>{item.title}</strong>
+                                    <p>{item.reason}</p>
+                                    <span>
+                                        {item.owner || 'Definir responsável'}
+                                        {item.dueAt ? ` · ${item.dueAt}` : ''}
+                                    </span>
+                                </div>
+                                <ArrowUpRight size={17} />
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="today-focus__empty">Nenhuma ação na fila atual. Confira a agenda da equipe para ver outros prazos.</p>
+                )}
+            </section>
             <BentoGrid className="dashboard-bento" aria-label="Resumo operacional de hoje">
                 <BentoItem colSpan={2}>
                     <Surface tone="elevated" padding="lg" className="operation-hero">

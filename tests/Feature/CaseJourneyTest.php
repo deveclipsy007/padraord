@@ -11,6 +11,15 @@ class CaseJourneyTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_journey_map_includes_contract_and_finance_as_separate_stages(): void
+    {
+        $case = Opportunity::create(['title' => 'Jornada', 'client_name' => 'Cliente', 'stage' => 'lead']);
+        $this->actingAs(User::factory()->create())->get("/opportunities/{$case->id}/journey")
+            ->assertInertia(fn ($page) => $page
+                ->where('moduleStatuses.5.key', 'contract')
+                ->where('moduleStatuses.6.key', 'finance'));
+    }
+
     public function test_viability_can_be_delivered_and_closed_without_management(): void
     {
         $case = Opportunity::create(['title' => 'Jornada', 'client_name' => 'Cliente', 'stage' => 'lead']);

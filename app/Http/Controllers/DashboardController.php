@@ -39,6 +39,7 @@ class DashboardController extends Controller
                 'origin' => $opportunity->origin,
                 'nextAction' => $opportunity->next_action,
                 'nextActionAt' => $opportunity->next_action_at?->format('d/m/Y H:i'),
+                'nextActionOverdue' => $opportunity->next_action_at?->isPast() ?? false,
                 'eventDate' => $opportunity->event_date?->format('d/m/Y'),
                 'estimatedValueCents' => $opportunity->estimated_value_cents,
                 'briefingStatus' => $opportunity->briefing_status,

@@ -770,6 +770,15 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                                                         {item.nextAction}
                                                     </span>
                                                 )}
+                                                {!item.nextAction && (
+                                                    <span className="pipeline-card__next pipeline-card__next--missing">
+                                                        <span className="pipeline-card__next-label">ATENÇÃO</span>Definir próximo passo
+                                                    </span>
+                                                )}
+                                                <span className="pipeline-card__signal">
+                                                    {item.briefingStatus === 'complete' ? 'Briefing conferido' : 'Briefing em aberto'} ·{' '}
+                                                    {item.eventDate ? 'Data do evento definida' : 'Data a definir'}
+                                                </span>
                                                 <span className="pipeline-card__people">
                                                     <span>
                                                         <UserRound size={13} /> {item.ownerName || 'Sem responsável'}
@@ -783,7 +792,9 @@ export default function Pipeline({ opportunities, stages: serverStages, filters,
                                                 {movingId === item.id && <span className="pipeline-card-moving">Atualizando etapa…</span>}
                                             </button>
                                             <label className="pipeline-card__stage">
-                                                <span className="sr-only">Mover etapa</span>
+                                                <span className="sr-only">
+                                                    Mover etapa de {item.title}. Regras e pendências serão verificadas antes da mudança.
+                                                </span>
                                                 <select
                                                     value={item.commercialStage}
                                                     disabled={movingId === item.id}

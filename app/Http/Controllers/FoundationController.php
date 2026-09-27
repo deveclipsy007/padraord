@@ -81,6 +81,7 @@ class FoundationController extends Controller
 
     public function clientShow(Client $client)
     {
+        $caseIds = $client->opportunities()->pluck('id');
         $duplicates = blank($client->tax_id) ? [] : Client::query()
             ->where('tax_id', $client->tax_id)
             ->whereKeyNot($client->id)
@@ -89,6 +90,16 @@ class FoundationController extends Controller
 
         return Inertia::render('ClientProfile', [
             'client' => $client->load(['contacts', 'opportunities']),
+            'relationship' => [
+                'proposals' => DB::table('documents')->whereIn('opportunity_id', $caseIds)->where('type', 'proposal')->whereIn('status', ['sent', 'accepted', 'signed'])->count(),
+                'receivedCents' => (int) DB::table('financial_settlements')->whereIn('opportunity_id', $caseIds)->where('ledger', 'receivables')->sum('amount_cents'),
+                'recentActions' => Activity::query()->with('opportunity:id,title')->whereIn('opportunity_id', $caseIds)->where('status', 'done')->latest('completed_at')->limit(5)->get()->map(fn (Activity $activity): array => [
+                    'title' => $activity->title,
+                    'caseId' => $activity->opportunity_id,
+                    'caseTitle' => $activity->opportunity?->title,
+                    'at' => $activity->completed_at?->format('d/m/Y'),
+                ])->values(),
+            ],
             'contractReadiness' => [
                 'ready' => $client->readyForContract(),
                 'missing' => $client->missingContractData(),

@@ -12,6 +12,7 @@ import '../css/chat-and-dialogs.css';
 import '../css/charts.css';
 import '../css/operational-system.css';
 import '../css/editorial-workspace.css';
+import '../css/operational-upgrade.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';

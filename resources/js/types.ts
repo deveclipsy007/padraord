@@ -35,6 +35,7 @@ export type Opportunity = {
     priority: OpportunityPriority;
     origin: OpportunityOrigin;
     nextActionAt?: string | null;
+    nextActionOverdue?: boolean;
     commercialRevision?: number;
     archived?: boolean;
 };

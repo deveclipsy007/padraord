@@ -46,6 +46,7 @@ export default function Briefing(props: Props) {
     const entry = useForm({ body: '' });
     const [reviewErrors, setReviewErrors] = useState<string[]>([]);
     const [reviewing, setReviewing] = useState(false);
+    const [gapIndex, setGapIndex] = useState(0);
     const sectionKey = `rd-briefing-section-${opportunity.id}`;
     const sectionFromHash = () => {
         const hash = window.location.hash;
@@ -87,6 +88,27 @@ export default function Briefing(props: Props) {
             '',
             value === 'details' ? '#briefing-estruturado' : value === 'review' ? '#briefing-revisao' : '#inicio',
         );
+    }
+    function answerGap(field: string) {
+        const targetField: Record<string, string> = {
+            objective: 'objective',
+            audience: 'audience_expected_min',
+            event_date: 'starts_at',
+            location: 'location_note',
+            budget: 'budget_declared_cents',
+            scope: 'scope_summary',
+            restrictions: 'restrictions_notes',
+            references: 'references',
+        };
+        navigateSection('details');
+        requestAnimationFrame(() => {
+            const target = document.querySelector<HTMLElement>(`[data-brief-field="${targetField[field] || field}"]`);
+            target?.scrollIntoView({
+                block: 'center',
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            });
+            target?.querySelector<HTMLElement>('input,textarea,select')?.focus({ preventScroll: true });
+        });
     }
     useEffect(() => {
         if (opportunity.briefingStatus !== 'processing') return;
@@ -207,6 +229,35 @@ export default function Briefing(props: Props) {
                         </button>
                     ))}
                 </nav>
+                {briefing.gaps.length > 0 && (
+                    <section className="briefing-question" aria-label="Próxima pergunta do briefing">
+                        <div>
+                            <span className="eyebrow">
+                                PERGUNTA {Math.min(gapIndex + 1, briefing.gaps.length)} DE {briefing.gaps.length}
+                            </span>
+                            <h2>{briefing.gaps[Math.min(gapIndex, briefing.gaps.length - 1)].question}</h2>
+                            <p>Essa informação ainda precisa de resposta. Confira a conversa de origem e registre o dado no briefing.</p>
+                        </div>
+                        <div className="briefing-question__actions">
+                            <button
+                                type="button"
+                                className="button button-primary"
+                                onClick={() => answerGap(briefing.gaps[Math.min(gapIndex, briefing.gaps.length - 1)].field)}
+                            >
+                                Responder no briefing <ArrowUpRight size={15} />
+                            </button>
+                            {briefing.gaps.length > 1 && (
+                                <button
+                                    type="button"
+                                    className="button button-subtle"
+                                    onClick={() => setGapIndex((index) => (index + 1) % briefing.gaps.length)}
+                                >
+                                    Outra pergunta
+                                </button>
+                            )}
+                        </div>
+                    </section>
+                )}
                 <div id="briefing-entrada" hidden={section !== 'capture'}>
                     <header className="briefing-area-heading">
                         <div>

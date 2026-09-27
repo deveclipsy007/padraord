@@ -105,6 +105,13 @@ type Props = {
     attachments: CaseAttachment[];
     attachmentLinks: AttachmentLink[];
     attachmentQuota: number;
+    templates: {
+        id: number;
+        name: string;
+        items: { title: string; description?: string | null; phase: string; priority: string }[];
+        budgetCategories: string[];
+        applied: boolean;
+    }[];
 };
 
 const labels: Record<string, string> = { todo: 'A fazer', in_progress: 'Em andamento', done: 'Concluída', blocked: 'Bloqueada' };
@@ -123,10 +130,13 @@ export default function Production({
     attachments,
     attachmentLinks,
     attachmentQuota,
+    templates,
 }: Props) {
-    const [area, setArea] = useState('tasks');
+    const [area, setArea] = useState(tasks.length ? 'day' : 'tasks');
     const [view, setView] = useState<'list' | 'timeline' | 'calendar'>('list');
     const [confirmingValidation, setConfirmingValidation] = useState<number | null>(null);
+    const [templateError, setTemplateError] = useState<string | null>(null);
+    const [dayError, setDayError] = useState<string | null>(null);
     const taskForm = useForm({
         title: '',
         description: '',
@@ -137,6 +147,7 @@ export default function Production({
         technical_validation_id: '',
     });
     const validationForm = useForm({ reference: '', measurements: '', evidence: '', supplier_name: '' });
+    const templateForm = useForm({ name: '' });
     const confirmationForm = useForm({ evidence: '', revision: 0 });
 
     function submitTask(event: FormEvent) {
@@ -215,10 +226,12 @@ export default function Production({
             </section>
             <nav className="production-area-switcher" aria-label="Áreas da produção">
                 {[
+                    ['day', '00', 'Dia do evento', 'Agora, bloqueios e confirmações'],
                     ['tasks', '01', 'Tarefas', 'Lista, prazos e andamento'],
                     ['technical', '02', 'Preparação', 'Escopo e validação técnica'],
                     ['delivery', '03', 'Operação', 'Escalas, checklists e fornecedores'],
                     ['files', '04', 'Arquivos', 'Documentos e evidências'],
+                    ['models', '05', 'Modelos', 'Aprenda com eventos concluídos'],
                 ].map(([key, index, label, desc]) => (
                     <button
                         key={key}
@@ -233,6 +246,178 @@ export default function Production({
                     </button>
                 ))}
             </nav>
+            <section id="production-area-day" className="event-day" hidden={area !== 'day'} aria-label="Operação do dia do evento">
+                {dayError && (
+                    <p role="alert" className="event-day__error">
+                        {dayError}
+                    </p>
+                )}
+                <header className="event-day__header">
+                    <div>
+                        <span className="eyebrow">MODO OPERAÇÃO</span>
+                        <h2>O que precisa acontecer no evento</h2>
+                        <p>
+                            {opportunity.eventDate || 'Data a definir'} · {tasks.filter((task) => task.status !== 'done').length} tarefas em
+                            aberto
+                        </p>
+                    </div>
+                    <span>
+                        {tasks.filter((task) => task.status === 'done').length}/{tasks.length} confirmadas
+                    </span>
+                </header>
+                {(['blocked', 'now', 'next'] as const).map((group) => {
+                    const grouped = tasks.filter((task) =>
+                        group === 'blocked'
+                            ? task.status === 'blocked'
+                            : group === 'now'
+                              ? task.status === 'in_progress' || (task.status === 'todo' && task.phase === 'event')
+                              : task.status === 'todo' && task.phase !== 'event',
+                    );
+                    return (
+                        <div className="event-day__group" key={group}>
+                            <h3>
+                                {group === 'blocked' ? 'Impedimentos' : group === 'now' ? 'Agora' : 'A seguir'}{' '}
+                                <small>{grouped.length}</small>
+                            </h3>
+                            {grouped.length ? (
+                                grouped.map((task) => (
+                                    <article className="event-day__task" key={task.id}>
+                                        <div>
+                                            <span className="eyebrow">
+                                                {phaseLabels[task.phase || 'preparation']} ·{' '}
+                                                {task.priority === 'high' ? 'Prioridade alta' : labels[task.status]}
+                                            </span>
+                                            <strong>{task.title}</strong>
+                                            <p>
+                                                {task.blockedReason
+                                                    ? `Bloqueio: ${task.blockedReason}`
+                                                    : task.description ||
+                                                      (task.dependencyTitle && `Após: ${task.dependencyTitle}`) ||
+                                                      'Sem observações adicionais'}
+                                            </p>
+                                            <small>
+                                                {task.team?.find((person) => person.isResponsible)?.name || 'Responsável a definir'}
+                                                {task.dueDate ? ` · prazo ${task.dueDate}` : ''}
+                                            </small>
+                                        </div>
+                                        <button
+                                            className="button button-subtle"
+                                            type="button"
+                                            onClick={() => {
+                                                setDayError(null);
+                                                router.patch(
+                                                    `/production/tasks/${task.id}`,
+                                                    { status: task.status === 'blocked' ? 'todo' : 'done' },
+                                                    {
+                                                        preserveScroll: true,
+                                                        onError: (errors) => setDayError(Object.values(errors).join(' ')),
+                                                    },
+                                                );
+                                            }}
+                                        >
+                                            {task.status === 'blocked' ? 'Reabrir tarefa' : 'Confirmar execução'}
+                                        </button>
+                                    </article>
+                                ))
+                            ) : (
+                                <p className="event-day__empty">Nenhuma tarefa neste grupo.</p>
+                            )}
+                        </div>
+                    );
+                })}
+                <footer className="event-day__footer">
+                    <button className="button button-subtle" onClick={() => setArea('delivery')}>
+                        Ver checklists e fornecedores
+                    </button>
+                    <button className="button button-subtle" onClick={() => setArea('tasks')}>
+                        Organizar tarefas
+                    </button>
+                </footer>
+            </section>
+            <section id="production-area-models" className="event-models" hidden={area !== 'models'} aria-label="Modelos de evento">
+                <header>
+                    <span className="eyebrow">EXPERIÊNCIA ACUMULADA</span>
+                    <h2>Repetir o que funcionou.</h2>
+                    <p>
+                        Modelos guardam a estrutura das tarefas e categorias de orçamento. Valores, fornecedores, contatos e prazos devem
+                        ser definidos para cada novo evento.
+                    </p>
+                </header>
+                {tasks.length > 0 && (
+                    <form
+                        className="event-models__create"
+                        onSubmit={(event) => {
+                            event.preventDefault();
+                            templateForm.post(`/production/events/${opportunity.id}/templates`, {
+                                preserveScroll: true,
+                                onSuccess: () => templateForm.reset(),
+                            });
+                        }}
+                    >
+                        <label>
+                            Nome do modelo
+                            <input
+                                value={templateForm.data.name}
+                                maxLength={120}
+                                required
+                                placeholder="Ex.: Convenção corporativa"
+                                onChange={(event) => templateForm.setData('name', event.target.value)}
+                            />
+                        </label>
+                        <button type="submit" className="button button-primary" disabled={templateForm.processing}>
+                            Salvar a partir deste evento
+                        </button>
+                        <small>Disponível quando o evento e todas as tarefas estiverem concluídos.</small>
+                        {templateForm.errors.name && <p role="alert">{templateForm.errors.name}</p>}
+                        {(templateForm.errors as Record<string, string>).source && (
+                            <p role="alert">{(templateForm.errors as Record<string, string>).source}</p>
+                        )}
+                    </form>
+                )}
+                <div className="event-models__grid">
+                    {templates.map((template) => (
+                        <article key={template.id} className="event-models__card">
+                            <span className="eyebrow">MODELO DE PRODUÇÃO</span>
+                            <h3>{template.name}</h3>
+                            <p>
+                                {template.items.length} tarefas · {template.budgetCategories.length} categorias de orçamento
+                            </p>
+                            <details>
+                                <summary>Ver o que será reaproveitado</summary>
+                                <ol>
+                                    {template.items.map((item, index) => (
+                                        <li key={index}>
+                                            {item.title} · {phaseLabels[item.phase] ?? item.phase}
+                                        </li>
+                                    ))}
+                                </ol>
+                                {template.budgetCategories.length > 0 && (
+                                    <p>Categorias para conferir: {template.budgetCategories.join(', ')}. Nenhum valor será copiado.</p>
+                                )}
+                            </details>
+                            <button
+                                type="button"
+                                className="button button-subtle"
+                                disabled={template.applied}
+                                onClick={() => {
+                                    setTemplateError(null);
+                                    router.post(
+                                        `/production/events/${opportunity.id}/templates/${template.id}/apply`,
+                                        {},
+                                        { preserveScroll: true, onError: (errors) => setTemplateError(Object.values(errors).join(' ')) },
+                                    );
+                                }}
+                            >
+                                {template.applied ? 'Já aplicado neste evento' : 'Adicionar tarefas deste modelo'}
+                            </button>
+                        </article>
+                    ))}
+                </div>
+                {templateError && <p role="alert">{templateError}</p>}
+                {!templates.length && (
+                    <p className="event-day__empty">Quando um evento for concluído, salve sua estrutura para usá-la no próximo.</p>
+                )}
+            </section>
             <div id="production-area-tasks" hidden={area !== 'tasks'}>
                 <SegmentedControl
                     value={view}

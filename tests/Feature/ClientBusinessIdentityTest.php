@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Activity;
 use App\Models\Client;
 use App\Models\Document;
 use App\Models\Opportunity;
@@ -13,6 +14,22 @@ use Tests\TestCase;
 class ClientBusinessIdentityTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_client_dossier_shows_recent_work_and_financial_totals_only_for_its_cases(): void
+    {
+        $user = User::factory()->create();
+        $client = Client::create(['name' => 'Cliente principal']);
+        $case = Opportunity::create(['title' => 'Evento A', 'client_id' => $client->id, 'client_name' => $client->name, 'stage' => 'production']);
+        $other = Opportunity::create(['title' => 'Evento externo', 'client_name' => 'Outro', 'stage' => 'production']);
+        Activity::create(['opportunity_id' => $case->id, 'title' => 'Reunião concluída', 'type' => 'meeting', 'status' => 'done', 'completed_at' => now()]);
+        Activity::create(['opportunity_id' => $other->id, 'title' => 'Reunião alheia', 'type' => 'meeting', 'status' => 'done', 'completed_at' => now()]);
+        \DB::table('financial_settlements')->insert(['opportunity_id' => $case->id, 'ledger' => 'receivables', 'entry_id' => 1, 'request_key' => 'cliente-a', 'amount_cents' => 12000, 'paid_at' => today(), 'evidence' => 'Comprovante', 'recorded_by' => $user->id, 'created_at' => now(), 'updated_at' => now()]);
+
+        $this->actingAs($user)->get("/clients/{$client->id}")->assertInertia(fn ($page) => $page
+            ->where('relationship.receivedCents', 12000)
+            ->where('relationship.recentActions.0.title', 'Reunião concluída')
+            ->missing('relationship.recentActions.1'));
+    }
 
     private function payload(array $overrides = []): array
     {
