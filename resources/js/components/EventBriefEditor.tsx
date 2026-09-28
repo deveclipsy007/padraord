@@ -1,6 +1,7 @@
 import { router, useForm } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 import { FileCheck2, Link2, Plus, RotateCcw, Save, Trash2 } from 'lucide-react';
+import { ImpactReview } from './ImpactReview';
 import { ConfirmButton } from './ConfirmButton';
 import { Field, FormErrors } from './FormControls';
 import { BriefStructureEditor, type BriefStructureProps } from './BriefStructureEditor';
@@ -204,6 +205,20 @@ export function EventBriefEditor(props: EventBriefEditorProps) {
     const [sourceField, setSourceField] = useState<string | null>(null);
     const [actionErrors, setActionErrors] = useState<Record<string, string>>({});
     const base = `/opportunities/${caseId}/event-brief`;
+    const [impactFingerprint, setImpactFingerprint] = useState('');
+    const importantFields = [
+        'starts_at',
+        'ends_at',
+        'location_note',
+        'audience_expected_min',
+        'audience_expected_max',
+        'audience_profile',
+        'scope_summary',
+        'objective',
+    ];
+    const originalFields = initial(brief);
+    const needsImpact = importantFields.some((k) => JSON.stringify(form.data.fields[k]) !== JSON.stringify(originalFields[k]));
+    const impactKey = JSON.stringify(importantFields.map((k) => form.data.fields[k]));
     const approved = brief.status === 'approved';
     const reset = (b: EventBriefData) => {
         const value = { revision: b.revision, fields: initial(b) };
@@ -252,6 +267,8 @@ export function EventBriefEditor(props: EventBriefEditorProps) {
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
+                    if (needsImpact && !impactFingerprint) return;
+                    form.transform((data) => ({ ...data, impact_fingerprint: needsImpact ? impactFingerprint : null }));
                     form.patch(base, { preserveScroll: true, onSuccess: (p) => reset(p.props.eventBrief as EventBriefData) });
                 }}
             >
@@ -457,10 +474,14 @@ export function EventBriefEditor(props: EventBriefEditorProps) {
                             ))}
                         </div>
                     </details>
+                    {!approved && needsImpact && <ImpactReview caseId={caseId} changeKey={impactKey} onReviewed={setImpactFingerprint} />}
                     <FormErrors errors={form.errors} />
                     {!approved && (
                         <div className="event-brief__actions">
-                            <button className="button button-primary" disabled={form.processing || !form.isDirty}>
+                            <button
+                                className="button button-primary"
+                                disabled={form.processing || !form.isDirty || (needsImpact && !impactFingerprint)}
+                            >
                                 <Save size={15} /> Salvar briefing do evento
                             </button>
                             <span>Salvar cria uma revisão. A aprovação é uma ação separada.</span>

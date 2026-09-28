@@ -1,6 +1,8 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import {
     Bot,
+    Orbit,
+    PanelsTopLeft,
     Clapperboard,
     Building2,
     CalendarDays,
@@ -58,6 +60,8 @@ type SharedPage = {
 type NavigationItem = { label: string; href: string; icon: typeof LayoutDashboard };
 const navigation: NavigationItem[] = [
     { label: 'Hoje', href: '/', icon: LayoutDashboard },
+    { label: 'Controle operacional', href: '/operations', icon: PanelsTopLeft },
+    { label: 'Agente Orbital RD', href: '/orbital', icon: Orbit },
     { label: 'Comercial', href: '/pipeline', icon: Workflow },
     { label: 'Projetos', href: '/projects', icon: FolderKanban },
     { label: 'Produção', href: '/production', icon: Clapperboard },
@@ -97,6 +101,7 @@ function createContext(
         const modules = [
             ['Visão geral', ''],
             ['Jornada', '/journey'],
+            ['Controle', '/control'],
             ['Briefing', '/briefing'],
             ['Viabilidade', '/feasibility'],
             ['Orçamento', '/budget'],
@@ -271,7 +276,7 @@ export function AppLayout({ children }: PropsWithChildren) {
             </aside>
             {context && <ContextRail {...context} />}
             <main className={`main-content${context ? ' has-context-rail' : ''}`}>{children}</main>
-            <AssistantPanel key={pathname} path={pathname} mode={ai?.mode || 'manual'} />
+            {pathname !== '/orbital' && <AssistantPanel key={pathname} path={pathname} mode={ai?.mode || 'manual'} />}
             <nav className="mobile-nav" aria-label="Navegação móvel">
                 <Link className={isActive(pathname, '/') ? 'active' : ''} href="/" viewTransition>
                     <LayoutDashboard size={18} />
@@ -292,7 +297,10 @@ export function AppLayout({ children }: PropsWithChildren) {
             </nav>
             {menuOpen && (
                 <div className="mobile-menu" role="dialog" aria-label="Menu">
+                    <Link href="/operations">Controle operacional</Link>
+                    <Link href="/orbital">Agente Orbital RD</Link>
                     <Link href="/projects">Projetos e laboratório</Link>
+                    <Link href="/production">Produção</Link>
                     <Link href="/clients">Clientes</Link>
                     <Link href="/suppliers">Fornecedores</Link>
                     <Link href="/venues">Locais</Link>

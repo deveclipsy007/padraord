@@ -11,6 +11,7 @@ use App\Http\Controllers\CaseAttachmentController;
 use App\Http\Controllers\CaseContextController;
 use App\Http\Controllers\CaseJourneyController;
 use App\Http\Controllers\ClientCoverController;
+use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\CommercialWorkflowController;
 use App\Http\Controllers\ContextAudioReviewController;
 use App\Http\Controllers\ContextAudioUploadController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\EventFinanceController;
 use App\Http\Controllers\FeasibilityController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FoundationController;
+use App\Http\Controllers\OperationalControlController;
 use App\Http\Controllers\OperationalPagesController;
 use App\Http\Controllers\OpportunityController;
 use App\Http\Controllers\OpportunityWorkspaceController;
@@ -41,6 +43,7 @@ use App\Models\Opportunity;
 use App\Services\BudgetIntake;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::middleware('guest')->group(function (): void {
     Route::get('/login', [AuthController::class, 'show'])->name('login');
@@ -54,7 +57,26 @@ Route::middleware('guest')->group(function (): void {
 Route::get('/shared/proposal/{token}', [DocumentShareController::class, 'show'])->name('documents.shared.show');
 Route::post('/shared/proposal/{token}/decision', [DocumentShareController::class, 'decide'])->name('documents.shared.decision');
 
+Route::get('/client-portal/{token}', [ClientPortalController::class, 'show'])->middleware('throttle:60,1');
+Route::post('/client-portal/{token}/response', [ClientPortalController::class, 'respond'])->middleware('throttle:15,1');
+Route::post('/client-portal/{token}/upload', [ClientPortalController::class, 'upload'])->middleware('throttle:10,1');
+
 Route::middleware('auth')->group(function (): void {
+    Route::get('/orbital', fn () => Inertia::render('Orbital'));
+    Route::get('/operations', [OperationalControlController::class, 'index']);
+    Route::post('/operations/capacity/{user}', [OperationalControlController::class, 'capacityLimit'])->middleware('can:manage-team');
+    Route::post('/workspace/focus', [OperationalControlController::class, 'focus']);
+    Route::get('/operations/rules/{key}/preview', [OperationalControlController::class, 'rulePreview'])->middleware('can:manage-team');
+    Route::post('/operations/rules/{key}/enable', [OperationalControlController::class, 'ruleEnable'])->middleware('can:manage-team');
+    Route::post('/operations/rules/{key}/run', [OperationalControlController::class, 'ruleRun'])->middleware('can:manage-team');
+    Route::post('/operations/runs/{run}/undo', [OperationalControlController::class, 'ruleUndo'])->middleware('can:manage-team');
+    Route::get('/opportunities/{opportunity}/control', [OperationalControlController::class, 'show']);
+    Route::get('/opportunities/{opportunity}/control/impact', [OperationalControlController::class, 'impact']);
+    Route::post('/opportunities/{opportunity}/control/pending', [OperationalControlController::class, 'pending']);
+    Route::post('/opportunities/{opportunity}/control/pending/{pending}', [OperationalControlController::class, 'resolve']);
+    Route::post('/opportunities/{opportunity}/control/portal', [ClientPortalController::class, 'publish']);
+    Route::post('/opportunities/{opportunity}/control/portal/{portal}/revoke', [ClientPortalController::class, 'revoke']);
+    Route::get('/opportunities/{opportunity}/control/uploads/{upload}', [ClientPortalController::class, 'download']);
     Route::get('/assistant/chat', [AssistantController::class, 'chatHistory']);
     Route::post('/assistant/chat', [AssistantController::class, 'chat'])->middleware('throttle:10,1');
     Route::post('/assistant/chat/{turn}/preview', [AssistantController::class, 'editChatPreview'])->whereNumber('turn');

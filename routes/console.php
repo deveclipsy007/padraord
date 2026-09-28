@@ -6,6 +6,7 @@ use App\Models\BriefingAudio;
 use App\Models\CaseContextEntry;
 use App\Models\Opportunity;
 use App\Services\BriefSourceService;
+use App\Services\OperationalAutomations;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -101,3 +102,11 @@ Artisan::command('context:purge-expired-audio', function () {
 })->purpose('Remove only managed context audio files and expired upload parts');
 
 Schedule::command('context:purge-expired-audio')->daily()->withoutOverlapping();
+
+Artisan::command('rd:automations', function () {
+    $service = app(OperationalAutomations::class);
+    foreach (array_keys(OperationalAutomations::RULES) as $key) {
+        $this->info($key.': '.$service->run($key).' tarefas criadas.');
+    }
+})->purpose('Executa as regras operacionais ativadas, sem duplicar tarefas');
+Schedule::command('rd:automations')->everyFiveMinutes()->withoutOverlapping();

@@ -11,10 +11,12 @@ use App\Models\Contact;
 use App\Models\Opportunity;
 use App\Models\User;
 use App\Services\NextActionService;
+use App\Services\OperationalControl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class OpportunityController extends Controller
@@ -58,6 +60,9 @@ class OpportunityController extends Controller
             $locked = Opportunity::query()->whereKey($opportunity->id)->lockForUpdate()->firstOrFail();
             if ($request->filled('revision') && (int) $request->input('revision') !== (int) $locked->commercial_revision) {
                 abort(409, 'O caso foi alterado por outra pessoa. Atualize antes de salvar.');
+            }
+            if ($request->filled('impact_fingerprint') && ! hash_equals(app(OperationalControl::class)->impact($locked, 'scope')['fingerprint'], (string) $request->input('impact_fingerprint'))) {
+                throw ValidationException::withMessages(['impact' => 'O contexto mudou desde a prévia. Confira o impacto novamente.']);
             }
             $locked->update([...$this->details($request), 'origin' => $request->input('origin', $locked->origin), 'priority' => $request->input('priority', $locked->priority), 'commercial_revision' => (int) $locked->commercial_revision + 1]);
             AuditLog::create(['user_id' => $request->user()->id, 'action' => 'opportunity.updated', 'subject_type' => Opportunity::class, 'subject_id' => $opportunity->id]);

@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { ImpactReview } from '../components/ImpactReview';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { AppLayout } from '../layout';
 import { GlassSurface } from '../components/GlassSurface';
@@ -34,6 +36,12 @@ export default function OpportunityEdit({ opportunity: o, clients, users }: Prop
         objective: o.objective || '',
         next_action: o.next_action || '',
     });
+    const [impactFingerprint, setImpactFingerprint] = useState('');
+    const changedContext =
+        form.data.event_date !== (o.event_date?.slice(0, 10) || '') ||
+        form.data.location !== (o.location || '') ||
+        form.data.objective !== (o.objective || '');
+    const impactKey = JSON.stringify([form.data.event_date, form.data.location, form.data.objective]);
     const contacts = clients.find((c) => String(c.id) === form.data.client_id)?.contacts || [];
     return (
         <AppLayout>
@@ -49,6 +57,8 @@ export default function OpportunityEdit({ opportunity: o, clients, users }: Prop
                     className="form-grid"
                     onSubmit={(e) => {
                         e.preventDefault();
+                        if (changedContext && !impactFingerprint) return;
+                        form.transform((data) => ({ ...data, impact_fingerprint: changedContext ? impactFingerprint : null }));
                         form.patch(`/opportunities/${o.id}`);
                     }}
                 >
@@ -115,8 +125,9 @@ export default function OpportunityEdit({ opportunity: o, clients, users }: Prop
                             <input value={form.data[key]} onChange={(e) => form.setData(key, e.target.value)} />
                         </label>
                     ))}
+                    {changedContext && <ImpactReview caseId={o.id} changeKey={impactKey} onReviewed={setImpactFingerprint} />}
                     <FormErrors errors={form.errors} />
-                    <button className="button button-primary" disabled={form.processing}>
+                    <button className="button button-primary" disabled={form.processing || (changedContext && !impactFingerprint)}>
                         Salvar alterações
                     </button>
                 </form>

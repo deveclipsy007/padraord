@@ -13,6 +13,7 @@ import '../css/charts.css';
 import '../css/operational-system.css';
 import '../css/editorial-workspace.css';
 import '../css/operational-upgrade.css';
+import '../css/rd-control.css';
 
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';

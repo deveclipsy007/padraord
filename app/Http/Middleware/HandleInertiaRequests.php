@@ -47,6 +47,7 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'role' => $request->user()->role,
                     'isAdmin' => $request->user()->isAdmin(),
+                    'workspaceFocus' => $request->user()->workspace_focus ?? ($request->user()->isAdmin() ? 'management' : 'production'),
                     'canApproveCommercial' => $request->user()->can_approve_commercial,
                 ] : null,
             ],
